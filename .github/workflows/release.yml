@@ -97,8 +97,8 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            -t $REGISTRY/${{ github.repository }}:${VERSION} \
-            -t $REGISTRY/${{ github.repository }}:latest \
+            -t $REGISTRY/${{ github.repository | toLowerCase }}:${VERSION} \
+            -t $REGISTRY/${{ github.repository | toLowerCase }}:latest \
             --push .
 
       # -------------------
