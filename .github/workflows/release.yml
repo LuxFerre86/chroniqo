@@ -1,0 +1,104 @@
+name: Production Release
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      # -------------------
+      # Checkout
+      # -------------------
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # -------------------
+      # Node für semantic-release
+      # -------------------
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Release Tools
+        run: |
+          npm install -g semantic-release \
+          @semantic-release/changelog \
+          @semantic-release/git \
+          @semantic-release/github \
+          @semantic-release/commit-analyzer \
+          @semantic-release/release-notes-generator
+
+      # -------------------
+      # Release erzeugen
+      # -------------------
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: semantic-release
+
+      # -------------------
+      # Version aus Tag holen
+      # -------------------
+      - name: Extract Version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/v//')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      # -------------------
+      # Java + Vaadin Build
+      # -------------------
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Maven Production Build
+        run: mvn -Pproduction clean package -DskipTests
+
+      # -------------------
+      # Docker Multi Arch Setup
+      # -------------------
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # -------------------
+      # GHCR Login
+      # -------------------
+      - name: Login GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # -------------------
+      # Multi Arch Build + Push
+      # -------------------
+      - name: Build and Push Docker
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t $REGISTRY/${{ github.repository }}:${VERSION} \
+            -t $REGISTRY/${{ github.repository }}:latest \
+            --push .
+
+      # -------------------
+      # Security Scan (Trivy)
+      # -------------------
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ env.VERSION }}
+          format: table
+          exit-code: 0

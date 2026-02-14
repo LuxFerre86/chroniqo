@@ -1,0 +1,15 @@
+services:
+  chroniqo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: none
+      no_cache: true
+
+    container_name: "chroniqo"
+    restart: always
+    #user: 1001:1001
+    mem_limit: 768M
+    mem_reservation: 256M
+    ports:
+        - "8180:8080"
