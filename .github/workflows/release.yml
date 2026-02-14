@@ -56,7 +56,15 @@ jobs:
       # -------------------
       - name: Extract Version
         run: |
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/v//')
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$TAG" ]; then
+            VERSION="0.1.0"
+          else
+            VERSION=$(echo $TAG | sed 's/v//')
+          fi
+
+          echo "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       # -------------------
