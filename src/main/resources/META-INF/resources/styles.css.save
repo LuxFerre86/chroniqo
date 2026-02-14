@@ -1,0 +1,229 @@
+/* =====================================================
+   Calendar Grid
+   ===================================================== */
+
+.calendar-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+/* =====================================================
+   Weekday Header (dezent!)
+   ===================================================== */
+
+.calendar-header {
+    text-align: center;
+    font-size: 1.0rem;
+    font-weight: 500;
+    opacity: 0.65;
+
+    line-height: 1;
+    padding: 2px 0;
+
+    align-self: center;
+    background: transparent;
+}
+
+/* =====================================================
+   Day Cell – Base
+   ===================================================== */
+
+.calendar-day {
+    min-height: 72px;
+    padding: 6px;
+    border-radius: 8px;
+
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-30pct);
+
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    justify-content: flex-start;
+    align-items: center;
+
+    transition: background-color 120ms ease,
+                border-color 120ms ease;
+}
+
+.calendar-day:hover {
+    border-color: var(--lumo-contrast-40pct);
+}
+
+/* Heute */
+.calendar-day.today {
+    border: 2px solid var(--lumo-primary-color);
+}
+
+/* =====================================================
+   Day Header (Datum)
+   ===================================================== */
+
+.day-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+}
+
+.day-number {
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+/* =====================================================
+   Day Content (Hauptinfo)
+   ===================================================== */
+
+.day-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column; /* Arbeitszeit + Saldo vertikal */
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+vaadin-card .balance-positive {
+    color: var(--aura-green-text);
+}
+
+vaadin-card .balance-negative {
+    color: var(--aura-red-text);
+}
+
+.day-badge {
+    /* Typography */
+    font-size: var(--aura-font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+
+    /* Spacing */
+    padding: 0.5rem 0.875rem;
+
+    /* Border & Shape */
+    border-radius: var(--vaadin-radius-l);
+    border: 1px solid transparent;
+
+    /* Layout */
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    white-space: nowrap;
+
+    /* Visual Effects */
+    position: relative;
+    overflow: hidden;
+
+    /* Transition */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Moderne Gradient-Variante für Feiertage */
+.day-badge--holiday {
+    background: linear-gradient(135deg,
+        var(--aura-blue) 0%,
+        color-mix(in srgb, var(--aura-blue) 85%, var(--aura-purple) 15%) 100%
+    );
+    color: white;
+    box-shadow:
+        0 2px 8px color-mix(in srgb, var(--aura-blue) 25%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Warme Variante für Krankheitstage */
+.day-badge--sick {
+    background: linear-gradient(135deg,
+        var(--aura-red) 0%,
+        color-mix(in srgb, var(--aura-red) 85%, var(--aura-orange) 15%) 100%
+    );
+    color: white;
+    box-shadow:
+        0 2px 8px color-mix(in srgb, var(--aura-red) 25%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Freundliche Variante für Urlaub */
+.day-badge--vacation {
+    background: linear-gradient(135deg,
+        var(--aura-green) 0%,
+        color-mix(in srgb, var(--aura-green) 90%, var(--aura-blue) 10%) 100%
+    );
+    color: white;
+    box-shadow:
+        0 2px 8px color-mix(in srgb, var(--aura-green) 25%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* ===== Header: Wochenende etwas heller ===== */
+.calendar-header.calendar-weekend {
+    color: var(--aura-neutral-text-secondary);
+    font-weight: 500;
+}
+
+/* ===== Cards am Wochenende ===== */
+vaadin-card.calendar-weekend {
+    background-color: color-mix(in srgb, rgb(105, 105, 105) 30%, transparent);
+}
+
+/* Inhalt leicht zurücknehmen */
+vaadin-card.calendar-weekend {
+    opacity: 0.85;
+}
+
+/* =====================================================
+   Month Navigation
+   ===================================================== */
+
+.month-nav {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.month-nav-btn {
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 8px;
+    user-select: none;
+    font-size: 1rem;
+}
+
+.month-nav-btn:hover {
+    background: var(--lumo-contrast-10pct);
+}
+
+.month-nav-label {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* =====================================================
+   Responsive
+   ===================================================== */
+
+@media (max-width: 700px) {
+    .calendar-day {
+        min-height: 60px;
+        padding: 4px;
+    }
+
+    .worked-time {
+        font-size: 0.8rem;
+    }
+
+    .balance-time {
+        font-size: 0.65rem;
+    }
+
+    .day-number {
+        font-size: 0.7rem;
+    }
+}

@@ -1,0 +1,420 @@
+/* =====================================================
+   Calendar Grid - Desktop
+   ===================================================== */
+
+.calendar-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--vaadin-gap-xs);
+}
+
+/* =====================================================
+   Weekday Header
+   ===================================================== */
+
+.calendar-header {
+    text-align: center;
+    font-size: var(--aura-font-size-m);
+    font-weight: var(--aura-font-weight-medium);
+    color: var(--vaadin-text-color-secondary);
+    line-height: var(--aura-line-height-m);
+    padding: var(--vaadin-padding-xs) 0;
+    align-self: center;
+    background: transparent;
+}
+
+.calendar-header.calendar-weekend {
+    color: var(--vaadin-text-color-disabled);
+    font-weight: var(--aura-font-weight-regular);
+}
+
+/* =====================================================
+   Day Cell – Base
+   ===================================================== */
+
+.calendar-day {
+    min-height: 72px;
+    padding: var(--vaadin-padding-xs);
+    border-radius: var(--vaadin-radius-m);
+
+    /* AURA Surface */
+    background: var(--aura-surface-color);
+    --aura-surface-level: 2;
+    --aura-surface-opacity: 0.5;
+
+    border: 1px solid var(--vaadin-border-color-secondary);
+
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    justify-content: flex-start;
+    align-items: center;
+
+    transition: background-color 120ms ease,
+                border-color 120ms ease,
+                box-shadow 120ms ease;
+}
+
+.calendar-day:hover {
+    border-color: var(--vaadin-border-color);
+    box-shadow: var(--aura-shadow-xs);
+}
+
+/* Heute */
+.calendar-day.today {
+    border: 2px solid var(--aura-accent-color);
+    box-shadow: 0 0 0 1px var(--aura-accent-color);
+    --aura-surface-level: 3;
+}
+
+/* Wochenende */
+.calendar-day.calendar-weekend {
+    background: color-mix(in srgb, var(--vaadin-text-color) 3%, transparent);
+    --aura-surface-level: 1;
+}
+
+.calendar-day.calendar-weekend .day-content {
+    opacity: 0.85;
+}
+
+/* Vaadin Card anpassen für custom Layout */
+vaadin-card.calendar-day {
+    display: flex;
+    flex-direction: column;
+}
+
+vaadin-card.calendar-day > * {
+    padding: 0;
+}
+
+/* ===== Cards am Wochenende ===== */
+vaadin-card.calendar-weekend {
+    background-color: color-mix(in srgb, rgb(105, 105, 105) 30%, transparent);
+}
+
+/* Inhalt leicht zurücknehmen */
+vaadin-card.calendar-weekend {
+    opacity: 0.85;
+}
+
+/* =====================================================
+   Day Header (Datum)
+   ===================================================== */
+
+.day-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    margin-bottom: var(--vaadin-gap-xs);
+}
+
+.day-number {
+    font-size: var(--aura-font-size-s);
+    font-weight: var(--aura-font-weight-semibold);
+    line-height: var(--aura-line-height-s);
+    color: var(--vaadin-text-color);
+}
+
+/* =====================================================
+   Day Content (Hauptinfo)
+   ===================================================== */
+
+.day-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--vaadin-gap-xs);
+    width: 100%;
+}
+
+/* Saldo-Farben */
+.balance-positive {
+    color: var(--aura-green-text);
+    font-weight: var(--aura-font-weight-medium);
+}
+
+.balance-negative {
+    color: var(--aura-red-text);
+    font-weight: var(--aura-font-weight-medium);
+}
+
+/* =====================================================
+   Day Badge (Feiertage, Krankheit, Urlaub)
+   ===================================================== */
+
+.day-badge {
+    /* Typography */
+    font-size: var(--aura-font-size-xs);
+    font-weight: var(--aura-font-weight-semibold);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    line-height: var(--aura-line-height-xs);
+
+    /* Spacing */
+    padding: calc(var(--vaadin-padding-xs) * 1.25) var(--vaadin-padding-s);
+
+    /* Border & Shape */
+    border-radius: var(--vaadin-radius-m);
+
+    /* Layout */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--vaadin-gap-xs);
+    white-space: nowrap;
+    min-width: max-content;
+
+    /* Visual Effects */
+    position: relative;
+    overflow: hidden;
+
+    /* Transition */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Moderne Gradient-Variante für Feiertage */
+.day-badge--holiday {
+    background: linear-gradient(135deg,
+        var(--aura-blue) 0%,
+        color-mix(in srgb, var(--aura-blue) 85%, var(--aura-purple) 15%) 100%
+    );
+    color: white;
+    box-shadow:
+        var(--aura-shadow-xs),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Warme Variante für Krankheitstage */
+.day-badge--sick {
+    background: linear-gradient(135deg,
+        var(--aura-red) 0%,
+        color-mix(in srgb, var(--aura-red) 85%, var(--aura-orange) 15%) 100%
+    );
+    color: white;
+    box-shadow:
+        var(--aura-shadow-xs),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Freundliche Variante für Urlaub */
+.day-badge--vacation {
+    background: linear-gradient(135deg,
+        var(--aura-green) 0%,
+        color-mix(in srgb, var(--aura-green) 90%, var(--aura-blue) 10%) 100%
+    );
+    color: white;
+    box-shadow:
+        var(--aura-shadow-xs),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Subtiler Glanz-Effekt */
+.day-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.15),
+        transparent
+    );
+    transition: left 0.5s ease;
+}
+
+.day-badge:hover::before {
+    left: 100%;
+}
+
+/* =====================================================
+   Month Navigation
+   ===================================================== */
+
+.month-nav {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--vaadin-gap-m);
+    margin-bottom: var(--vaadin-gap-m);
+    padding: var(--vaadin-padding-xs) 0;
+}
+
+.month-nav-btn {
+    cursor: pointer;
+    padding: var(--vaadin-padding-xs) var(--vaadin-padding-s);
+    border-radius: var(--vaadin-radius-m);
+    user-select: none;
+    font-size: var(--aura-font-size-m);
+    font-weight: var(--aura-font-weight-medium);
+    color: var(--vaadin-text-color-secondary);
+    transition: all 0.15s ease;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.month-nav-btn:hover {
+    background: var(--vaadin-background-container);
+    color: var(--vaadin-text-color);
+}
+
+.month-nav-btn:active {
+    background: var(--vaadin-background-container-strong);
+    transform: scale(0.98);
+}
+
+.month-nav-label {
+    text-align: center;
+    font-size: var(--aura-font-size-l);
+    font-weight: var(--aura-font-weight-semibold);
+    line-height: var(--aura-line-height-l);
+    color: var(--vaadin-text-color);
+}
+
+/* =====================================================
+   MOBILE: Listenansicht
+   ===================================================== */
+
+@media (max-width: 700px) {
+    /* Grid zu Liste */
+    .calendar-grid {
+        display: flex;
+        flex-direction: column;
+        gap: var(--vaadin-gap-xs);
+    }
+
+    /* Wochentag-Header ausblenden */
+    .calendar-header {
+        display: none;
+    }
+
+    /* Day Cell: Horizontal Layout */
+    .calendar-day {
+        min-height: auto;
+        padding: var(--vaadin-padding-s);
+        border-radius: var(--vaadin-radius-m);
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--vaadin-gap-s);
+    }
+
+    /* Day Header: Vertikal mit Wochentag */
+    .day-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        margin-bottom: 0;
+        min-width: 70px;
+    }
+
+    .day-number {
+        font-size: var(--aura-font-size-l);
+        font-weight: var(--aura-font-weight-semibold);
+    }
+
+    /* Wochentag als Pseudo-Element */
+    .day-number::before {
+        content: attr(data-weekday);
+        display: block;
+        font-size: var(--aura-font-size-xs);
+        color: var(--vaadin-text-color-secondary);
+        font-weight: var(--aura-font-weight-regular);
+        text-transform: capitalize;
+    }
+
+    /* Day Content: Horizontal statt vertikal */
+    .day-content {
+        flex-direction: row;
+        gap: var(--vaadin-gap-s);
+        width: auto;
+        flex: 1;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
+    /* Badge: volle Größe */
+    .day-badge {
+        font-size: var(--aura-font-size-xs);
+        padding: var(--vaadin-padding-xs) var(--vaadin-padding-s);
+    }
+
+    /* Heute-Markierung deutlicher */
+    .calendar-day.today {
+        background: color-mix(in srgb, var(--aura-accent-color) 5%, var(--aura-surface-color));
+        border-width: 2px;
+    }
+
+    .calendar-day.today .day-number {
+        color: var(--aura-accent-text-color);
+    }
+
+    /* Month Navigation kompakter */
+    .month-nav-label {
+        font-size: var(--aura-font-size-m);
+    }
+}
+
+/* Extra kleine Smartphones */
+@media (max-width: 400px) {
+    .calendar-day {
+        padding: var(--vaadin-padding-xs);
+    }
+
+    .day-header {
+        min-width: 60px;
+    }
+
+    .day-number {
+        font-size: var(--aura-font-size-m);
+    }
+
+    .day-badge {
+        font-size: calc(var(--aura-font-size-xs) * 0.9);
+        padding: calc(var(--vaadin-padding-xs) * 0.8) calc(var(--vaadin-padding-xs) * 1.2);
+    }
+}
+
+/* =====================================================
+   Tablet: Optimierte Grid-Ansicht
+   ===================================================== */
+
+@media (min-width: 701px) and (max-width: 1024px) {
+    .calendar-day {
+        min-height: 65px;
+        padding: calc(var(--vaadin-padding-xs) * 0.8);
+    }
+
+    .day-badge {
+        padding: var(--vaadin-padding-xs) calc(var(--vaadin-padding-s) * 0.8);
+    }
+}
+
+/* =====================================================
+   Desktop: Volle Größe
+   ===================================================== */
+
+@media (min-width: 1025px) {
+    .calendar-grid {
+        gap: var(--vaadin-gap-s);
+    }
+
+    .calendar-day {
+        min-height: 90px;
+        padding: var(--vaadin-padding-s);
+    }
+
+    .calendar-day:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--aura-shadow-s);
+    }
+}
