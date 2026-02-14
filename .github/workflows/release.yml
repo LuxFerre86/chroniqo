@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: $(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+  IMAGE_NAME: luxferre86/chroniqo
 
 jobs:
   release:
@@ -96,10 +96,10 @@ jobs:
       - name: Build and Push Docker
         run: |
           docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            -t $REGISTRY/$IMAGE_NAME:${VERSION} \
-            -t $REGISTRY/$IMAGE_NAME:latest \
-            --push .
+          --platform linux/amd64,linux/arm64 \
+          -t $REGISTRY/$IMAGE_NAME:${VERSION} \
+          -t $REGISTRY/$IMAGE_NAME:latest \
+          --push .
 
       # -------------------
       # Security Scan (Trivy)
