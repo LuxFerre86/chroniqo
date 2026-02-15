@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.frontend;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -9,17 +10,21 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Month;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
-import java.util.Locale;
 import java.util.stream.IntStream;
 
 public class MonthSelector extends HorizontalLayout {
 
+    // Getter und Setter
+    @Getter
     private YearMonth selectedMonth;
     private final Span monthLabel;
+    @Setter
     private MonthChangeListener changeListener;
 
     public MonthSelector() {
@@ -150,7 +155,7 @@ public class MonthSelector extends HorizontalLayout {
 
         for (Month month : Month.values()) {
             Button monthButton = new Button(
-                    month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
+                    month.getDisplayName(TextStyle.SHORT, UI.getCurrent().getLocale())
             );
             monthButton.setWidthFull();
 
@@ -192,7 +197,7 @@ public class MonthSelector extends HorizontalLayout {
 
     private String formatMonth(YearMonth yearMonth) {
         String monthName = yearMonth.getMonth()
-                .getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+                .getDisplayName(TextStyle.FULL, UI.getCurrent().getLocale());
         return monthName + " " + yearMonth.getYear();
     }
 
@@ -202,18 +207,9 @@ public class MonthSelector extends HorizontalLayout {
         }
     }
 
-    // Getter und Setter
-    public YearMonth getSelectedMonth() {
-        return selectedMonth;
-    }
-
     public void setSelectedMonth(YearMonth yearMonth) {
         this.selectedMonth = yearMonth;
         updateLabel();
-    }
-
-    public void setChangeListener(MonthChangeListener listener) {
-        this.changeListener = listener;
     }
 
     @FunctionalInterface

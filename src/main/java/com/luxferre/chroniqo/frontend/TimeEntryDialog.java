@@ -7,6 +7,7 @@ import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.service.AbsenceService;
 import com.luxferre.chroniqo.service.TimeEntryService;
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -31,35 +32,43 @@ import java.util.Objects;
 @Component
 public class TimeEntryDialog extends Dialog {
 
-    private DatePicker startDay = new DatePicker(LocalDate.now());
-    private DatePicker endDay = new DatePicker(LocalDate.now());
-    private TimePicker start = new TimePicker("Start Time");
-    private TimePicker end = new TimePicker("End Time");
-    private IntegerField breakMinutes = new IntegerField("Break");
+    private final DatePicker startDay = new DatePicker(LocalDate.now());
+    private final DatePicker endDay = new DatePicker(LocalDate.now());
+    private final TimePicker start = new TimePicker("Start Time");
+    private final TimePicker end = new TimePicker("End Time");
+    private final IntegerField breakMinutes = new IntegerField("Break");
 
-    private Tabs tabs = new Tabs();
-    private Tab workingTimeTab = new Tab("Working Time");
-    private Tab sickTab = new Tab("Sick");
-    private Tab vacationTab = new Tab("Vacation");
-    private VerticalLayout content = new VerticalLayout();
+    private final Tabs tabs = new Tabs();
+    private final Tab workingTimeTab = new Tab("Working Time");
+    private final Tab sickTab = new Tab("Sick");
+    private final Tab vacationTab = new Tab("Vacation");
+    private final VerticalLayout content = new VerticalLayout();
 
-    private Button saveButton = new Button("Save");
-    private Button deleteButton = new Button("Delete");
+    private final Button saveButton = new Button("Save");
+    private final Button deleteButton = new Button("Delete");
 
     private final TimeEntryService timeEntryService;
     private final AbsenceService absenceService;
 
-    private Binder<TimePicker> timePickerBinder = new Binder<>();
+    private final Binder<TimePicker> timePickerBinder = new Binder<>();
 
 
     public TimeEntryDialog(TimeEntryService timeEntryService, AbsenceService absenceService) {
         this.timeEntryService = timeEntryService;
         this.absenceService = absenceService;
+        initDialog();
         renderDialog();
         renderWorkingTime();
         timePickerBinder.forField(start)
                 .withValidator(Objects::nonNull, "Start Time is mandatory!")
                 .bind(TimePicker::getValue, TimePicker::setValue);
+    }
+
+    private void initDialog() {
+        startDay.setLocale(UI.getCurrent().getLocale());
+        endDay.setLocale(UI.getCurrent().getLocale());
+        start.setLocale(UI.getCurrent().getLocale());
+        end.setLocale(UI.getCurrent().getLocale());
     }
 
     void renderDialog() {
