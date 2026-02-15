@@ -4,9 +4,10 @@ import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.service.MonthService;
 import com.luxferre.chroniqo.service.YearService;
-import com.vaadin.flow.component.card.Card;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -16,7 +17,6 @@ import org.springframework.util.StringUtils;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.HashMap;
 import java.util.Locale;
@@ -26,17 +26,16 @@ import java.util.stream.Collectors;
 @Route("month")
 @UIScope
 @Component
+@StyleSheet("calendar.css")
 public class MonthView extends VerticalLayout {
     private YearMonth currentMonth = YearMonth.now();
     private final Div calendarGrid;
-    private Span monthLabel;
     private final MonthService monthService;
     private final YearService yearService;
     private Map<LocalDate, DaySummaryDTO> monthSummaries = new HashMap<>();
     private Map<LocalDate, DaySummaryDTO> yearSummaries = new HashMap<>();
     private final TimeEntryDialog timeEntryDialog;
     private final StatisticsCard monthStatisticsCard;
-
 
     public MonthView(MonthService monthService, YearService yearService, TimeEntryDialog timeEntryDialog) {
         this.monthService = monthService;
@@ -53,7 +52,6 @@ public class MonthView extends VerticalLayout {
         setSpacing(true);
 
         MonthSelector monthSelector = new MonthSelector();
-
         monthSelector.setChangeListener(newMonth -> {
             currentMonth = newMonth;
             loadSummaries();
@@ -63,7 +61,6 @@ public class MonthView extends VerticalLayout {
         monthSelector.setSelectedMonth(currentMonth);
         monthSelector.setAlignSelf(Alignment.CENTER);
 
-        // Statistik-Card erstellen
         monthStatisticsCard = new StatisticsCard();
 
         calendarGrid = new Div();
@@ -84,13 +81,8 @@ public class MonthView extends VerticalLayout {
 
         // ===== Header =====
         DayOfWeek[] weekdays = {
-                DayOfWeek.MONDAY,
-                DayOfWeek.TUESDAY,
-                DayOfWeek.WEDNESDAY,
-                DayOfWeek.THURSDAY,
-                DayOfWeek.FRIDAY,
-                DayOfWeek.SATURDAY,
-                DayOfWeek.SUNDAY
+                DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY
         };
 
         for (DayOfWeek day : weekdays) {
@@ -99,7 +91,7 @@ public class MonthView extends VerticalLayout {
             header.addClassName("calendar-header");
 
             if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) {
-                header.addClassName("calendar-weekend");
+                header.addClassName("weekend-header");
             }
 
             calendarGrid.add(header);
@@ -107,80 +99,111 @@ public class MonthView extends VerticalLayout {
 
         // ===== Tage =====
         LocalDate firstDay = currentMonth.atDay(1);
-        int firstWeekdayIndex = firstDay.getDayOfWeek().getValue() - 1; // Mo=0
+        int firstWeekdayIndex = firstDay.getDayOfWeek().getValue() - 1;
 
         // Leere Zellen vor Monatsbeginn
         for (int i = 0; i < firstWeekdayIndex; i++) {
-            calendarGrid.add(new Div());
+            Div emptyCell = new Div();
+            emptyCell.addClassName("calendar-empty");
+            calendarGrid.add(emptyCell);
         }
 
         // Monatstage
         for (int day = 1; day <= currentMonth.lengthOfMonth(); day++) {
             LocalDate date = currentMonth.atDay(day);
-
             calendarGrid.add(createDayCard(date));
         }
     }
 
-    private Card createDayCard(LocalDate date) {
+    private Div createDayCard(LocalDate date) {
         DaySummaryDTO summary = monthSummaries.get(date);
+        boolean isToday = date.equals(LocalDate.now());
+        boolean isWeekend = date.getDayOfWeek() == DayOfWeek.SATURDAY
+                || date.getDayOfWeek() == DayOfWeek.SUNDAY;
 
-        Card dayCard = new Card();
+        Div dayCard = new Div();
+        dayCard.addClassName("day-card");
 
-        // Manueller Header mit day-number
-        Div dayHeader = new Div();
+        if (isToday) {
+            dayCard.addClassName("day-card--today");
+        }
+
+        if (isWeekend) {
+            dayCard.addClassName("day-card--weekend");
+        }
+
+        // ===== Day Header Layout =====
+        HorizontalLayout dayHeader = new HorizontalLayout();
+        dayHeader.setWidthFull();
+        dayHeader.setJustifyContentMode(JustifyContentMode.BETWEEN);
+        dayHeader.setAlignItems(Alignment.CENTER);
         dayHeader.addClassName("day-header");
+        dayHeader.setPadding(false);
+        dayHeader.setSpacing(false);
+
+        // Day Number + Weekday (Mobile)
+        VerticalLayout dayNumberSection = new VerticalLayout();
+        dayNumberSection.setPadding(false);
+        dayNumberSection.setSpacing(false);
+        dayNumberSection.addClassName("day-number-section");
+
+        Span weekdayLabel = new Span(date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.GERMAN));
+        weekdayLabel.addClassName("weekday-mobile");
 
         Span dayNumber = new Span(String.valueOf(date.getDayOfMonth()));
         dayNumber.addClassName("day-number");
 
-        // WICHTIG: data-weekday für Mobile-Ansicht
-        String weekdayName = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.GERMAN);
-        dayNumber.getElement().setAttribute("data-weekday", weekdayName);
+        dayNumberSection.add(weekdayLabel, dayNumber);
 
-        dayHeader.add(dayNumber);
-
-        if (date.getDayOfWeek() == DayOfWeek.SATURDAY
-                || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            dayCard.addClassName("calendar-weekend");
-        }
-
-        // Day Content Container
-        Div dayContent = new Div();
-        dayContent.addClassName("day-content");
-
-        dayContent.add(new Div(formatMinutes(summary.workedMinutes())));
-
-        Div balance = new Div(formatBalance(summary.balanceMinutes()));
-        if (summary.balanceMinutes() != null) {
-            balance.addClassName(
-                    summary.balanceMinutes() >= 0
-                            ? "balance-positive"
-                            : "balance-negative"
-            );
-        } else {
-            balance.addClassName("balance-neutral");
-        }
-        dayContent.add(balance);
-
+        // Badge
+        Div badgeContainer = new Div();
         String dayTypeLabel = getDayTypeLabel(summary.absenceType());
         if (StringUtils.hasText(dayTypeLabel)) {
             Span badge = new Span(dayTypeLabel);
             badge.addClassName("day-badge");
-            badge.addClassName(getDayTypeClassName(summary.absenceType()));
-            dayCard.setHeaderSuffix(badge);
+            badge.addClassName(getBadgeClassName(summary.absenceType()));
+            badgeContainer.add(badge);
         }
 
-        // Alles zur Card hinzufügen
-        dayCard.setHeaderPrefix(dayHeader);
-        dayCard.add(dayContent);
+        dayHeader.add(dayNumberSection, badgeContainer);
 
-        dayCard.getElement().addEventListener("click", event -> {
-            timeEntryDialog.open(date);
-        });
-        dayCard.getStyle().set("cursor", "pointer");
+        // ===== Day Content =====
+        VerticalLayout dayContent = new VerticalLayout();
+        dayContent.setWidthFull();
+        dayContent.setDefaultHorizontalComponentAlignment(Alignment.CENTER);
+        dayContent.setJustifyContentMode(JustifyContentMode.CENTER);
+        dayContent.addClassName("day-content");
+        dayContent.setPadding(false);
+        dayContent.setSpacing(false);
+
+        // Worked Hours
+        Span workedHours = new Span(formatMinutes(summary.workedMinutes()));
+        workedHours.addClassName("worked-hours");
+
+        // Balance
+        Span balance = new Span(formatBalance(summary.balanceMinutes()));
+        balance.addClassName("balance");
+        if (summary.balanceMinutes() != null) {
+            balance.addClassName(summary.balanceMinutes() >= 0 ? "balance-positive" : "balance-negative");
+        }
+
+        dayContent.add(workedHours, balance);
+
+        dayCard.add(dayHeader, dayContent);
+
+        // Click Handler
+        dayCard.getElement().addEventListener("click", event -> timeEntryDialog.open(date));
 
         return dayCard;
+    }
+
+    private String getBadgeClassName(AbsenceType type) {
+        if (type == null) return "";
+        return switch (type) {
+            case HOLIDAY -> "badge-holiday";
+            case VACATION -> "badge-vacation";
+            case SICK -> "badge-sick";
+        };
     }
 
     private void updateStatistics() {
@@ -194,16 +217,12 @@ public class MonthView extends VerticalLayout {
 
         for (DaySummaryDTO summary : monthSummaries.values()) {
             if (summary.date().isBefore(LocalDate.now())) {
-                // Soll-Stunden: nur Werktage ohne Abwesenheit
                 if (summary.absenceType() == null &&
                         summary.date().getDayOfWeek() != DayOfWeek.SATURDAY &&
                         summary.date().getDayOfWeek() != DayOfWeek.SUNDAY) {
-                    // Annahme: 8 Stunden Soll-Arbeitszeit pro Tag (480 Minuten)
-                    // Dies kannst du anpassen, falls die Soll-Zeit aus dem DTO kommt
                     totalTargetMinutes += 468;
                 }
 
-                // Ist-Stunden
                 if (summary.workedMinutes() != null) {
                     totalWorkedMinutes += summary.workedMinutes();
                 }
@@ -218,17 +237,13 @@ public class MonthView extends VerticalLayout {
         int totalWorkedMinutes = 0;
 
         for (DaySummaryDTO summary : yearSummaries.values()) {
-            // Soll-Stunden: nur Werktage ohne Abwesenheit
             if (summary.date().isBefore(LocalDate.now())) {
                 if (summary.absenceType() == null &&
                         summary.date().getDayOfWeek() != DayOfWeek.SATURDAY &&
                         summary.date().getDayOfWeek() != DayOfWeek.SUNDAY) {
-                    // Annahme: 8 Stunden Soll-Arbeitszeit pro Tag (480 Minuten)
-                    // Dies kannst du anpassen, falls die Soll-Zeit aus dem DTO kommt
                     totalTargetMinutes += 468;
                 }
 
-                // Ist-Stunden
                 if (summary.workedMinutes() != null) {
                     totalWorkedMinutes += summary.workedMinutes();
                 }
@@ -268,20 +283,12 @@ public class MonthView extends VerticalLayout {
         }
     }
 
-    private String getDayTypeClassName(AbsenceType type) {
-        if (null == type) {
-            return null;
-        } else {
-            return switch (type) {
-                case HOLIDAY -> "day-badge--holiday";
-                case VACATION -> "day-badge--vacation";
-                case SICK -> "day-badge--sick";
-            };
-        }
-    }
-
     private void loadSummaries() {
-        monthSummaries = monthService.getMonth(currentMonth.getYear(), currentMonth.getMonthValue()).stream().collect(Collectors.toMap(DaySummaryDTO::date, dto -> dto));
-        yearSummaries = yearService.getYear(currentMonth.getYear()).stream().collect(Collectors.toMap(DaySummaryDTO::date, dto -> dto));
+        monthSummaries = monthService.getMonth(currentMonth.getYear(), currentMonth.getMonthValue())
+                .stream()
+                .collect(Collectors.toMap(DaySummaryDTO::date, dto -> dto));
+        yearSummaries = yearService.getYear(currentMonth.getYear())
+                .stream()
+                .collect(Collectors.toMap(DaySummaryDTO::date, dto -> dto));
     }
 }

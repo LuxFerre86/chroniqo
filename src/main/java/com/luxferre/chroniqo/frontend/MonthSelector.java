@@ -24,41 +24,63 @@ public class MonthSelector extends HorizontalLayout {
 
     public MonthSelector() {
         this.selectedMonth = YearMonth.now();
+        addClassName("month-selector");
 
         // Navigation Button zurück
         Button previousButton = new Button(VaadinIcon.CHEVRON_LEFT.create());
-        previousButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        previousButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
         previousButton.addClickListener(e -> navigateToPreviousMonth());
+        previousButton.getStyle()
+                .set("color", "var(--lumo-secondary-text-color)")
+                .set("border-radius", "8px");
 
         // Monatslabel (klickbar)
         monthLabel = new Span(formatMonth(selectedMonth));
+        monthLabel.addClassName("month-label");
         monthLabel.getStyle()
                 .set("cursor", "pointer")
-                .set("padding", "0.5rem 1rem")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("font-weight", "500")
-                .set("min-width", "200px")
+                .set("padding", "0.625rem 1.5rem")
+                .set("border-radius", "8px")
+                .set("font-weight", "600")
+                .set("font-size", "18px")
+                .set("min-width", "220px")
                 .set("text-align", "center")
-                .set("display", "inline-block");
+                .set("display", "inline-block")
+                .set("color", "var(--lumo-body-text-color)")
+                .set("background", "linear-gradient(135deg, hsl(220, 20%, 14%) 0%, hsl(220, 20%, 12%) 100%)")
+                .set("border", "1px solid hsla(32, 40%, 50%, 0.15)")
+                .set("box-shadow", "0 2px 6px rgba(0, 0, 0, 0.3)")
+                .set("transition", "all 0.2s ease");
 
         monthLabel.addClickListener(e -> openMonthPickerDialog());
 
         // Hover-Effekt
-        monthLabel.getElement().addEventListener("mouseenter", e -> {
-            monthLabel.getStyle().set("background-color", "var(--lumo-contrast-5pct)");
-        });
-        monthLabel.getElement().addEventListener("mouseleave", e -> {
-            monthLabel.getStyle().set("background-color", "transparent");
-        });
+        monthLabel.getElement().addEventListener("mouseenter", e -> monthLabel.getStyle()
+                .set("background", "linear-gradient(135deg, hsl(220, 20%, 16%) 0%, hsl(220, 20%, 14%) 100%)")
+                .set("border-color", "hsla(32, 40%, 50%, 0.25)")
+                .set("box-shadow", "0 4px 12px rgba(0, 0, 0, 0.4)")
+                .set("transform", "translateY(-1px)"));
+
+        monthLabel.getElement().addEventListener("mouseleave", e -> monthLabel.getStyle()
+                .set("background", "linear-gradient(135deg, hsl(220, 20%, 14%) 0%, hsl(220, 20%, 12%) 100%)")
+                .set("border-color", "hsla(32, 40%, 50%, 0.15)")
+                .set("box-shadow", "0 2px 6px rgba(0, 0, 0, 0.3)")
+                .set("transform", "translateY(0)"));
 
         // Navigation Button vorwärts
         Button nextButton = new Button(VaadinIcon.CHEVRON_RIGHT.create());
-        nextButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        nextButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
         nextButton.addClickListener(e -> navigateToNextMonth());
+        nextButton.getStyle()
+                .set("color", "var(--lumo-secondary-text-color)")
+                .set("border-radius", "8px");
 
         // Layout konfigurieren
         setAlignItems(Alignment.CENTER);
-        setSpacing(false);
+        setSpacing(true);
+        getStyle()
+                .set("gap", "0.75rem");
+
         add(previousButton, monthLabel, nextButton);
     }
 
@@ -76,38 +98,59 @@ public class MonthSelector extends HorizontalLayout {
 
     private void openMonthPickerDialog() {
         Dialog dialog = new Dialog();
+        dialog.addClassName("month-picker-dialog");
+        dialog.setWidth("400px");
+        dialog.setCloseOnEsc(true);
+        dialog.setCloseOnOutsideClick(true);
 
         VerticalLayout content = new VerticalLayout();
-        content.setPadding(false);
+        content.setPadding(true);
         content.setSpacing(true);
+        content.getStyle().set("gap", "1rem");
+
+        // Titel
+        Span title = new Span("Select Month");
+        title.getStyle()
+                .set("font-size", "16px")
+                .set("font-weight", "600")
+                .set("color", "var(--lumo-body-text-color)")
+                .set("margin-bottom", "0.5rem");
 
         // Jahr-Auswahl
         Select<Integer> yearSelect = new Select<>();
+        yearSelect.setLabel("Year");
         yearSelect.setItems(IntStream.rangeClosed(2000, 2050).boxed().toList());
         yearSelect.setValue(selectedMonth.getYear());
-        //yearSelect.setWidthFull();
+        yearSelect.setWidthFull();
 
-        // Monats-Grid
+        // Jahr-Änderung aktualisiert Grid
         Div monthGrid = createMonthGrid(dialog, yearSelect);
 
-        content.add(yearSelect, monthGrid);
-        content.setHorizontalComponentAlignment(Alignment.CENTER, yearSelect);
-        dialog.add(content);
+        yearSelect.addValueChangeListener(e -> {
+            content.remove(monthGrid);
+            Div newMonthGrid = createMonthGrid(dialog, yearSelect);
+            content.add(newMonthGrid);
+        });
 
+        content.add(title, yearSelect, monthGrid);
+        content.setHorizontalComponentAlignment(Alignment.CENTER, title);
+
+        dialog.add(content);
         dialog.open();
     }
 
     private Div createMonthGrid(Dialog dialog, Select<Integer> yearSelect) {
         Div monthGrid = new Div();
+        monthGrid.addClassName("month-grid");
         monthGrid.getStyle()
                 .set("display", "grid")
                 .set("grid-template-columns", "repeat(3, 1fr)")
                 .set("gap", "0.5rem")
-                .set("margin-top", "1rem");
+                .set("width", "100%");
 
         for (Month month : Month.values()) {
             Button monthButton = new Button(
-                    month.getDisplayName(TextStyle.FULL, Locale.UK)
+                    month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
             );
             monthButton.setWidthFull();
 
@@ -115,6 +158,17 @@ public class MonthSelector extends HorizontalLayout {
             YearMonth buttonMonth = YearMonth.of(yearSelect.getValue(), month);
             if (buttonMonth.equals(selectedMonth)) {
                 monthButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                monthButton.getStyle()
+                        .set("background", "linear-gradient(135deg, hsl(32, 95%, 58%) 0%, hsl(28, 95%, 54%) 100%)")
+                        .set("color", "hsl(220, 25%, 10%)")
+                        .set("font-weight", "600")
+                        .set("box-shadow", "0 3px 8px hsla(32, 95%, 50%, 0.3)");
+            } else if (buttonMonth.equals(YearMonth.now())) {
+                // Heutiger Monat (aber nicht ausgewählt)
+                monthButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+                monthButton.getStyle()
+                        .set("border", "1px solid hsla(32, 60%, 50%, 0.3)")
+                        .set("color", "var(--lumo-primary-text-color)");
             } else {
                 monthButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
             }
@@ -138,9 +192,7 @@ public class MonthSelector extends HorizontalLayout {
 
     private String formatMonth(YearMonth yearMonth) {
         String monthName = yearMonth.getMonth()
-                .getDisplayName(TextStyle.FULL, Locale.UK);
-        // Ersten Buchstaben großschreiben
-        monthName = monthName.substring(0, 1).toUpperCase() + monthName.substring(1);
+                .getDisplayName(TextStyle.FULL, Locale.ENGLISH);
         return monthName + " " + yearMonth.getYear();
     }
 
