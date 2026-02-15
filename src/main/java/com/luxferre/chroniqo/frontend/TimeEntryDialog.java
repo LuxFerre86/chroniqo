@@ -23,11 +23,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.Month;
 import java.time.format.DateTimeFormatter;
-import java.time.format.TextStyle;
-import java.util.Arrays;
-import java.util.Locale;
+import java.util.Objects;
 
 
 @UIScope
@@ -60,10 +57,19 @@ public class TimeEntryDialog extends Dialog {
         this.absenceService = absenceService;
         renderDialog();
         renderWorkingTime();
-        timePickerBinder.forField(start).withValidator(localTime -> null != localTime,"Start Time is mandatory!").bind(TimePicker::getValue,TimePicker::setValue);
+        timePickerBinder.forField(start)
+                .withValidator(Objects::nonNull, "Start Time is mandatory!")
+                .bind(TimePicker::getValue, TimePicker::setValue);
     }
 
     void renderDialog() {
+        // Dialog Styling
+        addClassName("chroniqo-dialog");
+        setWidth("500px");
+        setCloseOnEsc(true);
+        setCloseOnOutsideClick(false);
+
+        // Tabs
         tabs.add(workingTimeTab, vacationTab, sickTab);
         tabs.addSelectedChangeListener(event -> {
             if (workingTimeTab == event.getSelectedTab()) {
@@ -75,26 +81,56 @@ public class TimeEntryDialog extends Dialog {
             }
         });
 
+        // Tabs Styling - Warm Dark
+        tabs.getStyle()
+                .set("background", "transparent")
+                .set("border-bottom", "1px solid hsla(32, 30%, 50%, 0.15)");
+
+        // Tab Styling
+        workingTimeTab.getStyle()
+                .set("color", "var(--lumo-body-text-color)");
+        sickTab.getStyle()
+                .set("color", "var(--lumo-body-text-color)");
+        vacationTab.getStyle()
+                .set("color", "var(--lumo-body-text-color)");
+
+        // Break Minutes Field
         breakMinutes.setValue(30);
         breakMinutes.setStepButtonsVisible(true);
         breakMinutes.setStep(5);
-        breakMinutes.setMin(30);
+        breakMinutes.setMin(0);
         breakMinutes.setMax(480);
+        breakMinutes.setHelperText("Minutes");
 
-        Button cancelButton = new Button("Cancel", e -> this.close());
-        cancelButton.addThemeVariants(ButtonVariant.AURA_TERTIARY);
-
-        getHeader().add(tabs);
-        content.setAlignItems(FlexComponent.Alignment.CENTER);
+        // Content Layout
+        content.setAlignItems(FlexComponent.Alignment.STRETCH);
+        content.setPadding(true);
+        content.setSpacing(true);
+        content.getStyle()
+                .set("gap", "1rem");
         content.add(startDay, endDay, start, end, breakMinutes);
 
-
+        // Buttons
+        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveButton.addClickListener(this::save);
-        deleteButton.addThemeVariants(ButtonVariant.AURA_DANGER);
+
+        deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
         deleteButton.addClickListener(this::delete);
 
+        Button cancelButton = new Button("Cancel", e -> this.close());
+        cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+        // Header & Footer
+        getHeader().add(tabs);
         add(content);
         getFooter().add(saveButton, deleteButton, cancelButton);
+
+        // Footer Styling
+        getFooter().getElement().getStyle()
+                .set("gap", "0.5rem")
+                .set("padding", "1rem")
+                .set("background", "hsla(220, 20%, 10%, 0.5)")
+                .set("border-top", "1px solid hsla(32, 30%, 50%, 0.15)");
     }
 
     public void renderWorkingTime() {
@@ -104,6 +140,10 @@ public class TimeEntryDialog extends Dialog {
         start.setVisible(true);
         end.setVisible(true);
         breakMinutes.setVisible(true);
+
+        // Update button styling
+        saveButton.setText("Save");
+        deleteButton.setText("Delete");
     }
 
     public void renderSick() {
@@ -114,6 +154,10 @@ public class TimeEntryDialog extends Dialog {
         start.setVisible(false);
         end.setVisible(false);
         breakMinutes.setVisible(false);
+
+        // Update button styling
+        saveButton.setText("Mark as Sick");
+        deleteButton.setText("Remove Sick");
     }
 
     public void renderVacation() {
@@ -124,6 +168,10 @@ public class TimeEntryDialog extends Dialog {
         start.setVisible(false);
         end.setVisible(false);
         breakMinutes.setVisible(false);
+
+        // Update button styling
+        saveButton.setText("Book Vacation");
+        deleteButton.setText("Remove Vacation");
     }
 
     public void open(LocalDate date) {
@@ -132,31 +180,37 @@ public class TimeEntryDialog extends Dialog {
         endDay.setValue(date);
         TimeEntryDTO entry = timeEntryService.getEntry(date);
         tabs.setSelectedTab(workingTimeTab);
+
         if (null != entry) {
             start.setValue(LocalTime.parse(entry.getStartTime()));
             end.setValue(LocalTime.parse(entry.getEndTime()));
             breakMinutes.setValue(entry.getBreakMinutes());
+            deleteButton.setVisible(true);
         } else {
             Absence absence = absenceService.getAbsence(startDay.getValue());
             if (null != absence) {
                 if (absence.getType() == AbsenceType.SICK) {
                     tabs.setSelectedTab(sickTab);
+                    deleteButton.setVisible(true);
                 } else if (absence.getType() == AbsenceType.VACATION) {
                     tabs.setSelectedTab(vacationTab);
+                    deleteButton.setVisible(true);
                 }
             } else {
-              breakMinutes.setValue(30);
+                breakMinutes.setValue(30);
+                deleteButton.setVisible(false);
             }
         }
         open();
     }
 
-    private void reset(){
+    private void reset() {
         startDay.setValue(null);
         endDay.setValue(null);
         start.setValue(null);
         end.setValue(null);
         breakMinutes.setValue(null);
+        deleteButton.setVisible(false);
     }
 
     private void save(ClickEvent<Button> event) {
@@ -219,5 +273,4 @@ public class TimeEntryDialog extends Dialog {
     private void deleteSick() {
         absenceService.deleteAbsence(new AbsenceRequest(startDay.getValue(), endDay.getValue(), AbsenceType.SICK));
     }
-
 }

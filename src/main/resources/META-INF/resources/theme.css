@@ -1,0 +1,176 @@
+/* =====================================================
+   ChroniQo - Warm Dark Theme (Lumo Base)
+   Konsistent warme Farben durchgehend
+   ===================================================== */
+
+:root {
+    /* ===== Basis Hintergrundfarben - Sehr dunkel ===== */
+    --lumo-base-color: hsl(215, 25%, 8%);
+
+    /* ===== Warm Primary Color - Amber/Gold ===== */
+    --lumo-primary-color: hsl(38, 92%, 58%);
+    --lumo-primary-color-50pct: hsla(38, 92%, 58%, 0.5);
+    --lumo-primary-color-10pct: hsla(38, 92%, 58%, 0.1);
+    --lumo-primary-text-color: hsl(38, 95%, 65%);
+    --lumo-primary-contrast-color: hsl(215, 25%, 10%);
+
+    /* ===== Success Color - Warmes Grün ===== */
+    --lumo-success-color: hsl(142, 70%, 48%);
+    --lumo-success-color-50pct: hsla(142, 70%, 48%, 0.5);
+    --lumo-success-color-10pct: hsla(142, 70%, 48%, 0.1);
+    --lumo-success-text-color: hsl(142, 75%, 55%);
+
+    /* ===== Error Color - Warmes Rot/Orange ===== */
+    --lumo-error-color: hsl(12, 85%, 58%);
+    --lumo-error-color-50pct: hsla(12, 85%, 58%, 0.5);
+    --lumo-error-color-10pct: hsla(12, 85%, 58%, 0.1);
+    --lumo-error-text-color: hsl(12, 90%, 65%);
+
+    /* ===== Tint & Contrast - Warm getönt ===== */
+    --lumo-tint-5pct: hsla(38, 30%, 90%, 0.03);
+    --lumo-tint-10pct: hsla(38, 30%, 90%, 0.06);
+    --lumo-tint-20pct: hsla(38, 30%, 90%, 0.12);
+    --lumo-tint-30pct: hsla(38, 30%, 90%, 0.18);
+    --lumo-tint-40pct: hsla(38, 30%, 90%, 0.24);
+    --lumo-tint-50pct: hsla(38, 30%, 90%, 0.30);
+    --lumo-tint-60pct: hsla(38, 30%, 90%, 0.36);
+    --lumo-tint-70pct: hsla(38, 30%, 90%, 0.42);
+    --lumo-tint-80pct: hsla(38, 30%, 90%, 0.48);
+    --lumo-tint-90pct: hsla(38, 30%, 90%, 0.54);
+    --lumo-tint: hsl(38, 20%, 92%);
+
+    --lumo-contrast-5pct: hsla(38, 20%, 95%, 0.04);
+    --lumo-contrast-10pct: hsla(38, 20%, 95%, 0.08);
+    --lumo-contrast-20pct: hsla(38, 20%, 95%, 0.14);
+    --lumo-contrast-30pct: hsla(38, 20%, 95%, 0.20);
+    --lumo-contrast-40pct: hsla(38, 20%, 95%, 0.26);
+    --lumo-contrast-50pct: hsla(38, 20%, 95%, 0.32);
+    --lumo-contrast-60pct: hsla(38, 20%, 95%, 0.40);
+    --lumo-contrast-70pct: hsla(38, 20%, 95%, 0.50);
+    --lumo-contrast-80pct: hsla(38, 20%, 95%, 0.65);
+    --lumo-contrast-90pct: hsla(38, 20%, 95%, 0.85);
+    --lumo-contrast: hsl(38, 20%, 95%);
+
+    /* ===== Textfarben - Wärmer ===== */
+    --lumo-header-text-color: hsl(38, 25%, 92%);
+    --lumo-body-text-color: hsl(38, 18%, 85%);
+    --lumo-secondary-text-color: hsl(38, 12%, 62%);
+    --lumo-tertiary-text-color: hsl(38, 8%, 42%);
+    --lumo-disabled-text-color: hsl(38, 5%, 32%);
+
+    /* ===== Schatten - Tiefer ===== */
+    --lumo-box-shadow-xs: 0 2px 4px -1px rgba(0, 0, 0, 0.6);
+    --lumo-box-shadow-s: 0 3px 8px -2px rgba(0, 0, 0, 0.65);
+    --lumo-box-shadow-m: 0 5px 16px -3px rgba(0, 0, 0, 0.7);
+    --lumo-box-shadow-l: 0 8px 24px -4px rgba(0, 0, 0, 0.75);
+    --lumo-box-shadow-xl: 0 16px 48px -8px rgba(0, 0, 0, 0.8);
+}
+
+/* ===== Body - Dunkler Gradient ===== */
+body {
+    background: linear-gradient(160deg,
+                hsl(215, 25%, 9%) 0%,
+                hsl(215, 25%, 7%) 50%,
+                hsl(215, 25%, 9%) 100%);
+    background-attachment: fixed;
+}
+
+/* ===== Cards ===== */
+vaadin-card {
+    background: linear-gradient(145deg,
+                hsl(215, 22%, 12%) 0%,
+                hsl(215, 22%, 10%) 100%);
+    border: 1px solid hsla(38, 40%, 50%, 0.08);
+    box-shadow: var(--lumo-box-shadow-s),
+                inset 0 1px 0 hsla(38, 50%, 70%, 0.04);
+}
+
+/* ===== Primary Buttons ===== */
+vaadin-button[theme~="primary"] {
+    background: linear-gradient(135deg,
+                hsl(38, 92%, 58%) 0%,
+                hsl(35, 92%, 54%) 100%);
+    color: hsl(215, 25%, 10%);
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 4px 12px hsla(38, 92%, 50%, 0.3),
+                inset 0 1px 0 hsla(38, 100%, 75%, 0.4);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+vaadin-button[theme~="primary"]:hover:not([disabled]) {
+    background: linear-gradient(135deg,
+                hsl(38, 95%, 62%) 0%,
+                hsl(35, 95%, 58%) 100%);
+    box-shadow: 0 6px 20px hsla(38, 92%, 50%, 0.4),
+                inset 0 1px 0 hsla(38, 100%, 78%, 0.5);
+    transform: translateY(-1px);
+}
+
+/* ===== Input Fields ===== */
+vaadin-text-field::part(input-field),
+vaadin-text-area::part(input-field),
+vaadin-combo-box::part(input-field),
+vaadin-date-picker::part(input-field),
+vaadin-number-field::part(input-field),
+vaadin-time-picker::part(input-field) {
+    background: hsl(215, 22%, 10%);
+    border: 1px solid hsla(38, 30%, 50%, 0.12);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+vaadin-text-field:focus-within::part(input-field),
+vaadin-text-area:focus-within::part(input-field),
+vaadin-combo-box:focus-within::part(input-field),
+vaadin-date-picker:focus-within::part(input-field),
+vaadin-number-field:focus-within::part(input-field),
+vaadin-time-picker:focus-within::part(input-field) {
+    border-color: var(--lumo-primary-color);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4),
+                0 0 0 2px hsla(38, 92%, 58%, 0.25);
+}
+
+/* ===== Scrollbars ===== */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: hsl(215, 22%, 9%);
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg,
+                hsla(38, 40%, 40%, 0.5) 0%,
+                hsla(38, 35%, 35%, 0.5) 100%);
+    border-radius: 6px;
+    border: 2px solid hsl(215, 22%, 9%);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg,
+                hsla(38, 50%, 48%, 0.6) 0%,
+                hsla(38, 45%, 43%, 0.6) 100%);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: hsla(38, 40%, 40%, 0.5) hsl(215, 22%, 9%);
+}
+
+/* ===== Performance ===== */
+html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

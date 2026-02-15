@@ -1,0 +1,216 @@
+/* =====================================================
+   AppLayout - Warm Dark Design
+   ===================================================== */
+
+/* ===== App Layout Container ===== */
+.chroniqo-app-layout {
+    /* Main Layout wird über Shadow DOM gesteuert (siehe Java) */
+}
+
+/* ===== Navbar ===== */
+vaadin-app-layout::part(navbar) {
+    background: linear-gradient(180deg,
+                hsl(220, 20%, 13%) 0%,
+                hsl(220, 20%, 11%) 100%);
+    border-bottom: 1px solid hsla(32, 40%, 50%, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    height: 64px;
+    padding: 0 var(--lumo-space-m);
+}
+
+/* ===== Drawer ===== */
+vaadin-app-layout::part(drawer) {
+    background: linear-gradient(180deg,
+                hsl(220, 20%, 13%) 0%,
+                hsl(220, 20%, 10%) 100%);
+    border-right: 1px solid hsla(32, 40%, 50%, 0.15);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== Drawer Toggle Button ===== */
+vaadin-app-layout vaadin-drawer-toggle {
+    color: var(--lumo-body-text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+vaadin-app-layout vaadin-drawer-toggle:hover {
+    color: var(--lumo-primary-text-color);
+    background: hsla(32, 40%, 50%, 0.12);
+    border-radius: 8px;
+}
+
+/* ===== Side Nav ===== */
+vaadin-side-nav {
+    padding: var(--lumo-space-s);
+}
+
+/* ===== Side Nav Items - Base ===== */
+vaadin-side-nav-item {
+    border-radius: 8px;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+vaadin-side-nav-item::part(link) {
+    color: var(--lumo-secondary-text-color);
+    font-weight: 500;
+    font-size: 14px;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hover Effect */
+vaadin-side-nav-item::part(link):hover {
+    background: hsla(32, 40%, 50%, 0.12);
+    color: var(--lumo-body-text-color);
+    transform: translateX(2px);
+}
+
+/* Active/Selected State */
+vaadin-side-nav-item[selected]::part(link) {
+    background: linear-gradient(135deg,
+                hsla(32, 95%, 58%, 0.15) 0%,
+                hsla(32, 95%, 58%, 0.10) 100%);
+    color: var(--lumo-primary-text-color);
+    font-weight: 600;
+    border-left: 3px solid var(--lumo-primary-color);
+    padding-left: calc(1rem - 3px);
+    box-shadow: inset 0 1px 0 hsla(32, 95%, 58%, 0.2),
+                0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+vaadin-side-nav-item[selected]::part(link)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg,
+                hsl(32, 95%, 58%) 0%,
+                hsl(28, 95%, 54%) 100%);
+    box-shadow: 0 0 8px hsla(32, 95%, 58%, 0.5);
+}
+
+/* ===== Nav Item Icons ===== */
+vaadin-side-nav-item::part(link) vaadin-icon {
+    color: inherit;
+    margin-right: var(--lumo-space-s);
+}
+
+/* ===== Scroller ===== */
+vaadin-scroller {
+    --_scrollbar-thumb-color: hsla(32, 40%, 40%, 0.5);
+    --_scrollbar-track-color: hsla(220, 20%, 10%, 0.5);
+}
+
+/* ===== Content Area ===== */
+vaadin-app-layout::part(content) {
+    background: transparent;
+}
+
+/* ===== Drawer Footer (Version Info) ===== */
+.chroniqo-app-layout vaadin-scroller ~ span {
+    display: block;
+    font-size: 11px;
+    color: var(--lumo-tertiary-text-color);
+    text-align: center;
+    padding: var(--lumo-space-m);
+    margin-top: auto;
+    border-top: 1px solid hsla(32, 30%, 50%, 0.08);
+}
+
+/* ===== Responsive - Mobile ===== */
+@media (max-width: 700px) {
+    vaadin-app-layout::part(navbar) {
+        height: 56px;
+        padding: 0 var(--lumo-space-s);
+    }
+
+    vaadin-app-layout h1 {
+        font-size: 18px !important;
+    }
+
+    vaadin-app-layout::part(drawer) {
+        width: 280px;
+    }
+
+    vaadin-side-nav-item::part(link) {
+        padding: 1rem;
+        font-size: 15px;
+    }
+}
+
+/* ===== Responsive - Tablet ===== */
+@media (min-width: 701px) and (max-width: 1024px) {
+    vaadin-app-layout::part(drawer) {
+        width: 260px;
+    }
+}
+
+/* ===== Responsive - Desktop ===== */
+@media (min-width: 1025px) {
+    vaadin-app-layout::part(drawer) {
+        width: 280px;
+    }
+
+    /* Drawer immer sichtbar auf Desktop */
+    vaadin-app-layout[drawer-opened] {
+        --_drawer-transform: translateX(0);
+    }
+}
+
+/* ===== Animation für Drawer ===== */
+@keyframes drawerSlideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+vaadin-app-layout[drawer-opened]::part(drawer) {
+    animation: drawerSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== Focus States ===== */
+vaadin-drawer-toggle:focus-visible,
+vaadin-side-nav-item::part(link):focus-visible {
+    outline: 2px solid var(--lumo-primary-color);
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+/* ===== Accessibility - High Contrast Mode ===== */
+@media (prefers-contrast: high) {
+    vaadin-app-layout::part(navbar),
+    vaadin-app-layout::part(drawer) {
+        border-color: var(--lumo-contrast-50pct);
+    }
+
+    vaadin-side-nav-item[selected]::part(link) {
+        border-left-width: 4px;
+        border-left-color: var(--lumo-primary-color);
+    }
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+    vaadin-side-nav-item,
+    vaadin-side-nav-item::part(link),
+    vaadin-drawer-toggle {
+        transition: none !important;
+    }
+
+    vaadin-app-layout[drawer-opened]::part(drawer) {
+        animation: none !important;
+    }
+}
