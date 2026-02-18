@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.02.2] - 2026-02-18
+
+### Fixed
+- statistics also considering today's time entry
+
+
+### Maintenance
+- Merge pull request #3 from LuxFerre86/feature/time-stats
+
 ## [2026.02.1] - 2026-02-15
 
 ### Added
