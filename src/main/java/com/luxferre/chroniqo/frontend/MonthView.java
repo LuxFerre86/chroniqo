@@ -216,7 +216,7 @@ public class MonthView extends VerticalLayout {
         int totalWorkedMinutes = 0;
 
         for (DaySummaryDTO summary : monthSummaries.values()) {
-            if (summary.date().isBefore(LocalDate.now())) {
+            if (!summary.date().isAfter(LocalDate.now())) {
                 if (summary.absenceType() == null &&
                         summary.date().getDayOfWeek() != DayOfWeek.SATURDAY &&
                         summary.date().getDayOfWeek() != DayOfWeek.SUNDAY) {
