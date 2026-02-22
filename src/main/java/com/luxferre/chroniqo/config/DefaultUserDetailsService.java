@@ -38,12 +38,9 @@ public class DefaultUserDetailsService implements UserDetailsService {
                 .build();
     }
 
-    public String getUsernameFromContext() {
+    public Optional<String> getUsernameFromContext() {
         SecurityContext context = SecurityContextHolder.getContext();
-        Object principal = Optional.of(context).map(SecurityContext::getAuthentication).map(Authentication::getPrincipal).orElseThrow(() -> new IllegalArgumentException("Could not determine Username."));
-        if (principal instanceof org.springframework.security.core.userdetails.User user) {
-            return user.getUsername();
-        }
-        throw new IllegalArgumentException("Could not determine Username.");
+        Object principal = Optional.of(context).map(SecurityContext::getAuthentication).map(Authentication::getPrincipal).orElse(null);
+        return Optional.ofNullable(principal).filter(org.springframework.security.core.userdetails.User.class::isInstance).map(org.springframework.security.core.userdetails.User.class::cast).map(org.springframework.security.core.userdetails.User::getUsername);
     }
 }

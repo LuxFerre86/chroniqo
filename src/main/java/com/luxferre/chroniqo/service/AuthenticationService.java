@@ -20,6 +20,7 @@ import java.util.UUID;
 public class AuthenticationService {
 
     private final UserRepository userRepository;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final DefaultUserDetailsService userDetailsService;
     private final EmailService emailService;
@@ -166,7 +167,11 @@ public class AuthenticationService {
      * Get currently authenticated user
      */
     public Optional<User> getCurrentUser() {
-        return userRepository.findByEmail(userDetailsService.getUsernameFromContext());
+        try {
+            return Optional.ofNullable(userService.getCurrentUser());
+        } catch (UserNotFoundException e) {
+            return Optional.empty();
+        }
     }
 
     /**

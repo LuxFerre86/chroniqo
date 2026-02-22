@@ -14,7 +14,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final DefaultUserDetailsService userDetailsService;
 
-    public User getCurrentUser() {
-        return userRepository.findByEmail(userDetailsService.getUsernameFromContext()).orElseThrow(() -> new IllegalArgumentException("Could not determine current user."));
+    public User getCurrentUser() throws UserNotFoundException {
+        return userDetailsService.getUsernameFromContext().flatMap(userRepository::findByEmail).orElseThrow(() -> new UserNotFoundException("Could not determine current user."));
     }
 }
