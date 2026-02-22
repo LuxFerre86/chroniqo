@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.02.4] - 2026-02-22
+
+### Fixed
+- loginView is shown without exception
+
+
+### Maintenance
+- Merge pull request #5 from LuxFerre86/feature/login-and-register
+
 ## [2026.02.3] - 2026-02-22
 
 ### Maintenance
