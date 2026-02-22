@@ -18,12 +18,16 @@ public class StatisticsCard extends VerticalLayout {
         setSpacing(false);
         setWidthFull();
 
-        // Container für die Statistiken
         HorizontalLayout statsLayout = new HorizontalLayout();
         statsLayout.setWidthFull();
         statsLayout.setPadding(false);
         statsLayout.setSpacing(false);
         statsLayout.addClassName("stats-container");
+
+        statsLayout.getStyle().set("display", "flex");
+        statsLayout.getStyle().set("flex-wrap", "wrap");
+        statsLayout.getStyle().set("gap", "1.5rem");
+        statsLayout.setAlignItems(Alignment.START);
 
         // Soll-Stunden
         VerticalLayout targetSection = createStatSection("Target Hours", "", "");
@@ -42,6 +46,10 @@ public class StatisticsCard extends VerticalLayout {
 
         statsLayout.add(targetSection, workedSection, balanceSection);
         statsLayout.setFlexGrow(1, targetSection, workedSection, balanceSection);
+
+        targetSection.getStyle().set("flex", "1 1 260px");
+        workedSection.getStyle().set("flex", "1 1 260px");
+        balanceSection.getStyle().set("flex", "1 1 260px");
 
         add(statsLayout);
 
