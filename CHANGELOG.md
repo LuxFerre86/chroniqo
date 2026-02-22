@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.02.5] - 2026-02-22
+
+### Added
+- added new Dashboard view as root view
+
+
+### Maintenance
+- Merge pull request #6 from LuxFerre86/feature/dashboard
+
 ## [2026.02.4] - 2026-02-22
 
 ### Fixed
