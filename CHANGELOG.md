@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.02.3] - 2026-02-22
+
+### Maintenance
+- Merge pull request #4 from LuxFerre86/feature/login-and-register
+- Added new authentication feature with login, register, password reset and password forget functionality.
+
 ## [2026.02.2] - 2026-02-18
 
 ### Fixed
