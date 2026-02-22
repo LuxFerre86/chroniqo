@@ -12,6 +12,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.UIScope;
+import jakarta.annotation.security.RolesAllowed;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 @UIScope
 @Component
 @StyleSheet("calendar.css")
+@RolesAllowed("ROLE_USER")
 public class MonthView extends VerticalLayout {
     private YearMonth currentMonth = YearMonth.now();
     private final Div calendarGrid;

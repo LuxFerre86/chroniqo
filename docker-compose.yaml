@@ -5,7 +5,8 @@ services:
       dockerfile: Dockerfile
       network: none
       no_cache: true
-
+    env_file:
+      - .env
     container_name: "chroniqo"
     restart: always
     #user: 1001:1001

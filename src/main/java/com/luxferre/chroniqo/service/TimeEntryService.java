@@ -6,7 +6,6 @@ import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
-import com.luxferre.chroniqo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,11 +18,11 @@ import java.time.LocalTime;
 public class TimeEntryService {
 
     private final TimeEntryRepository repository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final AbsenceRepository absenceRepository;
 
     public TimeEntryDTO getEntry(LocalDate date) {
-        User user = userRepository.findById("1").orElseThrow();
+        User user = userService.getCurrentUser();
 
         TimeEntry entry = repository.findByUserAndDate(user, date);
         if (entry == null) return null;
@@ -37,7 +36,7 @@ public class TimeEntryService {
     }
 
     public void saveEntry(TimeEntryDTO timeEntryDTO) {
-        User user = userRepository.findById("1").orElseThrow();
+        User user = userService.getCurrentUser();
         LocalDate date = LocalDate.parse(timeEntryDTO.getDate());
 
         TimeEntry entry = repository.findByUserAndDate(user, date);
@@ -57,7 +56,7 @@ public class TimeEntryService {
     }
 
     public void deleteEntry(TimeEntryDTO timeEntryDTO) {
-        User user = userRepository.findById("1").orElseThrow();
+        User user = userService.getCurrentUser();
         LocalDate date = LocalDate.parse(timeEntryDTO.getDate());
 
         TimeEntry entry = repository.findByUserAndDate(user, date);
@@ -74,9 +73,9 @@ public class TimeEntryService {
         return Math.max(0, minutes);
     }
 
-    void deleteAbsence(User user, TimeEntryDTO timeEntryDTO){
+    void deleteAbsence(User user, TimeEntryDTO timeEntryDTO) {
         Absence absence = absenceRepository.findByUserAndDate(user, LocalDate.parse(timeEntryDTO.getDate()));
-        if (null != absence){
+        if (null != absence) {
             absenceRepository.delete(absence);
         }
     }
