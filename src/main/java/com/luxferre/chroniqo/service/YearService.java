@@ -60,21 +60,24 @@ public class YearService {
                     ? timeEntryService.calculateWorkedMinutes(entry)
                     : 0;
 
-            int balance = workedMinutes - dailyTargetMinutes;
+            int balance = 0;
             AbsenceType dayType = null;
+            int targetMinutes = 0;
 
             if (absence != null) {
                 dayType = absence.getType();
                 workedMinutes = 0;
-                balance = 0;
             } else if (isWeekend(day)) {
-                workedMinutes = 0;
-                balance = 0;
+                balance = workedMinutes;
+            } else {
+                balance = workedMinutes - dailyTargetMinutes;
+                targetMinutes = dailyTargetMinutes;
             }
 
             result.add(new DaySummaryDTO(
                     day,
                     workedMinutes > 0 ? workedMinutes : null,
+                    targetMinutes > 0 ? targetMinutes : null,
                     balance,
                     dayType
             ));

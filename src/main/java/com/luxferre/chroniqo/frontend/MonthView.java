@@ -219,10 +219,8 @@ public class MonthView extends VerticalLayout {
 
         for (DaySummaryDTO summary : monthSummaries.values()) {
             if (!summary.date().isAfter(LocalDate.now())) {
-                if (summary.absenceType() == null &&
-                        summary.date().getDayOfWeek() != DayOfWeek.SATURDAY &&
-                        summary.date().getDayOfWeek() != DayOfWeek.SUNDAY) {
-                    totalTargetMinutes += 468;
+                if (summary.targetMinutes() != null) {
+                    totalTargetMinutes += summary.targetMinutes();
                 }
 
                 if (summary.workedMinutes() != null) {
@@ -239,11 +237,9 @@ public class MonthView extends VerticalLayout {
         int totalWorkedMinutes = 0;
 
         for (DaySummaryDTO summary : yearSummaries.values()) {
-            if (summary.date().isBefore(LocalDate.now())) {
-                if (summary.absenceType() == null &&
-                        summary.date().getDayOfWeek() != DayOfWeek.SATURDAY &&
-                        summary.date().getDayOfWeek() != DayOfWeek.SUNDAY) {
-                    totalTargetMinutes += 468;
+            if (!summary.date().isAfter(LocalDate.now())) {
+                if (summary.targetMinutes() != null) {
+                    totalTargetMinutes += summary.targetMinutes();
                 }
 
                 if (summary.workedMinutes() != null) {
