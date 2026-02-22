@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import java.util.Optional;
 
 
 @UIScope
@@ -191,9 +192,9 @@ public class TimeEntryDialog extends Dialog {
         tabs.setSelectedTab(workingTimeTab);
 
         if (null != entry) {
-            start.setValue(LocalTime.parse(entry.getStartTime()));
-            end.setValue(LocalTime.parse(entry.getEndTime()));
-            breakMinutes.setValue(entry.getBreakMinutes());
+            start.setValue(Optional.of(entry).map(TimeEntryDTO::getStartTime).map(LocalTime::parse).orElse(null));
+            end.setValue(Optional.of(entry).map(TimeEntryDTO::getEndTime).map(LocalTime::parse).orElse(null));
+            breakMinutes.setValue(Optional.of(entry).map(TimeEntryDTO::getBreakMinutes).orElse(null));
             deleteButton.setVisible(true);
         } else {
             Absence absence = absenceService.getAbsence(startDay.getValue());
@@ -250,12 +251,7 @@ public class TimeEntryDialog extends Dialog {
 
     private void saveWorkingTime() {
         timePickerBinder.validate();
-        TimeEntryDTO timeEntryDto = new TimeEntryDTO();
-        timeEntryDto.setDate(startDay.getValue().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        timeEntryDto.setStartTime(start.getValue().format(DateTimeFormatter.ISO_TIME));
-        timeEntryDto.setEndTime(end.getValue().format(DateTimeFormatter.ISO_TIME));
-        timeEntryDto.setBreakMinutes(breakMinutes.getValue());
-        timeEntryService.saveEntry(timeEntryDto);
+        timeEntryService.saveEntry(inputsToTimeEntryDto());
     }
 
     private void saveVacation() {
@@ -267,12 +263,7 @@ public class TimeEntryDialog extends Dialog {
     }
 
     private void deleteWorkingTime() {
-        TimeEntryDTO timeEntryDto = new TimeEntryDTO();
-        timeEntryDto.setDate(startDay.getValue().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        timeEntryDto.setStartTime(start.getValue().format(DateTimeFormatter.ISO_TIME));
-        timeEntryDto.setEndTime(end.getValue().format(DateTimeFormatter.ISO_TIME));
-        timeEntryDto.setBreakMinutes(breakMinutes.getValue());
-        timeEntryService.deleteEntry(timeEntryDto);
+        timeEntryService.deleteEntry(inputsToTimeEntryDto());
     }
 
     private void deleteVacation() {
@@ -281,5 +272,14 @@ public class TimeEntryDialog extends Dialog {
 
     private void deleteSick() {
         absenceService.deleteAbsence(new AbsenceRequest(startDay.getValue(), endDay.getValue(), AbsenceType.SICK));
+    }
+
+    private TimeEntryDTO inputsToTimeEntryDto() {
+        TimeEntryDTO timeEntryDto = new TimeEntryDTO();
+        timeEntryDto.setDate(Optional.ofNullable(startDay).map(DatePicker::getValue).map(date -> date.format(DateTimeFormatter.ISO_LOCAL_DATE)).orElse(null));
+        timeEntryDto.setStartTime(Optional.ofNullable(start).map(TimePicker::getValue).map(time -> time.format(DateTimeFormatter.ISO_TIME)).orElse(null));
+        timeEntryDto.setEndTime(Optional.ofNullable(end).map(TimePicker::getValue).map(time -> time.format(DateTimeFormatter.ISO_TIME)).orElse(null));
+        timeEntryDto.setBreakMinutes(Optional.ofNullable(breakMinutes).map(IntegerField::getValue).orElse(null));
+        return timeEntryDto;
     }
 }

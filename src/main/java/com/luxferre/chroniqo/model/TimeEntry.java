@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Getter
@@ -27,4 +28,45 @@ public class TimeEntry {
     private LocalTime startTime;
     private LocalTime endTime;
     private Integer breakMinutes;
+
+    /**
+     * Status of this time entry
+     * STARTED = Only start time set
+     * COMPLETED = Start + End time set
+     */
+    @Enumerated(EnumType.STRING)
+    private TimeEntryStatus status = TimeEntryStatus.COMPLETED;
+
+    /**
+     * Timestamp when entry was created/started
+     */
+    private LocalDateTime createdAt;
+
+    /**
+     * Timestamp when entry was completed
+     */
+    private LocalDateTime completedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
+    /**
+     * Check if entry is still active (not completed)
+     */
+    public boolean isActive() {
+        return status == TimeEntryStatus.STARTED && endTime == null;
+    }
+
+    /**
+     * Check if entry is complete
+     */
+    public boolean isComplete() {
+        return status == TimeEntryStatus.COMPLETED &&
+                startTime != null &&
+                endTime != null;
+    }
 }

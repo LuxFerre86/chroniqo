@@ -137,11 +137,12 @@ public class AppLayoutBasic extends AppLayout {
 
     private SideNav getSideNav() {
         // Nav Items
+        SideNavItem dashboard = new SideNavItem("Dashboard", DashboardView.class);
         SideNavItem monthItem = new SideNavItem("Monthly View", MonthView.class);
         SideNavItem settings = new SideNavItem("Settings", SettingsView.class);
 
         SideNav sideNav = new SideNav();
-        sideNav.addItem(monthItem, settings);
+        sideNav.addItem(dashboard, monthItem, settings);
         sideNav.setCollapsible(false);
 
         return sideNav;
