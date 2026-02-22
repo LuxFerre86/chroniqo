@@ -6,7 +6,6 @@ import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
-import com.luxferre.chroniqo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,11 +22,11 @@ public class MonthService {
     private final TimeEntryRepository timeEntryRepository;
     private final TimeEntryService timeEntryService;
     private final AbsenceService absenceService;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
 
     public List<DaySummaryDTO> getMonth(int year, int month) {
-        User user = userRepository.findById("1").orElseThrow();
+        User user = userService.getCurrentUser();
 
         LocalDate monthStart = LocalDate.of(year, month, 1);
 

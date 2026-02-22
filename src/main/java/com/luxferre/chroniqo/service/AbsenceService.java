@@ -6,7 +6,6 @@ import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
-import com.luxferre.chroniqo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,13 +19,13 @@ import java.util.stream.LongStream;
 public class AbsenceService {
 
     private final AbsenceRepository repository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final TimeEntryRepository timeEntryRepository;
 
     public void saveAbsence(AbsenceRequest absenceRequest) {
         long days = absenceRequest.startDate().until(absenceRequest.endDate(), ChronoUnit.DAYS);
 
-        User user = userRepository.findById("1").orElseThrow();
+        User user = userService.getCurrentUser();
 
         if (absenceRequest.endDate().isBefore(absenceRequest.startDate())) {
             throw new IllegalArgumentException("End date must not be before start date");
@@ -51,9 +50,7 @@ public class AbsenceService {
     }
 
     public void deleteAbsence(AbsenceRequest absenceRequest) {
-        long days = absenceRequest.startDate().until(absenceRequest.endDate(), ChronoUnit.DAYS);
-
-        User user = userRepository.findById("1").orElseThrow();
+        User user = userService.getCurrentUser();
 
         if (absenceRequest.endDate().isBefore(absenceRequest.startDate())) {
             throw new IllegalArgumentException("End date must not be before start date");
@@ -80,7 +77,7 @@ public class AbsenceService {
     }
 
     public Absence getAbsence(LocalDate date) {
-        User user = userRepository.findById("1").orElseThrow();
+        User user = userService.getCurrentUser();
         return repository.findByUserAndDate(user, date);
     }
 }

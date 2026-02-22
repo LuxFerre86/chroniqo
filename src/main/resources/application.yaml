@@ -2,9 +2,9 @@ spring:
   application:
     name: chroniqo
   datasource:
-    url: jdbc:mariadb://192.168.100.119:3306/chroniqo?useSSL=false
-    username: chroniqo
-    password: chroniqo
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     #driver-class-name: org.mariadb.jdbc.Driver
   jpa:
     #show-sql: true
@@ -13,6 +13,17 @@ spring:
       hibernate:
         ddl-auto: validate
         #format_sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_USERNAME}
+    password: ${GMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 logging:
   level:

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -24,6 +25,12 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
+    @Column(nullable = false)
+    private String firstName;
+
+    @Column(nullable = false)
+    private String lastName;
+
     private int weeklyTargetHours;
 
     @ElementCollection
@@ -32,4 +39,33 @@ public class User {
     private List<String> workingDays; // MONDAY, TUESDAY, ...
 
     private String federalState;
+
+    // ===== Authentication Fields =====
+
+    @Column(nullable = false)
+    private boolean enabled = false;
+
+    @Column(nullable = false)
+    private boolean accountNonLocked = true;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime lastLoginAt;
+
+    // Password Reset
+    private String resetToken;
+    private LocalDateTime resetTokenExpiryDate;
+
+    // Email Verification
+    private String verificationToken;
+    private LocalDateTime verificationTokenExpiryDate;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
 }

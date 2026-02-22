@@ -6,14 +6,12 @@ import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
-import com.luxferre.chroniqo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Year;
-import java.time.YearMonth;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,11 +23,11 @@ public class YearService {
     private final TimeEntryRepository timeEntryRepository;
     private final TimeEntryService timeEntryService;
     private final AbsenceService absenceService;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
 
     public List<DaySummaryDTO> getYear(int year) {
-        User user = userRepository.findById("1").orElseThrow();
+        User user = userService.getCurrentUser();
 
         LocalDate yearStart = Year.of(year).atMonth(1).atDay(1);
 
