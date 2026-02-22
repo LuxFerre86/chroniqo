@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.02.6] - 2026-02-22
+
+### Fixed
+- make statistic card responsive for monthly view
+
+
+### Maintenance
+- Merge pull request #7 from LuxFerre86/feature/statistic-card-responsive
+
 ## [2026.02.5] - 2026-02-22
 
 ### Added
