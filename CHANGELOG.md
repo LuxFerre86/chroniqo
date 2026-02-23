@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.02.7] - 2026-02-23
+
+### Added
+- showing app version in navbar
+
+
+### Maintenance
+- Merge pull request #8 from LuxFerre86/feature/navbar-with-app-version
+
 ## [2026.02.6] - 2026-02-22
 
 ### Fixed
