@@ -11,10 +11,12 @@ RUN groupadd -g 999 appuser && \
     chown appuser:appuser /app/logs
 USER appuser
 
+ARG APP_VERSION=dev
 ARG JAR_FILE=target/*.jar
+ARG JVM_ARGS
 COPY ${JAR_FILE} /app/app.jar
 
-ARG JVM_ARGS
+ENV APP_VERSION=${APP_VERSION}
 
 WORKDIR "/app"
 ENTRYPOINT ["sh","-c","java $JVM_ARGS -jar app.jar"]

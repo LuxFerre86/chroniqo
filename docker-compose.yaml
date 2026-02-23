@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
       network: none
       no_cache: true
+      args:
+        - APP_VERSION=${APP_VERSION}
     env_file:
       - .env
     container_name: "chroniqo"
