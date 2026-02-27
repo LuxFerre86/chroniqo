@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.02.10] - 2026-02-27
+
+### Added
+- all texts and dates on views consistently using UK locale
+
+
+### Maintenance
+- Merge pull request #11 from LuxFerre86/feature/texts-english
+
 ## [2026.02.9] - 2026-02-27
 
 ### Added
