@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.2</version>
+        <version>4.0.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -17,9 +17,9 @@
 
     <properties>
         <java.version>21</java.version>
-        <lombok.version>1.18.36</lombok.version>
-        <spring-boot.version>4.0.2</spring-boot.version>
-        <vaadin.version>25.0.4</vaadin.version>
+        <lombok.version>1.18.42</lombok.version>
+        <spring-boot.version>4.0.3</spring-boot.version> <!-- needed implicitly for plugin section / do NOT remove -->
+        <vaadin.version>25.0.6</vaadin.version>
     </properties>
 
     <dependencyManagement>
@@ -45,7 +45,6 @@
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-spring-boot-starter</artifactId>
-            <version>${vaadin.version}</version>
         </dependency>
 
         <dependency>
@@ -59,11 +58,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-spring-boot-starter</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
@@ -71,11 +65,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-mail</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
         <dependency>
@@ -136,6 +125,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
             </plugin>
 
             <plugin>
