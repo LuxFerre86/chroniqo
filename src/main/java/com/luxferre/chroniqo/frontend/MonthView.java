@@ -4,7 +4,6 @@ import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.service.MonthService;
 import com.luxferre.chroniqo.service.YearService;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -21,6 +20,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -89,7 +89,7 @@ public class MonthView extends VerticalLayout {
 
         for (DayOfWeek day : weekdays) {
             Div header = new Div();
-            header.setText(day.getDisplayName(TextStyle.SHORT, UI.getCurrent().getLocale()));
+            header.setText(day.getDisplayName(TextStyle.SHORT, Locale.UK));
             header.addClassName("calendar-header");
 
             if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) {
@@ -149,7 +149,7 @@ public class MonthView extends VerticalLayout {
         dayNumberSection.setSpacing(false);
         dayNumberSection.addClassName("day-number-section");
 
-        Span weekdayLabel = new Span(date.getDayOfWeek().getDisplayName(TextStyle.SHORT, UI.getCurrent().getLocale()));
+        Span weekdayLabel = new Span(date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.UK));
         weekdayLabel.addClassName("weekday-mobile");
 
         Span dayNumber = new Span(String.valueOf(date.getDayOfMonth()));

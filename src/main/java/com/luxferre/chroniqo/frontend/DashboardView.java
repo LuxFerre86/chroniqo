@@ -20,9 +20,10 @@ import jakarta.annotation.security.PermitAll;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 @Route(value = "", layout = AppLayoutBasic.class)
-@PageTitle("Dashboard | ChroniQo")
+@PageTitle("Dashboard | chroniqo")
 @PermitAll
 public class DashboardView extends VerticalLayout {
 
@@ -107,7 +108,7 @@ public class DashboardView extends VerticalLayout {
                 .set("font-weight", "700");
 
         String todayFormatted = LocalDate.now()
-                .format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy"));
+                .format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", Locale.UK));
         Span dateLabel = new Span(todayFormatted);
         dateLabel.getStyle()
                 .set("color", "var(--lumo-secondary-text-color)")
