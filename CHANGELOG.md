@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.02.9] - 2026-02-27
+
+### Added
+- upgrade spring-boot to 4.0.3 and vaadin to 25.0.6
+
+
+### Maintenance
+- Merge pull request #10 from LuxFerre86/feature/dependency-upgrade
+
 ## [2026.02.8] - 2026-02-27
 
 ### Added
