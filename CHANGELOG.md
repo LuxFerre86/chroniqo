@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.02.8] - 2026-02-27
+
+### Added
+- add remember-me check box to login view
+
+
+### Maintenance
+- Merge pull request #9 from LuxFerre86/feature/remember-me
+
 ## [2026.02.7] - 2026-02-23
 
 ### Added
