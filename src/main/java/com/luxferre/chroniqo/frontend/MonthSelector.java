@@ -1,6 +1,5 @@
 package com.luxferre.chroniqo.frontend;
 
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -16,6 +15,7 @@ import lombok.Setter;
 import java.time.Month;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
+import java.util.Locale;
 import java.util.stream.IntStream;
 
 public class MonthSelector extends HorizontalLayout {
@@ -155,7 +155,7 @@ public class MonthSelector extends HorizontalLayout {
 
         for (Month month : Month.values()) {
             Button monthButton = new Button(
-                    month.getDisplayName(TextStyle.SHORT, UI.getCurrent().getLocale())
+                    month.getDisplayName(TextStyle.SHORT, Locale.UK)
             );
             monthButton.setWidthFull();
 
@@ -197,7 +197,7 @@ public class MonthSelector extends HorizontalLayout {
 
     private String formatMonth(YearMonth yearMonth) {
         String monthName = yearMonth.getMonth()
-                .getDisplayName(TextStyle.FULL, UI.getCurrent().getLocale());
+                .getDisplayName(TextStyle.FULL, Locale.UK);
         return monthName + " " + yearMonth.getYear();
     }
 

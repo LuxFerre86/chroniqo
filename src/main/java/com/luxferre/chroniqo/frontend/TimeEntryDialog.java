@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -276,10 +277,10 @@ public class TimeEntryDialog extends Dialog {
 
     private TimeEntryDTO inputsToTimeEntryDto() {
         TimeEntryDTO timeEntryDto = new TimeEntryDTO();
-        timeEntryDto.setDate(Optional.ofNullable(startDay).map(DatePicker::getValue).map(date -> date.format(DateTimeFormatter.ISO_LOCAL_DATE)).orElse(null));
-        timeEntryDto.setStartTime(Optional.ofNullable(start).map(TimePicker::getValue).map(time -> time.format(DateTimeFormatter.ISO_TIME)).orElse(null));
-        timeEntryDto.setEndTime(Optional.ofNullable(end).map(TimePicker::getValue).map(time -> time.format(DateTimeFormatter.ISO_TIME)).orElse(null));
-        timeEntryDto.setBreakMinutes(Optional.ofNullable(breakMinutes).map(IntegerField::getValue).orElse(null));
+        timeEntryDto.setDate(Optional.of(startDay).map(DatePicker::getValue).map(date -> date.format(DateTimeFormatter.ISO_LOCAL_DATE.localizedBy(Locale.UK))).orElse(null));
+        timeEntryDto.setStartTime(Optional.of(start).map(TimePicker::getValue).map(time -> time.format(DateTimeFormatter.ISO_TIME.localizedBy(Locale.UK))).orElse(null));
+        timeEntryDto.setEndTime(Optional.of(end).map(TimePicker::getValue).map(time -> time.format(DateTimeFormatter.ISO_TIME.localizedBy(Locale.UK))).orElse(null));
+        timeEntryDto.setBreakMinutes(Optional.of(breakMinutes).map(IntegerField::getValue).orElse(null));
         return timeEntryDto;
     }
 }
