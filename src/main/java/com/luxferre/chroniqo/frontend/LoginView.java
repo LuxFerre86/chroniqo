@@ -1,6 +1,5 @@
 package com.luxferre.chroniqo.frontend;
 
-import com.luxferre.chroniqo.service.AuthenticationService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -9,6 +8,7 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -26,7 +26,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 
     private final LoginForm login = new LoginForm();
 
-    public LoginView(AuthenticationService authenticationService) {
+    public LoginView() {
         addClassName("login-view");
         setSizeFull();
         setAlignItems(Alignment.CENTER);
@@ -82,17 +82,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
                 UI.getCurrent().navigate("reset-password")
         );
 
-        // Remember Me Checkbox
-        Checkbox rememberMe = new Checkbox("Remember me for 30 days");
-        rememberMe.getStyle()
-                .set("margin", "1rem 0")
-                .set("color", "var(--lumo-body-text-color)");
-
-        // Login listener
-        login.addLoginListener(e -> {
-            // Remember me is handled by Spring Security config
-            authenticationService.updateLastLogin(e.getUsername());
-        });
+        addRememberMeCheckbox();
 
         // Register Link
         Span registerText = new Span("Don't have an account? ");
@@ -119,11 +109,29 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
                 title,
                 subtitle,
                 login,
-                rememberMe,
                 registerSection
         );
 
         add(loginContainer);
+    }
+
+    void addRememberMeCheckbox() {
+        Checkbox rememberMe = new Checkbox("Remember me");
+        rememberMe.getStyle()
+                .set("margin", "1rem 0")
+                .set("color", "var(--lumo-body-text-color)");
+        rememberMe.getElement().setAttribute("name", "remember-me");
+        Element loginFormElement = login.getElement();
+        Element element = rememberMe.getElement();
+        loginFormElement.appendChild(element);
+
+        String executeJsForFieldString = "const field = document.getElementById($0);" +
+                "if(field) {" +
+                "   field.after($1)" +
+                "} else {" +
+                "   console.error('could not find field', $0);" +
+                "}";
+        getElement().executeJs(executeJsForFieldString, "vaadinLoginPassword", element);
     }
 
     @Override

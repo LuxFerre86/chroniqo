@@ -25,6 +25,13 @@ spring:
           auth: true
           starttls:
             enable: true
+  security:
+    remember-me:
+      key: super-long-random-string-here-min-32-chars
+      use-secure-cookie: false
+      validity: P30D
+      cookie-domain: localhost
+
 
 logging:
   level:
