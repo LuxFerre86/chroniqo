@@ -9,9 +9,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 
 @Configuration
 @EnableWebSecurity
@@ -33,7 +35,7 @@ public class SecurityConfig {
     private final RememberMeProperties rememberMeProperties;
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, VaadinSavedRequestAwareAuthenticationSuccessHandler authenticationSuccessHandler) {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, VaadinSavedRequestAwareAuthenticationSuccessHandler authenticationSuccessHandler, LastLoginTokenBasedRememberMeServices rememberMeServices) {
         // register custom authenticationSuccessHandler as shared object
         http.setSharedObject(VaadinSavedRequestAwareAuthenticationSuccessHandler.class, authenticationSuccessHandler);
         // Configure your static resources with public access
@@ -42,15 +44,18 @@ public class SecurityConfig {
         // Vaadin Security
         http.with(VaadinSecurityConfigurer.vaadin(), configurer -> configurer.loginView(LoginView.class));
         // Remember Me Configuration
-        http.rememberMe(remember -> remember
-                .key(rememberMeProperties.getKey())
-                .tokenValiditySeconds((int) rememberMeProperties.getValidity().toSeconds()) // 30 days
-                .useSecureCookie(rememberMeProperties.isUseSecureCookie())
-                .rememberMeCookieDomain(rememberMeProperties.getCookieDomain())
-                .rememberMeParameter("remember-me")
-        );
+        http.rememberMe(remember -> remember.rememberMeServices(rememberMeServices));
 
         return http.build();
+    }
+
+    @Bean
+    public LastLoginTokenBasedRememberMeServices lastLoginTokenBasedRememberMeServices(UserDetailsService userDetailsService, AuthenticationService authenticationService) {
+        LastLoginTokenBasedRememberMeServices rememberMeServices = new LastLoginTokenBasedRememberMeServices(rememberMeProperties.getKey(), userDetailsService, authenticationService, TokenBasedRememberMeServices.RememberMeTokenAlgorithm.SHA256);
+        rememberMeServices.setUseSecureCookie(rememberMeProperties.isUseSecureCookie());
+        rememberMeServices.setCookieDomain(rememberMeProperties.getCookieDomain());
+        rememberMeServices.setTokenValiditySeconds(Math.toIntExact(rememberMeProperties.getValidity().getSeconds()));
+        return rememberMeServices;
     }
 
     @Bean
