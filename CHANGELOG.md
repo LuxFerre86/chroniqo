@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.02.11] - 2026-02-28
+
+### Added
+- successful authentication via remember-me leads to an update of the last login timestamp
+
+
+### Maintenance
+- Merge pull request #12 from LuxFerre86/feature/remember-me-with-last-login-audit
+
 ## [2026.02.10] - 2026-02-27
 
 ### Added
