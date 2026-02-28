@@ -2,8 +2,8 @@ package com.luxferre.chroniqo.frontend;
 
 import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.model.AbsenceType;
-import com.luxferre.chroniqo.service.MonthService;
-import com.luxferre.chroniqo.service.YearService;
+import com.luxferre.chroniqo.service.SummaryService;
+import com.luxferre.chroniqo.util.IsWeekendQuery;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,16 +33,14 @@ import java.util.stream.Collectors;
 public class MonthView extends VerticalLayout {
     private YearMonth currentMonth = YearMonth.now();
     private final Div calendarGrid;
-    private final MonthService monthService;
-    private final YearService yearService;
+    private final SummaryService summaryService;
     private Map<LocalDate, DaySummaryDTO> monthSummaries = new HashMap<>();
     private Map<LocalDate, DaySummaryDTO> yearSummaries = new HashMap<>();
     private final TimeEntryDialog timeEntryDialog;
     private final StatisticsCard monthStatisticsCard;
 
-    public MonthView(MonthService monthService, YearService yearService, TimeEntryDialog timeEntryDialog) {
-        this.monthService = monthService;
-        this.yearService = yearService;
+    public MonthView(SummaryService summaryService, TimeEntryDialog timeEntryDialog) {
+        this.summaryService = summaryService;
         this.timeEntryDialog = timeEntryDialog;
         this.timeEntryDialog.addClosedListener(event1 -> {
             loadSummaries();
@@ -120,8 +119,7 @@ public class MonthView extends VerticalLayout {
     private Div createDayCard(LocalDate date) {
         DaySummaryDTO summary = monthSummaries.get(date);
         boolean isToday = date.equals(LocalDate.now());
-        boolean isWeekend = date.getDayOfWeek() == DayOfWeek.SATURDAY
-                || date.getDayOfWeek() == DayOfWeek.SUNDAY;
+        boolean isWeekend = date.query(new IsWeekendQuery());
 
         Div dayCard = new Div();
         dayCard.addClassName("day-card");
@@ -282,11 +280,9 @@ public class MonthView extends VerticalLayout {
     }
 
     private void loadSummaries() {
-        monthSummaries = monthService.getMonth(currentMonth.getYear(), currentMonth.getMonthValue())
-                .stream()
-                .collect(Collectors.toMap(DaySummaryDTO::date, dto -> dto));
-        yearSummaries = yearService.getYear(currentMonth.getYear())
-                .stream()
-                .collect(Collectors.toMap(DaySummaryDTO::date, dto -> dto));
+        List<DaySummaryDTO> yearSummary = summaryService.getSummary(currentMonth.getYear());
+        List<DaySummaryDTO> monthSummary = yearSummary.stream().filter(daySummaryDTO -> daySummaryDTO.date().getMonthValue() == currentMonth.getMonthValue()).toList();
+        monthSummaries = monthSummary.stream().collect(Collectors.toMap(DaySummaryDTO::date, dto -> dto));
+        yearSummaries = yearSummary.stream().collect(Collectors.toMap(DaySummaryDTO::date, dto -> dto));
     }
 }

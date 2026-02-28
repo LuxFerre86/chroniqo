@@ -1,6 +1,6 @@
 package com.luxferre.chroniqo.frontend.dashboard;
 
-import com.luxferre.chroniqo.service.DashboardService.WeeklyProgress;
+import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -128,7 +128,7 @@ public class QuickStatsWidget extends HorizontalLayout {
         }
     }
 
-    public void updateWeeklyProgress(WeeklyProgress progress) {
+    public void updateWeeklyProgress(WeeklyProgressDTO progress) {
         int percentage = progress.percentage();
         percentage = Math.min(100, Math.max(0, percentage));
 

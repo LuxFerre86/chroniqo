@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -23,6 +24,11 @@ public class TimeEntryService {
     private final TimeEntryRepository repository;
     private final UserService userService;
     private final AbsenceRepository absenceRepository;
+
+    public List<TimeEntry> findByUserAndDateBetween(LocalDate startDate, LocalDate endDate) {
+        User user = userService.getCurrentUser();
+        return repository.findByUserAndDateBetween(user, startDate, endDate);
+    }
 
     public TimeEntryDTO getEntry(LocalDate date) {
         User user = userService.getCurrentUser();
