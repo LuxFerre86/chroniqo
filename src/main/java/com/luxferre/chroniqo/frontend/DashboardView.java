@@ -1,11 +1,11 @@
 package com.luxferre.chroniqo.frontend;
 
 import com.luxferre.chroniqo.dto.DaySummaryDTO;
+import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.frontend.dashboard.QuickStatsWidget;
 import com.luxferre.chroniqo.frontend.dashboard.TodaySummaryCard;
 import com.luxferre.chroniqo.frontend.dashboard.WeekChartWidget;
-import com.luxferre.chroniqo.service.DashboardService;
-import com.luxferre.chroniqo.service.DashboardService.WeeklyProgress;
+import com.luxferre.chroniqo.service.SummaryService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H2;
@@ -27,7 +27,7 @@ import java.util.Locale;
 @PermitAll
 public class DashboardView extends VerticalLayout {
 
-    private final DashboardService dashboardService;
+    private final SummaryService summaryService;
     private final TimeEntryDialog timeEntryDialog;
 
     // Widgets
@@ -35,9 +35,8 @@ public class DashboardView extends VerticalLayout {
     private final WeekChartWidget weekChartWidget;
     private final QuickStatsWidget quickStatsWidget;
 
-    public DashboardView(DashboardService dashboardService,
-                         TimeEntryDialog timeEntryDialog) {
-        this.dashboardService = dashboardService;
+    public DashboardView(SummaryService summaryService, TimeEntryDialog timeEntryDialog) {
+        this.summaryService = summaryService;
         this.timeEntryDialog = timeEntryDialog;
 
         addClassName("dashboard-view");
@@ -151,19 +150,31 @@ public class DashboardView extends VerticalLayout {
 
     private void refreshDashboard() {
         // Today's Summary
-        DaySummaryDTO todaySummary = dashboardService.getTodaySummary();
+        DaySummaryDTO todaySummary = summaryService.getToday();
         todaySummaryCard.updateSummary(todaySummary);
 
         // Week Chart
-        List<DaySummaryDTO> weekData = dashboardService.getWeekSummary();
+        List<DaySummaryDTO> weekData = summaryService.getCurrentWeek();
         weekChartWidget.updateChart(weekData);
 
         // Balance
-        int balance = dashboardService.getCurrentBalance();
-        quickStatsWidget.updateBalance(balance);
+        quickStatsWidget.updateBalance(getCurrentBalance());
 
         // Weekly Progress
-        WeeklyProgress progress = dashboardService.getWeeklyProgress();
-        quickStatsWidget.updateWeeklyProgress(progress);
+        WeeklyProgressDTO weeklyProgressDTO = summaryService.getWeeklyProgress();
+        quickStatsWidget.updateWeeklyProgress(weeklyProgressDTO);
+    }
+
+    /**
+     * Get current balance
+     */
+    int getCurrentBalance() {
+        LocalDate today = LocalDate.now();
+        return summaryService.getSummary(today.getYear())
+                .stream()
+                .filter(s -> s.date().isBefore(today) || s.date().equals(today))
+                .filter(s -> s.balanceMinutes() != null)
+                .mapToInt(DaySummaryDTO::balanceMinutes)
+                .sum();
     }
 }

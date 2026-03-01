@@ -1,6 +1,6 @@
 package com.luxferre.chroniqo.frontend.dashboard;
 
-import com.luxferre.chroniqo.service.DashboardService.WeeklyProgress;
+import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -8,7 +8,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 public class QuickStatsWidget extends HorizontalLayout {
 
-    private final VerticalLayout balanceBox;
     private final VerticalLayout weekProgressBox;
     private final Span balanceValue;
     private final Span progressValue;
@@ -21,7 +20,7 @@ public class QuickStatsWidget extends HorizontalLayout {
         getStyle().set("gap", "1rem");
 
         // Balance Box
-        balanceBox = createStatBox("Current Balance", "±0:00");
+        VerticalLayout balanceBox = createStatBox("Current Balance", "±0:00");
         balanceValue = (Span) balanceBox.getComponentAt(1);
 
         // Week Progress Box
@@ -128,7 +127,7 @@ public class QuickStatsWidget extends HorizontalLayout {
         }
     }
 
-    public void updateWeeklyProgress(WeeklyProgress progress) {
+    public void updateWeeklyProgress(WeeklyProgressDTO progress) {
         int percentage = progress.percentage();
         percentage = Math.min(100, Math.max(0, percentage));
 

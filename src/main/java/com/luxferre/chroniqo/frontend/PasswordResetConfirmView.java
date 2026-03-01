@@ -33,7 +33,6 @@ public class PasswordResetConfirmView extends VerticalLayout implements HasUrlPa
     private String resetToken;
     private final PasswordField newPasswordField = new PasswordField("New Password");
     private final PasswordField confirmPasswordField = new PasswordField("Confirm Password");
-    private final Button saveButton = new Button("Set New Password");
 
     public PasswordResetConfirmView(AuthenticationService authService) {
         this.authService = authService;
@@ -96,6 +95,7 @@ public class PasswordResetConfirmView extends VerticalLayout implements HasUrlPa
         setupValidation();
 
         // Save Button
+        Button saveButton = new Button("Set New Password");
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveButton.setWidthFull();
         saveButton.getStyle().set("margin-top", "1rem");
