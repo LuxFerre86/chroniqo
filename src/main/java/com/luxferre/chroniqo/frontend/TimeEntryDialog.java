@@ -4,8 +4,7 @@ import com.luxferre.chroniqo.dto.AbsenceRequest;
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.AbsenceType;
-import com.luxferre.chroniqo.service.AbsenceService;
-import com.luxferre.chroniqo.service.TimeEntryService;
+import com.luxferre.chroniqo.service.TimeTrackingService;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -23,9 +22,6 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -49,15 +45,13 @@ public class TimeEntryDialog extends Dialog {
     private final Button saveButton = new Button("Save");
     private final Button deleteButton = new Button("Delete");
 
-    private final TimeEntryService timeEntryService;
-    private final AbsenceService absenceService;
+    private final TimeTrackingService timeTrackingService;
 
     private final Binder<TimePicker> timePickerBinder = new Binder<>();
 
 
-    public TimeEntryDialog(TimeEntryService timeEntryService, AbsenceService absenceService) {
-        this.timeEntryService = timeEntryService;
-        this.absenceService = absenceService;
+    public TimeEntryDialog(TimeTrackingService timeTrackingService) {
+        this.timeTrackingService = timeTrackingService;
         initDialog();
         renderDialog();
         renderWorkingTime();
@@ -189,16 +183,16 @@ public class TimeEntryDialog extends Dialog {
         reset();
         startDay.setValue(date);
         endDay.setValue(date);
-        TimeEntryDTO entry = timeEntryService.getEntry(date);
+        TimeEntryDTO entry = timeTrackingService.getTimeEntry(date);
         tabs.setSelectedTab(workingTimeTab);
 
         if (null != entry) {
-            start.setValue(Optional.of(entry).map(TimeEntryDTO::getStartTime).map(LocalTime::parse).orElse(null));
-            end.setValue(Optional.of(entry).map(TimeEntryDTO::getEndTime).map(LocalTime::parse).orElse(null));
+            start.setValue(entry.getStartTime());
+            end.setValue(entry.getEndTime());
             breakMinutes.setValue(Optional.of(entry).map(TimeEntryDTO::getBreakMinutes).orElse(null));
             deleteButton.setVisible(true);
         } else {
-            Absence absence = absenceService.getAbsence(startDay.getValue());
+            Absence absence = timeTrackingService.getAbsence(startDay.getValue());
             if (null != absence) {
                 if (absence.getType() == AbsenceType.SICK) {
                     tabs.setSelectedTab(sickTab);
@@ -252,34 +246,34 @@ public class TimeEntryDialog extends Dialog {
 
     private void saveWorkingTime() {
         timePickerBinder.validate();
-        timeEntryService.saveEntry(inputsToTimeEntryDto());
+        timeTrackingService.saveEntry(inputsToTimeEntryDto());
     }
 
     private void saveVacation() {
-        absenceService.saveAbsence(new AbsenceRequest(startDay.getValue(), endDay.getValue(), AbsenceType.VACATION));
+        timeTrackingService.saveAbsence(new AbsenceRequest(startDay.getValue(), endDay.getValue(), AbsenceType.VACATION));
     }
 
     private void saveSick() {
-        absenceService.saveAbsence(new AbsenceRequest(startDay.getValue(), endDay.getValue(), AbsenceType.SICK));
+        timeTrackingService.saveAbsence(new AbsenceRequest(startDay.getValue(), endDay.getValue(), AbsenceType.SICK));
     }
 
     private void deleteWorkingTime() {
-        timeEntryService.deleteEntry(inputsToTimeEntryDto());
+        timeTrackingService.deleteEntry(inputsToTimeEntryDto());
     }
 
     private void deleteVacation() {
-        absenceService.deleteAbsence(new AbsenceRequest(startDay.getValue(), endDay.getValue(), AbsenceType.VACATION));
+        timeTrackingService.deleteAbsences(startDay.getValue(), endDay.getValue());
     }
 
     private void deleteSick() {
-        absenceService.deleteAbsence(new AbsenceRequest(startDay.getValue(), endDay.getValue(), AbsenceType.SICK));
+        timeTrackingService.deleteAbsences(startDay.getValue(), endDay.getValue());
     }
 
     private TimeEntryDTO inputsToTimeEntryDto() {
         TimeEntryDTO timeEntryDto = new TimeEntryDTO();
-        timeEntryDto.setDate(Optional.of(startDay).map(DatePicker::getValue).map(date -> date.format(DateTimeFormatter.ISO_LOCAL_DATE.localizedBy(Locale.UK))).orElse(null));
-        timeEntryDto.setStartTime(Optional.of(start).map(TimePicker::getValue).map(time -> time.format(DateTimeFormatter.ISO_TIME.localizedBy(Locale.UK))).orElse(null));
-        timeEntryDto.setEndTime(Optional.of(end).map(TimePicker::getValue).map(time -> time.format(DateTimeFormatter.ISO_TIME.localizedBy(Locale.UK))).orElse(null));
+        timeEntryDto.setDate(startDay.getValue());
+        timeEntryDto.setStartTime(start.getValue());
+        timeEntryDto.setEndTime(end.getValue());
         timeEntryDto.setBreakMinutes(Optional.of(breakMinutes).map(IntegerField::getValue).orElse(null));
         return timeEntryDto;
     }

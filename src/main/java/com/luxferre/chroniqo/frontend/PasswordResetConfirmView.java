@@ -1,6 +1,6 @@
 package com.luxferre.chroniqo.frontend;
 
-import com.luxferre.chroniqo.service.AuthenticationService;
+import com.luxferre.chroniqo.service.UserService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -27,15 +27,15 @@ import java.util.Map;
 @Component
 public class PasswordResetConfirmView extends VerticalLayout implements HasUrlParameter<String> {
 
-    private final AuthenticationService authService;
+    private final UserService userService;
     private final Binder<PasswordForm> binder = new Binder<>(PasswordForm.class);
 
     private String resetToken;
     private final PasswordField newPasswordField = new PasswordField("New Password");
     private final PasswordField confirmPasswordField = new PasswordField("Confirm Password");
 
-    public PasswordResetConfirmView(AuthenticationService authService) {
-        this.authService = authService;
+    public PasswordResetConfirmView(UserService userService) {
+        this.userService = userService;
 
         addClassName("reset-confirm-view");
         setSizeFull();
@@ -140,7 +140,7 @@ public class PasswordResetConfirmView extends VerticalLayout implements HasUrlPa
         PasswordForm form = new PasswordForm();
 
         if (binder.writeBeanIfValid(form)) {
-            boolean success = authService.resetPassword(resetToken, form.getPassword());
+            boolean success = userService.resetPassword(resetToken, form.getPassword());
 
             if (success) {
                 Notification.show(

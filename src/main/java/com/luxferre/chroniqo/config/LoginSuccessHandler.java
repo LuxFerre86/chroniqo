@@ -1,6 +1,6 @@
 package com.luxferre.chroniqo.config;
 
-import com.luxferre.chroniqo.service.AuthenticationService;
+import com.luxferre.chroniqo.service.UserService;
 import com.vaadin.flow.spring.security.VaadinSavedRequestAwareAuthenticationSuccessHandler;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,11 +13,11 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class LoginSuccessHandler extends VaadinSavedRequestAwareAuthenticationSuccessHandler {
 
-    private final AuthenticationService authenticationService;
+    private final UserService userService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         super.onAuthenticationSuccess(request, response, authentication);
-        authenticationService.updateLastLogin(authentication.getName());
+        userService.updateLastLogin(authentication.getName());
     }
 }

@@ -1,7 +1,7 @@
 package com.luxferre.chroniqo.frontend;
 
 import com.luxferre.chroniqo.model.User;
-import com.luxferre.chroniqo.service.AuthenticationService;
+import com.luxferre.chroniqo.service.UserService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H2;
@@ -22,6 +22,8 @@ import jakarta.annotation.security.RolesAllowed;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Route(value = "settings", layout = AppLayoutBasic.class)
 @PageTitle("Settings | ChroniQo")
 @UIScope
@@ -29,7 +31,7 @@ import org.springframework.stereotype.Component;
 @RolesAllowed("ROLE_USER")
 public class SettingsView extends VerticalLayout {
 
-    private final AuthenticationService authService;
+    private final UserService userService;
     private final User currentUser;
 
     // Profile Section
@@ -46,8 +48,8 @@ public class SettingsView extends VerticalLayout {
 
     private final Binder<PasswordChangeForm> passwordBinder = new Binder<>(PasswordChangeForm.class);
 
-    public SettingsView(AuthenticationService authService) {
-        this.authService = authService;
+    public SettingsView(UserService userService) {
+        this.userService = userService;
 
         addClassName("settings-view");
         setSizeFull();
@@ -55,7 +57,7 @@ public class SettingsView extends VerticalLayout {
         setSpacing(true);
 
         // Get current user
-        this.currentUser = authService.getCurrentUser()
+        this.currentUser = Optional.ofNullable(userService.getCurrentUser())
                 .orElseThrow(() -> new IllegalStateException("No user logged in"));
 
         // Page Title
@@ -260,7 +262,7 @@ public class SettingsView extends VerticalLayout {
 
     private void saveProfile() {
         try {
-            authService.updateProfile(
+            userService.updateProfile(
                     currentUser.getEmail(),
                     firstNameField.getValue(),
                     lastNameField.getValue()
@@ -290,7 +292,7 @@ public class SettingsView extends VerticalLayout {
 
         if (passwordBinder.writeBeanIfValid(form)) {
             try {
-                authService.changePassword(
+                userService.changePassword(
                         currentUser.getEmail(),
                         form.getCurrentPassword(),
                         form.getNewPassword()

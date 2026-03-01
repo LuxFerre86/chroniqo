@@ -1,7 +1,7 @@
 package com.luxferre.chroniqo.frontend;
 
 import com.luxferre.chroniqo.model.User;
-import com.luxferre.chroniqo.service.AuthenticationService;
+import com.luxferre.chroniqo.service.UserService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class RegisterView extends VerticalLayout {
 
-    private final AuthenticationService authService;
+    private final UserService userService;
     private final Binder<RegistrationForm> binder = new Binder<>(RegistrationForm.class);
 
     private final TextField firstNameField = new TextField("First Name");
@@ -38,8 +38,8 @@ public class RegisterView extends VerticalLayout {
     private final PasswordField passwordField = new PasswordField("Password");
     private final PasswordField confirmPasswordField = new PasswordField("Confirm Password");
 
-    public RegisterView(AuthenticationService authService) {
-        this.authService = authService;
+    public RegisterView(UserService userService) {
+        this.userService = userService;
 
         addClassName("register-view");
         setSizeFull();
@@ -188,7 +188,7 @@ public class RegisterView extends VerticalLayout {
 
         if (binder.writeBeanIfValid(form)) {
             try {
-                User ignored = authService.register(
+                User ignored = userService.register(
                         form.getEmail(),
                         form.getPassword(),
                         form.getFirstName(),
