@@ -1,5 +1,18 @@
 # Changelog
 
+## [2026.03.0] - 2026-03-01
+
+### Added
+- replaces yearService, monthService and dashboardService with new summaryService
+
+
+### Fixed
+- code inspections
+
+
+### Maintenance
+- Merge pull request #13 from LuxFerre86/feature/service-layer-refactoring
+
 ## [2026.02.11] - 2026-02-28
 
 ### Added
