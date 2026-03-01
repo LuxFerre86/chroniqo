@@ -37,7 +37,6 @@ public class RegisterView extends VerticalLayout {
     private final EmailField emailField = new EmailField("Email");
     private final PasswordField passwordField = new PasswordField("Password");
     private final PasswordField confirmPasswordField = new PasswordField("Confirm Password");
-    private final Button registerButton = new Button("Create Account");
 
     public RegisterView(AuthenticationService authService) {
         this.authService = authService;
@@ -112,6 +111,7 @@ public class RegisterView extends VerticalLayout {
         setupValidation();
 
         // Register Button
+        Button registerButton = new Button("Create Account");
         registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         registerButton.setWidthFull();
         registerButton.getStyle()

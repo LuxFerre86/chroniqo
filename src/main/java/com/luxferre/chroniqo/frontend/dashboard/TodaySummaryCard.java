@@ -8,7 +8,6 @@ public class TodaySummaryCard extends VerticalLayout {
 
     private final Span workedHoursValue;
     private final Span balanceValue;
-    private final Span dateLabel;
 
     public TodaySummaryCard() {
         addClassName("today-summary-card");
@@ -26,7 +25,7 @@ public class TodaySummaryCard extends VerticalLayout {
                 .set("min-height", "200px");
 
         // Date Label
-        dateLabel = new Span("Today");
+        Span dateLabel = new Span("Today");
         dateLabel.getStyle()
                 .set("font-size", "14px")
                 .set("font-weight", "600")

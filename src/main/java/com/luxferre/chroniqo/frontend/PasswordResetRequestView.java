@@ -29,9 +29,6 @@ public class PasswordResetRequestView extends VerticalLayout {
     private final AuthenticationService authService;
     private final Binder<ResetForm> binder = new Binder<>(ResetForm.class);
 
-    private final EmailField emailField = new EmailField("Email");
-    private final Button resetButton = new Button("Send Reset Link");
-
     public PasswordResetRequestView(AuthenticationService authService) {
         this.authService = authService;
 
@@ -82,6 +79,7 @@ public class PasswordResetRequestView extends VerticalLayout {
                 .set("font-size", "14px");
 
         // Email Field
+        EmailField emailField = new EmailField("Email");
         emailField.setRequired(true);
         emailField.setWidthFull();
         emailField.setPlaceholder("your@email.com");
@@ -93,6 +91,7 @@ public class PasswordResetRequestView extends VerticalLayout {
                 .bind(ResetForm::getEmail, ResetForm::setEmail);
 
         // Reset Button
+        Button resetButton = new Button("Send Reset Link");
         resetButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         resetButton.setWidthFull();
         resetButton.getStyle().set("margin-top", "1rem");

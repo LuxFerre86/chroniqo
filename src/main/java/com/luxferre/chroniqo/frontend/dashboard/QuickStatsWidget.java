@@ -8,7 +8,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 public class QuickStatsWidget extends HorizontalLayout {
 
-    private final VerticalLayout balanceBox;
     private final VerticalLayout weekProgressBox;
     private final Span balanceValue;
     private final Span progressValue;
@@ -21,7 +20,7 @@ public class QuickStatsWidget extends HorizontalLayout {
         getStyle().set("gap", "1rem");
 
         // Balance Box
-        balanceBox = createStatBox("Current Balance", "±0:00");
+        VerticalLayout balanceBox = createStatBox("Current Balance", "±0:00");
         balanceValue = (Span) balanceBox.getComponentAt(1);
 
         // Week Progress Box
