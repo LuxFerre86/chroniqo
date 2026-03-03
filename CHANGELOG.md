@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.1] - 2026-03-03
+
+### Added
+- Refactoring of TimeEntryService and AbsenceService and create a wrapping TimeTrackingService feat: merged UserService and AuthenticationService
+
+
+### Maintenance
+- Merge pull request #14 from LuxFerre86/feature/service-layer-refactoring-part-2
+
 ## [2026.03.0] - 2026-03-01
 
 ### Added
