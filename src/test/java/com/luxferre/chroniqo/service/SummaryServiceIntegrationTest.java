@@ -63,7 +63,7 @@ public class SummaryServiceIntegrationTest {
 
         assertThat(daySummaryDTO).isNotNull();
         assertThat(daySummaryDTO.date()).isEqualTo(LocalDate.now());
-        assertThat(daySummaryDTO.workedMinutes()).isNull();
+        assertThat(daySummaryDTO.workedMinutes()).isEqualTo(0);
         boolean isWeekend = today.query(new IsWeekendQuery());
         if (isWeekend) {
             assertThat(daySummaryDTO.targetMinutes()).isNull();
@@ -109,13 +109,37 @@ public class SummaryServiceIntegrationTest {
         IntStream.range(0, timeEntries.size()).forEach(i -> assertDaySummaryDTO(daySummaryDTOs.get(i), timeEntries.get(i).getDate()));
     }
 
+    @Test
+    public void getToday_startTimeFuture() {
+        TimeEntry timeEntry = new TimeEntry();
+        timeEntry.setDate(LocalDate.now());
+        timeEntry.setStartTime(LocalTime.now().plusMinutes(15));
+        timeEntry.setUser(testUser);
+        timeEntry.setStatus(TimeEntryStatus.STARTED);
+        entityManager.persist(timeEntry);
+
+        DaySummaryDTO daySummaryDTO = summaryService.getToday();
+
+        assertThat(daySummaryDTO).isNotNull();
+        assertThat(daySummaryDTO.date()).isEqualTo(LocalDate.now());
+        assertThat(daySummaryDTO.workedMinutes()).isEqualTo(0);
+        boolean isWeekend = LocalDate.now().query(new IsWeekendQuery());
+        if (isWeekend) {
+            assertThat(daySummaryDTO.targetMinutes()).isEqualTo(0);
+            assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(0);
+        } else {
+            assertThat(daySummaryDTO.targetMinutes()).isEqualTo(468);
+            assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(-468);
+        }
+    }
+
     private void assertDaySummaryDTO(DaySummaryDTO daySummaryDTO, LocalDate date) {
         assertThat(daySummaryDTO).isNotNull();
         assertThat(daySummaryDTO.date()).isEqualTo(date);
         assertThat(daySummaryDTO.workedMinutes()).isEqualTo(560);
         boolean isWeekend = date.query(new IsWeekendQuery());
         if (isWeekend) {
-            assertThat(daySummaryDTO.targetMinutes()).isNull();
+            assertThat(daySummaryDTO.targetMinutes()).isEqualTo(0);
             assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(560);
         } else {
             assertThat(daySummaryDTO.targetMinutes()).isEqualTo(468);

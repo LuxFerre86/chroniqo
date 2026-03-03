@@ -19,10 +19,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Route("month")
@@ -120,6 +117,7 @@ public class MonthView extends VerticalLayout {
         DaySummaryDTO summary = monthSummaries.get(date);
         boolean isToday = date.equals(LocalDate.now());
         boolean isWeekend = date.query(new IsWeekendQuery());
+        boolean isAbsence = summary.absenceType() != null;
 
         Div dayCard = new Div();
         dayCard.addClassName("day-card");
@@ -177,14 +175,24 @@ public class MonthView extends VerticalLayout {
         dayContent.setSpacing(false);
 
         // Worked Hours
-        Span workedHours = new Span(formatMinutes(summary.workedMinutes()));
+        Span workedHours = new Span();
         workedHours.addClassName("worked-hours");
+        Integer workedMinutes = summary.workedMinutes();
+        if (workedMinutes != null) {
+            if (!isWeekend && !isAbsence || workedMinutes > 0) {
+                workedHours.setText(formatMinutes(workedMinutes));
+            }
+        }
 
         // Balance
-        Span balance = new Span(formatBalance(summary.balanceMinutes()));
+        Span balance = new Span();
         balance.addClassName("balance");
-        if (summary.balanceMinutes() != null) {
-            balance.addClassName(summary.balanceMinutes() >= 0 ? "balance-positive" : "balance-negative");
+        Integer balanceMinutes = summary.balanceMinutes();
+        if (balanceMinutes != null) {
+            if (!isWeekend && !isAbsence || balanceMinutes > 0) {
+                balance.setText(formatBalance(balanceMinutes));
+                balance.addClassName(balanceMinutes >= 0 ? "balance-positive" : "balance-negative");
+            }
         }
 
         dayContent.add(workedHours, balance);
@@ -250,8 +258,6 @@ public class MonthView extends VerticalLayout {
     }
 
     private String formatMinutes(Integer minutes) {
-        if (minutes == null) return "";
-
         int sign = minutes < 0 ? -1 : 1;
         int absMinutes = Math.abs(minutes);
 
@@ -262,21 +268,12 @@ public class MonthView extends VerticalLayout {
     }
 
     private String formatBalance(Integer minutes) {
-        if (minutes == null) return "";
         String sign = minutes >= 0 ? "+" : "";
         return sign + formatMinutes(minutes);
     }
 
     private String getDayTypeLabel(AbsenceType type) {
-        if (null == type) {
-            return null;
-        } else {
-            return switch (type) {
-                case HOLIDAY -> "Feiertag";
-                case VACATION -> "Urlaub";
-                case SICK -> "Krank";
-            };
-        }
+        return Optional.ofNullable(type).map(AbsenceType::name).orElse(null);
     }
 
     private void loadSummaries() {

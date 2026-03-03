@@ -100,8 +100,8 @@ public class SummaryService {
 
         return new DaySummaryDTO(
                 date,
-                workedMinutes > 0 ? workedMinutes : null,
-                targetMinutes > 0 ? targetMinutes : null,
+                workedMinutes,
+                targetMinutes,
                 balance,
                 dayType
         );
@@ -111,10 +111,10 @@ public class SummaryService {
         // If entry not complete, calculate from start time to now
         if (entry.getEndTime() == null && entry.getStartTime() != null) {
             LocalTime now = LocalTime.now();
-            Duration duration = Duration.between(entry.getStartTime(), now);
-            int minutes = (int) duration.toMinutes();
-            if (minutes < 0) minutes += 1440; // Handle day overflow
-            if (entry.getBreakMinutes() != null) minutes -= entry.getBreakMinutes();
+            int minutes = Math.toIntExact(Duration.between(entry.getStartTime(), now).toMinutes());
+            if (entry.getBreakMinutes() != null) {
+                minutes -= entry.getBreakMinutes();
+            }
             return Math.max(0, minutes);
         }
 
@@ -125,8 +125,12 @@ public class SummaryService {
 
         Duration duration = Duration.between(entry.getStartTime(), entry.getEndTime());
         int minutes = (int) duration.toMinutes();
-        if (minutes < 0) minutes += 1440;
-        if (entry.getBreakMinutes() != null) minutes -= entry.getBreakMinutes();
+        if (minutes < 0) {
+            minutes += 1440;
+        }
+        if (entry.getBreakMinutes() != null) {
+            minutes -= entry.getBreakMinutes();
+        }
         return Math.max(0, minutes);
     }
 
