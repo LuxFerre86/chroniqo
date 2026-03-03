@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.2] - 2026-03-03
+
+### Fixed
+- show always balance and hours worked zero if a minus value was calculated / also not show worked hours and balance if weekend or absence
+
+
+### Maintenance
+- Merge pull request #15 from LuxFerre86/fix/calculate-correct-balance-and-worked-hours
+
 ## [2026.03.1] - 2026-03-03
 
 ### Added
