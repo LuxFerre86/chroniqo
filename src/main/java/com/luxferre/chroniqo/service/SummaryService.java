@@ -1,17 +1,19 @@
 package com.luxferre.chroniqo.service;
 
 import com.luxferre.chroniqo.dto.DaySummaryDTO;
+import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.AbsenceType;
-import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.util.IsWeekendQuery;
 import com.vaadin.flow.component.UI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Year;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
@@ -22,8 +24,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class SummaryService {
 
-    private final AbsenceService absenceService;
-    private final TimeEntryService timeEntryService;
+    private final TimeTrackingService timeTrackingService;
     private final UserService userService;
 
 
@@ -49,19 +50,27 @@ public class SummaryService {
     public List<DaySummaryDTO> getSummary(LocalDate startDate, LocalDate endDate) {
         User user = userService.getCurrentUser();
 
-        List<TimeEntry> entries =
-                timeEntryService.findByUserAndDateBetween(startDate, endDate);
+        List<TimeEntryDTO> entries =
+                timeTrackingService.getTimeEntries(startDate, endDate);
 
         List<Absence> absences =
-                absenceService.getAbsences(user, startDate, endDate);
+                timeTrackingService.getAbsences(startDate, endDate);
 
         int dailyTargetMinutes = (user.getWeeklyTargetHours() * 60) / 5;
 
         return startDate.datesUntil(endDate.plusDays(1L)).map(date -> createDaySummaryDTO(date, entries, absences, dailyTargetMinutes)).toList();
     }
 
-    private DaySummaryDTO createDaySummaryDTO(LocalDate date, List<TimeEntry> entries, List<Absence> absences, int dailyTargetMinutes) {
-        TimeEntry entry = entries.stream()
+    public WeeklyProgressDTO getWeeklyProgress() {
+        List<DaySummaryDTO> currentWeek = getCurrentWeek();
+        int workedMinutes = currentWeek.stream().map(DaySummaryDTO::workedMinutes).filter(Objects::nonNull).mapToInt(Integer::intValue).sum();
+        int targetMinutes = currentWeek.stream().map(DaySummaryDTO::targetMinutes).filter(Objects::nonNull).mapToInt(Integer::intValue).sum();
+        int percentage = targetMinutes > 0 ? (workedMinutes * 100) / targetMinutes : 0;
+        return new WeeklyProgressDTO(workedMinutes, targetMinutes, percentage);
+    }
+
+    DaySummaryDTO createDaySummaryDTO(LocalDate date, List<TimeEntryDTO> entries, List<Absence> absences, int dailyTargetMinutes) {
+        TimeEntryDTO entry = entries.stream()
                 .filter(e -> e.getDate().equals(date))
                 .findFirst()
                 .orElse(null);
@@ -72,7 +81,7 @@ public class SummaryService {
                 .orElse(null);
 
         int workedMinutes = entry != null
-                ? timeEntryService.calculateWorkedMinutes(entry)
+                ? calculateWorkedMinutes(entry)
                 : 0;
 
         int balance = 0;
@@ -98,11 +107,28 @@ public class SummaryService {
         );
     }
 
-    public WeeklyProgressDTO getWeeklyProgress() {
-        List<DaySummaryDTO> currentWeek = getCurrentWeek();
-        int workedMinutes = currentWeek.stream().map(DaySummaryDTO::workedMinutes).filter(Objects::nonNull).mapToInt(Integer::intValue).sum();
-        int targetMinutes = currentWeek.stream().map(DaySummaryDTO::targetMinutes).filter(Objects::nonNull).mapToInt(Integer::intValue).sum();
-        int percentage = targetMinutes > 0 ? (workedMinutes * 100) / targetMinutes : 0;
-        return new WeeklyProgressDTO(workedMinutes, targetMinutes, percentage);
+    int calculateWorkedMinutes(TimeEntryDTO entry) {
+        // If entry not complete, calculate from start time to now
+        if (entry.getEndTime() == null && entry.getStartTime() != null) {
+            LocalTime now = LocalTime.now();
+            Duration duration = Duration.between(entry.getStartTime(), now);
+            int minutes = (int) duration.toMinutes();
+            if (minutes < 0) minutes += 1440; // Handle day overflow
+            if (entry.getBreakMinutes() != null) minutes -= entry.getBreakMinutes();
+            return Math.max(0, minutes);
+        }
+
+        // Normal calculation for completed entries
+        if (entry.getStartTime() == null) {
+            return 0;
+        }
+
+        Duration duration = Duration.between(entry.getStartTime(), entry.getEndTime());
+        int minutes = (int) duration.toMinutes();
+        if (minutes < 0) minutes += 1440;
+        if (entry.getBreakMinutes() != null) minutes -= entry.getBreakMinutes();
+        return Math.max(0, minutes);
     }
+
+
 }

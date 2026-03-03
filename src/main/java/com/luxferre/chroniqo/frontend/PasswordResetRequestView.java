@@ -1,6 +1,6 @@
 package com.luxferre.chroniqo.frontend;
 
-import com.luxferre.chroniqo.service.AuthenticationService;
+import com.luxferre.chroniqo.service.UserService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -26,11 +26,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class PasswordResetRequestView extends VerticalLayout {
 
-    private final AuthenticationService authService;
+    private final UserService userService;
     private final Binder<ResetForm> binder = new Binder<>(ResetForm.class);
 
-    public PasswordResetRequestView(AuthenticationService authService) {
-        this.authService = authService;
+    public PasswordResetRequestView(UserService userService) {
+        this.userService = userService;
 
         addClassName("reset-view");
         setSizeFull();
@@ -115,7 +115,7 @@ public class PasswordResetRequestView extends VerticalLayout {
         ResetForm form = new ResetForm();
 
         if (binder.writeBeanIfValid(form)) {
-            authService.requestPasswordReset(form.getEmail());
+            userService.requestPasswordReset(form.getEmail());
 
             Notification.show(
                     "If an account exists with this email, you'll receive a reset link shortly.",

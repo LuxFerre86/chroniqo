@@ -2,7 +2,8 @@ package com.luxferre.chroniqo.frontend;
 
 import com.luxferre.chroniqo.config.ApplicationInfoProperties;
 import com.luxferre.chroniqo.model.User;
-import com.luxferre.chroniqo.service.AuthenticationService;
+import com.luxferre.chroniqo.service.UserNotFoundException;
+import com.luxferre.chroniqo.service.UserService;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
@@ -29,13 +30,18 @@ public class AppLayoutBasic extends AppLayout {
 
     private final AuthenticationContext authenticationContext;
 
-    public AppLayoutBasic(AuthenticationContext authenticationContext, AuthenticationService authenticationService, ApplicationInfoProperties applicationInfoProperties) {
+    public AppLayoutBasic(AuthenticationContext authenticationContext, UserService userService, ApplicationInfoProperties applicationInfoProperties) {
         this.authenticationContext = authenticationContext;
 
         addClassName("chroniqo-app-layout");
 
         // Get current user
-        User currentUser = authenticationService.getCurrentUser().orElse(null);
+        User currentUser;
+        try {
+            currentUser = userService.getCurrentUser();
+        } catch (UserNotFoundException e) {
+            currentUser = null;
+        }
 
         // Drawer Toggle
         DrawerToggle toggle = new DrawerToggle();

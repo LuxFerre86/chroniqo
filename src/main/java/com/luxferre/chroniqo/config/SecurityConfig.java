@@ -1,7 +1,7 @@
 package com.luxferre.chroniqo.config;
 
 import com.luxferre.chroniqo.frontend.LoginView;
-import com.luxferre.chroniqo.service.AuthenticationService;
+import com.luxferre.chroniqo.service.UserService;
 import com.vaadin.flow.spring.security.VaadinSavedRequestAwareAuthenticationSuccessHandler;
 import com.vaadin.flow.spring.security.VaadinSecurityConfigurer;
 import lombok.RequiredArgsConstructor;
@@ -50,8 +50,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public LastLoginTokenBasedRememberMeServices lastLoginTokenBasedRememberMeServices(UserDetailsService userDetailsService, AuthenticationService authenticationService) {
-        LastLoginTokenBasedRememberMeServices rememberMeServices = new LastLoginTokenBasedRememberMeServices(rememberMeProperties.getKey(), userDetailsService, authenticationService, TokenBasedRememberMeServices.RememberMeTokenAlgorithm.SHA256);
+    public LastLoginTokenBasedRememberMeServices lastLoginTokenBasedRememberMeServices(UserDetailsService userDetailsService, UserService userService) {
+        LastLoginTokenBasedRememberMeServices rememberMeServices = new LastLoginTokenBasedRememberMeServices(rememberMeProperties.getKey(), userDetailsService, userService, TokenBasedRememberMeServices.RememberMeTokenAlgorithm.SHA256);
         rememberMeServices.setUseSecureCookie(rememberMeProperties.isUseSecureCookie());
         rememberMeServices.setCookieDomain(rememberMeProperties.getCookieDomain());
         rememberMeServices.setTokenValiditySeconds(Math.toIntExact(rememberMeProperties.getValidity().getSeconds()));
@@ -59,8 +59,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public VaadinSavedRequestAwareAuthenticationSuccessHandler loginSuccessHandler(AuthenticationService authenticationService) {
-        return new LoginSuccessHandler(authenticationService);
+    public VaadinSavedRequestAwareAuthenticationSuccessHandler loginSuccessHandler(UserService userService) {
+        return new LoginSuccessHandler(userService);
     }
 
 

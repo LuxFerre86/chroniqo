@@ -1,6 +1,6 @@
 package com.luxferre.chroniqo.frontend;
 
-import com.luxferre.chroniqo.service.AuthenticationService;
+import com.luxferre.chroniqo.service.UserService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Route("verify-email")
 @PageTitle("Verify Email | ChroniQo")
@@ -22,11 +23,11 @@ import java.util.Map;
 @Component
 public class EmailVerificationView extends VerticalLayout implements HasUrlParameter<String> {
 
-    private final AuthenticationService authService;
+    private final UserService userService;
     private boolean verificationSuccess = false;
 
-    public EmailVerificationView(AuthenticationService authService) {
-        this.authService = authService;
+    public EmailVerificationView(UserService userService) {
+        this.userService = userService;
 
         addClassName("verification-view");
         setSizeFull();
@@ -45,11 +46,11 @@ public class EmailVerificationView extends VerticalLayout implements HasUrlParam
 
         if (params.containsKey("token")) {
             String token = params.get("token").getFirst();
-            verificationSuccess = authService.verifyEmail(token);
+            verificationSuccess = userService.verifyEmail(token);
 
             if (verificationSuccess) {
                 // Auto-login after successful verification
-                authService.getCurrentUser().ifPresent(user -> authService.autoLogin(user.getEmail()));
+                Optional.ofNullable(userService.getCurrentUser()).ifPresent(user -> userService.autoLogin(user.getEmail()));
             }
 
             renderContent();

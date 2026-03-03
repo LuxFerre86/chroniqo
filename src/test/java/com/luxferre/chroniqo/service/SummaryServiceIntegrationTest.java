@@ -58,17 +58,24 @@ public class SummaryServiceIntegrationTest {
 
     @Test
     public void getToday_withTimeEntryNotPresent() {
+        LocalDate today = LocalDate.now();
         DaySummaryDTO daySummaryDTO = summaryService.getToday();
 
         assertThat(daySummaryDTO).isNotNull();
         assertThat(daySummaryDTO.date()).isEqualTo(LocalDate.now());
         assertThat(daySummaryDTO.workedMinutes()).isNull();
-        assertThat(daySummaryDTO.targetMinutes()).isNull();
-        assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(0);
+        boolean isWeekend = today.query(new IsWeekendQuery());
+        if (isWeekend) {
+            assertThat(daySummaryDTO.targetMinutes()).isNull();
+            assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(0);
+        } else {
+            assertThat(daySummaryDTO.targetMinutes()).isEqualTo(468);
+            assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(-468);
+        }
     }
 
     @Test
-    public void getCurrent_withPresentTimeEntries() {
+    public void getCurrentWeek_withPresentTimeEntries() {
         List<TimeEntry> timeEntries = addCurrentWeekTestData();
 
         List<DaySummaryDTO> daySummaryDTOs = summaryService.getCurrentWeek();

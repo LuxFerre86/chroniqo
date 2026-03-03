@@ -9,10 +9,10 @@ import java.util.List;
 
 public interface AbsenceRepository extends JpaRepository<Absence, String> {
 
-    List<Absence> findByUserAndDateLessThanEqualAndDateGreaterThanEqual(
+    List<Absence> findByUserAndDateBetween(
             User user,
-            LocalDate endDate,
-            LocalDate startDate
+            LocalDate startDate,
+            LocalDate endDate
     );
 
     Absence findByUserAndDate(
