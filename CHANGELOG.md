@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.3] - 2026-03-08
+
+### Added
+- improved test coverage
+
+
+### Maintenance
+- Merge pull request #16 from LuxFerre86/feature/test-coverage
+
 ## [2026.03.2] - 2026-03-03
 
 ### Fixed
