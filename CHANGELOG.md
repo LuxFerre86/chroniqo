@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.5] - 2026-03-08
+
+### Added
+- improved weekly progress visualization
+
+
+### Maintenance
+- Merge pull request #18 from LuxFerre86/feature/improve-weekly-progress-visualization
+
 ## [2026.03.4] - 2026-03-08
 
 ### Added
