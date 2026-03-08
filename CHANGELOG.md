@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.8] - 2026-03-08
+
+### Fixed
+- using jackson-core in 3.1.0 due to CVE-2026-29062
+
+
+### Maintenance
+- Merge pull request #21 from LuxFerre86/fix/CVE-2026-29062
+
 ## [2026.03.7] - 2026-03-08
 
 ### Added
