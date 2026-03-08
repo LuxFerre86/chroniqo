@@ -11,8 +11,13 @@ services:
       - .env
     container_name: "chroniqo"
     restart: always
-    #user: 1001:1001
     mem_limit: 768M
     mem_reservation: 256M
     ports:
-        - "8180:8080"
+      - "8180:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
