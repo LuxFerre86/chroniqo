@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.4] - 2026-03-08
+
+### Added
+- improved workday determination
+
+
+### Maintenance
+- Merge pull request #17 from LuxFerre86/feature/improve-workday-determination
+
 ## [2026.03.3] - 2026-03-08
 
 ### Added
