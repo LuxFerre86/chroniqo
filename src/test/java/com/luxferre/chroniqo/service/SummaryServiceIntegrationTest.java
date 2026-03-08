@@ -66,7 +66,7 @@ public class SummaryServiceIntegrationTest {
         assertThat(daySummaryDTO.workedMinutes()).isEqualTo(0);
         boolean isWeekend = today.query(new IsWeekendQuery());
         if (isWeekend) {
-            assertThat(daySummaryDTO.targetMinutes()).isNull();
+            assertThat(daySummaryDTO.targetMinutes()).isEqualTo(0);
             assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(0);
         } else {
             assertThat(daySummaryDTO.targetMinutes()).isEqualTo(468);
