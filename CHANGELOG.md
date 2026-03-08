@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.7] - 2026-03-08
+
+### Added
+- improved docker compose wit healthcheck
+
+
+### Maintenance
+- Merge pull request #20 from LuxFerre86/feature/improve-docker-compose
+
 ## [2026.03.6] - 2026-03-08
 
 ### Added
