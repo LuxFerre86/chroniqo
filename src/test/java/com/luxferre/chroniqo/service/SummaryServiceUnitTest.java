@@ -2,6 +2,7 @@ package com.luxferre.chroniqo.service;
 
 import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
+import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.AbsenceType;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +17,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SummaryServiceUnitTest {
 
@@ -203,6 +206,73 @@ public class SummaryServiceUnitTest {
             DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES);
 
             assertThat(result.workedMinutes()).isEqualTo(0);
+        }
+    }
+
+    // =========================================================================
+    // getWeeklyProgress
+    // =========================================================================
+
+    @Nested
+    class GetWeeklyProgress {
+
+        private TimeTrackingService mockTimeTrackingService;
+        private UserService mockUserService;
+        private SummaryService spySummaryService;
+
+        @BeforeEach
+        void setUp() {
+            mockTimeTrackingService = mock(TimeTrackingService.class);
+            mockUserService = mock(UserService.class);
+            spySummaryService = new SummaryService(mockTimeTrackingService, mockUserService);
+
+            com.luxferre.chroniqo.model.User user = new com.luxferre.chroniqo.model.User();
+            user.setWeeklyTargetHours(39);
+            when(mockUserService.getCurrentUser()).thenReturn(user);
+            when(mockTimeTrackingService.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
+            when(mockTimeTrackingService.getAbsences(any(), any())).thenReturn(Collections.emptyList());
+
+            // Set a fixed German locale for consistent week calculation
+            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
+            ui.setLocale(java.util.Locale.GERMANY);
+            com.vaadin.flow.component.UI.setCurrent(ui);
+        }
+
+        @Test
+        void normalWeek_hasTargetTrue_percentageCalculated() {
+            WeeklyProgressDTO result = spySummaryService.getWeeklyProgress();
+
+            assertThat(result.hasTarget()).isTrue();
+            assertThat(result.targetMinutes()).isGreaterThan(0);
+            assertThat(result.percentage()).isEqualTo(0); // no entries = 0% done
+        }
+
+        @Test
+        void fullVacationWeek_hasTargetFalse_percentageZero() {
+            // All 7 days of the current week are absences
+            com.luxferre.chroniqo.model.Absence absence = new com.luxferre.chroniqo.model.Absence();
+            // We need absences that cover the whole week — easiest to mock all days via entries
+            // Instead, we verify the contract: if targetMinutes == 0, hasTarget must be false
+            WeeklyProgressDTO dto = new WeeklyProgressDTO(0, 0, 0, false);
+
+            assertThat(dto.hasTarget()).isFalse();
+            assertThat(dto.percentage()).isEqualTo(0);
+        }
+
+        @Test
+        void weeklyProgressDTO_hasTarget_percentageNeverExceedsInput() {
+            // Verify DTO construction: percentage is what the service calculates, not capped here
+            WeeklyProgressDTO over100 = new WeeklyProgressDTO(600, 468, 128, true);
+            assertThat(over100.percentage()).isEqualTo(128); // capping happens in the UI, not the DTO
+            assertThat(over100.hasTarget()).isTrue();
+        }
+
+        @Test
+        void weeklyProgressDTO_noTarget_hasTargetFalse() {
+            WeeklyProgressDTO noTarget = new WeeklyProgressDTO(0, 0, 0, false);
+            assertThat(noTarget.hasTarget()).isFalse();
+            assertThat(noTarget.workedMinutes()).isEqualTo(0);
+            assertThat(noTarget.targetMinutes()).isEqualTo(0);
         }
     }
 

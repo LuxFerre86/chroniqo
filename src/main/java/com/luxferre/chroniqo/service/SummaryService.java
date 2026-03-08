@@ -64,7 +64,8 @@ public class SummaryService {
         int workedMinutes = currentWeek.stream().mapToInt(DaySummaryDTO::workedMinutes).sum();
         int targetMinutes = currentWeek.stream().mapToInt(DaySummaryDTO::targetMinutes).sum();
         int percentage = targetMinutes > 0 ? (workedMinutes * 100) / targetMinutes : 0;
-        return new WeeklyProgressDTO(workedMinutes, targetMinutes, percentage);
+        boolean hasTarget = targetMinutes > 0;
+        return new WeeklyProgressDTO(workedMinutes, targetMinutes, percentage, hasTarget);
     }
 
     DaySummaryDTO createDaySummaryDTO(LocalDate date, List<TimeEntryDTO> entries, List<Absence> absences, int dailyTargetMinutes) {
