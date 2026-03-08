@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.6] - 2026-03-08
+
+### Added
+- improved PR and release pipelines
+
+
+### Maintenance
+- Merge pull request #19 from LuxFerre86/feature/improve-pr-and-release-pipelines
+
 ## [2026.03.5] - 2026-03-08
 
 ### Added
