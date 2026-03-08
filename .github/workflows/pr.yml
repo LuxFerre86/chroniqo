@@ -17,9 +17,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: maven
 
       - name: Build + Test
         run: mvn -B clean verify
 
       - name: Vaadin Production Build Check
-        run: mvn -Pproduction package -DskipTests
+        run: mvn -B -Pproduction package -DskipTests
