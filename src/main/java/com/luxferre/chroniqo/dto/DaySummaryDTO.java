@@ -6,9 +6,10 @@ import java.time.LocalDate;
 
 public record DaySummaryDTO(
         LocalDate date,
-        Integer workedMinutes,
-        Integer targetMinutes,
-        Integer balanceMinutes,
+        boolean isWorkday,
+        int workedMinutes,
+        int targetMinutes,
+        int balanceMinutes,
         AbsenceType absenceType
 ) {
 }

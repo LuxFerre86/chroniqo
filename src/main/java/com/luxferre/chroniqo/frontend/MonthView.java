@@ -117,7 +117,6 @@ public class MonthView extends VerticalLayout {
         DaySummaryDTO summary = monthSummaries.get(date);
         boolean isToday = date.equals(LocalDate.now());
         boolean isWeekend = date.query(new IsWeekendQuery());
-        boolean isAbsence = summary.absenceType() != null;
 
         Div dayCard = new Div();
         dayCard.addClassName("day-card");
@@ -174,25 +173,19 @@ public class MonthView extends VerticalLayout {
         dayContent.setPadding(false);
         dayContent.setSpacing(false);
 
-        // Worked Hours
+        // Worked Hours — only show on workdays or when overtime was worked (weekend/absence)
         Span workedHours = new Span();
         workedHours.addClassName("worked-hours");
-        Integer workedMinutes = summary.workedMinutes();
-        if (workedMinutes != null) {
-            if (!isWeekend && !isAbsence || workedMinutes > 0) {
-                workedHours.setText(formatMinutes(workedMinutes));
-            }
+        if (summary.isWorkday() || summary.workedMinutes() > 0) {
+            workedHours.setText(formatMinutes(summary.workedMinutes()));
         }
 
-        // Balance
+        // Balance — only show on workdays or positive weekend overtime
         Span balance = new Span();
         balance.addClassName("balance");
-        Integer balanceMinutes = summary.balanceMinutes();
-        if (balanceMinutes != null) {
-            if (!isWeekend && !isAbsence || balanceMinutes > 0) {
-                balance.setText(formatBalance(balanceMinutes));
-                balance.addClassName(balanceMinutes >= 0 ? "balance-positive" : "balance-negative");
-            }
+        if (summary.isWorkday() || summary.balanceMinutes() > 0) {
+            balance.setText(formatBalance(summary.balanceMinutes()));
+            balance.addClassName(summary.balanceMinutes() >= 0 ? "balance-positive" : "balance-negative");
         }
 
         dayContent.add(workedHours, balance);
@@ -225,13 +218,8 @@ public class MonthView extends VerticalLayout {
 
         for (DaySummaryDTO summary : monthSummaries.values()) {
             if (!summary.date().isAfter(LocalDate.now())) {
-                if (summary.targetMinutes() != null) {
-                    totalTargetMinutes += summary.targetMinutes();
-                }
-
-                if (summary.workedMinutes() != null) {
-                    totalWorkedMinutes += summary.workedMinutes();
-                }
+                totalTargetMinutes += summary.targetMinutes();
+                totalWorkedMinutes += summary.workedMinutes();
             }
         }
 
@@ -244,13 +232,8 @@ public class MonthView extends VerticalLayout {
 
         for (DaySummaryDTO summary : yearSummaries.values()) {
             if (!summary.date().isAfter(LocalDate.now())) {
-                if (summary.targetMinutes() != null) {
-                    totalTargetMinutes += summary.targetMinutes();
-                }
-
-                if (summary.workedMinutes() != null) {
-                    totalWorkedMinutes += summary.workedMinutes();
-                }
+                totalTargetMinutes += summary.targetMinutes();
+                totalWorkedMinutes += summary.workedMinutes();
             }
         }
 
