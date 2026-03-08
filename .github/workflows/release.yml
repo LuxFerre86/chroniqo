@@ -28,6 +28,16 @@ jobs:
           fetch-depth: 0
 
       # -------------------
+      # Setup Java (early – needed for tests + build)
+      # -------------------
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      # -------------------
       # Calculate CalVer Version
       # -------------------
       - name: Calculate Version
@@ -52,6 +62,12 @@ jobs:
 
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Calculated Version: $VERSION"
+
+      # -------------------
+      # Run Tests
+      # -------------------
+      - name: Test
+        run: mvn -B verify
 
       # -------------------
       # Update CHANGELOG.md
@@ -157,19 +173,10 @@ jobs:
             --notes-file RELEASE_NOTES.md
 
       # -------------------
-      # Setup Java
-      # -------------------
-      - name: Setup Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      # -------------------
       # Maven Production Build
       # -------------------
       - name: Build Application
-        run: mvn -Pproduction clean package -DskipTests
+        run: mvn -B -Pproduction clean package -DskipTests
 
       # -------------------
       # Docker Setup
@@ -203,4 +210,6 @@ jobs:
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
           format: table
-          exit-code: 0
+          exit-code: 1
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
