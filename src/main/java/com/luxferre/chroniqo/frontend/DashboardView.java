@@ -173,7 +173,6 @@ public class DashboardView extends VerticalLayout {
         return summaryService.getSummary(today.getYear())
                 .stream()
                 .filter(s -> s.date().isBefore(today) || s.date().equals(today))
-                .filter(s -> s.balanceMinutes() != null)
                 .mapToInt(DaySummaryDTO::balanceMinutes)
                 .sum();
     }

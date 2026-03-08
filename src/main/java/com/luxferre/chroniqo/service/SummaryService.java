@@ -4,7 +4,6 @@ import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
-import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.util.IsWeekendQuery;
 import com.vaadin.flow.component.UI;
@@ -18,7 +17,6 @@ import java.time.Year;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -63,8 +61,8 @@ public class SummaryService {
 
     public WeeklyProgressDTO getWeeklyProgress() {
         List<DaySummaryDTO> currentWeek = getCurrentWeek();
-        int workedMinutes = currentWeek.stream().map(DaySummaryDTO::workedMinutes).filter(Objects::nonNull).mapToInt(Integer::intValue).sum();
-        int targetMinutes = currentWeek.stream().map(DaySummaryDTO::targetMinutes).filter(Objects::nonNull).mapToInt(Integer::intValue).sum();
+        int workedMinutes = currentWeek.stream().mapToInt(DaySummaryDTO::workedMinutes).sum();
+        int targetMinutes = currentWeek.stream().mapToInt(DaySummaryDTO::targetMinutes).sum();
         int percentage = targetMinutes > 0 ? (workedMinutes * 100) / targetMinutes : 0;
         return new WeeklyProgressDTO(workedMinutes, targetMinutes, percentage);
     }
@@ -80,30 +78,23 @@ public class SummaryService {
                 .findFirst()
                 .orElse(null);
 
-        int workedMinutes = entry != null
+        boolean isWeekend = date.query(new IsWeekendQuery());
+        boolean isWorkday = !isWeekend && absence == null;
+
+        int workedMinutes = (entry != null && absence == null)
                 ? calculateWorkedMinutes(entry)
                 : 0;
 
-        int balance = 0;
-        AbsenceType dayType = null;
-        int targetMinutes = 0;
-
-        if (absence != null) {
-            dayType = absence.getType();
-            workedMinutes = 0;
-        } else if (date.query(new IsWeekendQuery())) {
-            balance = workedMinutes;
-        } else {
-            balance = workedMinutes - dailyTargetMinutes;
-            targetMinutes = dailyTargetMinutes;
-        }
+        int targetMinutes = isWorkday ? dailyTargetMinutes : 0;
+        int balance = isWeekend ? workedMinutes : workedMinutes - targetMinutes;
 
         return new DaySummaryDTO(
                 date,
+                isWorkday,
                 workedMinutes,
                 targetMinutes,
                 balance,
-                dayType
+                absence != null ? absence.getType() : null
         );
     }
 

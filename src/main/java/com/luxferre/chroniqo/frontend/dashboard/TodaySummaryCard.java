@@ -75,18 +75,16 @@ public class TodaySummaryCard extends VerticalLayout {
         balanceValue.setText(formatBalance(summary.balanceMinutes()));
 
         // Update balance styling
-        if (summary.balanceMinutes() != null) {
-            if (summary.balanceMinutes() >= 0) {
-                balanceValue.getStyle()
-                        .set("color", "hsl(142, 75%, 55%)")
-                        .set("background", "hsla(142, 70%, 48%, 0.15)")
-                        .set("box-shadow", "inset 0 0 0 1px hsla(142, 70%, 48%, 0.25)");
-            } else {
-                balanceValue.getStyle()
-                        .set("color", "hsl(12, 90%, 65%)")
-                        .set("background", "hsla(12, 85%, 58%, 0.15)")
-                        .set("box-shadow", "inset 0 0 0 1px hsla(12, 85%, 58%, 0.25)");
-            }
+        if (summary.balanceMinutes() >= 0) {
+            balanceValue.getStyle()
+                    .set("color", "hsl(142, 75%, 55%)")
+                    .set("background", "hsla(142, 70%, 48%, 0.15)")
+                    .set("box-shadow", "inset 0 0 0 1px hsla(142, 70%, 48%, 0.25)");
+        } else {
+            balanceValue.getStyle()
+                    .set("color", "hsl(12, 90%, 65%)")
+                    .set("background", "hsla(12, 85%, 58%, 0.15)")
+                    .set("box-shadow", "inset 0 0 0 1px hsla(12, 85%, 58%, 0.25)");
         }
     }
 

@@ -56,7 +56,6 @@ public class WeekChartWidget extends VerticalLayout {
 
         // Find max hours for scaling
         int maxMinutes = weekData.stream()
-                .filter(d -> d.workedMinutes() != null)
                 .mapToInt(DaySummaryDTO::workedMinutes)
                 .max()
                 .orElse(480); // Default 8 hours
@@ -89,7 +88,7 @@ public class WeekChartWidget extends VerticalLayout {
 
         Div bar = new Div();
 
-        int workedMinutes = day.workedMinutes() != null ? day.workedMinutes() : 0;
+        int workedMinutes = day.workedMinutes();
         int heightPercent = maxMinutes > 0 ? (workedMinutes * 100) / maxMinutes : 0;
         heightPercent = Math.min(100, Math.max(0, heightPercent));
 
