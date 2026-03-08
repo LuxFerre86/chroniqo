@@ -20,6 +20,7 @@
         <lombok.version>1.18.42</lombok.version>
         <spring-boot.version>4.0.3</spring-boot.version> <!-- needed implicitly for plugin section / do NOT remove -->
         <vaadin.version>25.0.6</vaadin.version>
+        <jackson-core.version>3.1.0</jackson-core.version>
     </properties>
 
     <dependencyManagement>
@@ -65,6 +66,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-mail</artifactId>
+        </dependency>
+
+        <!-- 3.1.0 instead of 3.0.4 fixing CVE-2026-29062 -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson-core.version}</version>
         </dependency>
 
         <dependency>
