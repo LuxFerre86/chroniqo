@@ -6,14 +6,11 @@ spring:
     url: ${DATABASE_URL}
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
-    #driver-class-name: org.mariadb.jdbc.Driver
   jpa:
-    #show-sql: true
     open-in-view: false
     properties:
       hibernate:
         ddl-auto: validate
-        #format_sql: true
   mail:
     host: smtp.gmail.com
     port: 587
@@ -27,13 +24,7 @@ spring:
             enable: true
   security:
     remember-me:
-      key: super-long-random-string-here-min-32-chars
-      use-secure-cookie: false
+      key: ${REMEMBER_ME_KEY}
+      use-secure-cookie: ${REMEMBER_ME_SECURE_COOKIE_ENABLED:true}
       validity: P30D
-      cookie-domain: localhost
-
-
-logging:
-  level:
-    org.hibernate.SQL: info
-    org.hibernate.tool.schema: info
+      cookie-domain: ${REMEMBER_ME_COOKIE_DOMAIN:localhost}
