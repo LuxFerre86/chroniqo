@@ -1,4 +1,4 @@
-package com.luxferre.chroniqo.service;
+package com.luxferre.chroniqo.service.user;
 
 public class UserNotFoundException extends RuntimeException {
 

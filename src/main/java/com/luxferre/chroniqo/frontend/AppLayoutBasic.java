@@ -2,8 +2,8 @@ package com.luxferre.chroniqo.frontend;
 
 import com.luxferre.chroniqo.config.ApplicationInfoProperties;
 import com.luxferre.chroniqo.model.User;
-import com.luxferre.chroniqo.service.UserNotFoundException;
-import com.luxferre.chroniqo.service.UserService;
+import com.luxferre.chroniqo.service.user.UserNotFoundException;
+import com.luxferre.chroniqo.service.user.UserService;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;

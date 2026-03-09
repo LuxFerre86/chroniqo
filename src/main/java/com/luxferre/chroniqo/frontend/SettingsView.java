@@ -1,7 +1,7 @@
 package com.luxferre.chroniqo.frontend;
 
 import com.luxferre.chroniqo.model.User;
-import com.luxferre.chroniqo.service.UserService;
+import com.luxferre.chroniqo.service.user.UserService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H2;

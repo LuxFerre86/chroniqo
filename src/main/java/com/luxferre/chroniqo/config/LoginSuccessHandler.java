@@ -1,6 +1,6 @@
 package com.luxferre.chroniqo.config;
 
-import com.luxferre.chroniqo.service.UserService;
+import com.luxferre.chroniqo.service.user.UserService;
 import com.vaadin.flow.spring.security.VaadinSavedRequestAwareAuthenticationSuccessHandler;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
