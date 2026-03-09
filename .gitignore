@@ -59,3 +59,7 @@ mvnw
 tsconfig.json
 types.d.ts
 index.html
+# Local environment variables – never commit this
+.env
+# Production env file
+.env.prod
