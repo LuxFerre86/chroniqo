@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026.03.9] - 2026-03-09
+
+### Maintenance
+- Merge pull request #22 from LuxFerre86/chore/go-public
+- chore: added Trivy Scan for PR build
+- chore: removed unused dependencies
+- chore: added LICENSE and README.md
+- chore: CONTRIBUTING.md
+- chore: improved .gitignore
+- chore: remember-me config as env parameters
+
 ## [2026.03.8] - 2026-03-08
 
 ### Fixed
