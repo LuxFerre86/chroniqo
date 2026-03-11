@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.15] - 2026-03-11
+
+### Fixed
+- missing equal sign in .env.example
+
+
+### Maintenance
+- Merge pull request #28 from LuxFerre86/fix/typo-env-example
+
 ## [2026.03.14] - 2026-03-11
 
 ### Added
