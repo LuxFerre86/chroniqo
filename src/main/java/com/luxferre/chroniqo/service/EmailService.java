@@ -1,9 +1,10 @@
 package com.luxferre.chroniqo.service;
 
+import com.luxferre.chroniqo.config.AppProperties;
 import com.luxferre.chroniqo.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.mail.autoconfigure.MailProperties;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -14,18 +15,14 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
-
-    @Value("${app.base-url:http://localhost:8080}")
-    private String baseUrl;
-
-    @Value("${spring.mail.username}")
-    private String fromEmail;
+    private final AppProperties appProperties;
+    private final MailProperties mailProperties;
 
     /**
      * Send email verification
      */
     public void sendVerificationEmail(User user) {
-        String verificationLink = baseUrl + "/verify-email?token=" + user.getVerificationToken();
+        String verificationLink = appProperties.getBaseUrl() + "/verify-email?token=" + user.getVerificationToken();
 
         String subject = "ChroniQo - Verify your email";
         String message = String.format("""
@@ -50,7 +47,7 @@ public class EmailService {
      * Send password reset email
      */
     public void sendPasswordResetEmail(User user) {
-        String resetLink = baseUrl + "/reset-password-confirm?token=" + user.getResetToken();
+        String resetLink = appProperties.getBaseUrl() + "/reset-password-confirm?token=" + user.getResetToken();
 
         String subject = "ChroniQo - Password Reset";
         String message = String.format("""
@@ -77,7 +74,7 @@ public class EmailService {
     private void sendEmail(String to, String subject, String text) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
+            message.setFrom(mailProperties.getUsername());
             message.setTo(to);
             message.setSubject(subject);
             message.setText(text);

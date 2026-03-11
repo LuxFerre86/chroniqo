@@ -1,8 +1,9 @@
-package com.luxferre.chroniqo.service;
+package com.luxferre.chroniqo.service.user;
 
 import com.luxferre.chroniqo.config.DefaultUserDetailsService;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.UserRepository;
+import com.luxferre.chroniqo.service.EmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

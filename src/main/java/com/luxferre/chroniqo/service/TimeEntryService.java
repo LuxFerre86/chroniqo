@@ -5,6 +5,7 @@ import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.TimeEntryStatus;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
+import com.luxferre.chroniqo.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

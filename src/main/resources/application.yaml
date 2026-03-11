@@ -1,7 +1,6 @@
 spring:
   application:
-    name: chroniqo
-    version: ${APP_VERSION}
+
   datasource:
     url: ${DATABASE_URL}
     username: ${DATABASE_USERNAME}
@@ -28,3 +27,8 @@ spring:
       use-secure-cookie: ${REMEMBER_ME_SECURE_COOKIE_ENABLED:true}
       validity: P30D
       cookie-domain: ${REMEMBER_ME_COOKIE_DOMAIN:localhost}
+
+app:
+  base-url: ${APP_BASE_URL}
+  name: chroniqo
+  version: ${APP_VERSION}

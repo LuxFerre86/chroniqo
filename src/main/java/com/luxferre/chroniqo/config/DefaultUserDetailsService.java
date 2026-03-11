@@ -25,14 +25,14 @@ public class DefaultUserDetailsService implements UserDetailsService {
     @Override
     public @NonNull UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())
                 .password(user.getPasswordHash())
                 .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
                 .accountExpired(false)
-                .accountLocked(!user.isAccountNonLocked())
+                .accountLocked(user.isAccountLocked())
                 .credentialsExpired(false)
                 .disabled(!user.isEnabled())
                 .build();

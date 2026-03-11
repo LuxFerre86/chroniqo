@@ -45,8 +45,11 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = false;
 
-    @Column(nullable = false)
-    private boolean accountNonLocked = true;
+    /**
+     * If set, the account is locked until this timestamp.
+     * Null means the account is not locked.
+     */
+    private LocalDateTime lockedUntil;
 
     private LocalDateTime createdAt;
 
@@ -63,6 +66,14 @@ public class User {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+    }
+
+    /**
+     * Returns true if the account is currently not locked.
+     * A lock expires automatically once {@code lockedUntil} is in the past.
+     */
+    public boolean isAccountLocked() {
+        return lockedUntil != null && !lockedUntil.isBefore(LocalDateTime.now());
     }
 
     public String getFullName() {

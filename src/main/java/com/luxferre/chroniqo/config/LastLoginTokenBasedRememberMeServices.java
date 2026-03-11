@@ -1,6 +1,6 @@
 package com.luxferre.chroniqo.config;
 
-import com.luxferre.chroniqo.service.UserService;
+import com.luxferre.chroniqo.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;

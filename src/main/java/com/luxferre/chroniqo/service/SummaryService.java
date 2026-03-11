@@ -5,6 +5,7 @@ import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.User;
+import com.luxferre.chroniqo.service.user.UserService;
 import com.luxferre.chroniqo.util.IsWeekendQuery;
 import com.vaadin.flow.component.UI;
 import lombok.RequiredArgsConstructor;
