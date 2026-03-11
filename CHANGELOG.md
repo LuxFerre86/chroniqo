@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026.03.10] - 2026-03-11
+
+### Added
+- added account lock after 5 unsuccessful login attempts
+
+
+### Maintenance
+- Merge pull request #23 from LuxFerre86/feature/improved-login-security
+- chore: move user services
+
 ## [2026.03.9] - 2026-03-09
 
 ### Maintenance
