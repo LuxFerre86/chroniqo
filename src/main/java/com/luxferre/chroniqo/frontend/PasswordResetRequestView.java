@@ -20,7 +20,7 @@ import lombok.Data;
 import org.springframework.stereotype.Component;
 
 @Route("reset-password")
-@PageTitle("Reset Password | ChroniQo")
+@PageTitle("Reset Password | chroniqo")
 @AnonymousAllowed
 @UIScope
 @Component

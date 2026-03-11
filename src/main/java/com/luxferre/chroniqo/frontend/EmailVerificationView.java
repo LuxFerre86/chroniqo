@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Route("verify-email")
-@PageTitle("Verify Email | ChroniQo")
+@PageTitle("Verify Email | chroniqo")
 @AnonymousAllowed
 @UIScope
 @Component

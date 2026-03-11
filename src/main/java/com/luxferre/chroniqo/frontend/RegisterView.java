@@ -24,7 +24,7 @@ import lombok.Data;
 import org.springframework.stereotype.Component;
 
 @Route("register")
-@PageTitle("Sign Up | ChroniQo")
+@PageTitle("Sign Up | chroniqo")
 @AnonymousAllowed
 @UIScope
 @Component

@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Route(value = "settings", layout = AppLayoutBasic.class)
-@PageTitle("Settings | ChroniQo")
+@PageTitle("Settings | chroniqo")
 @UIScope
 @Component
 @RolesAllowed("ROLE_USER")
