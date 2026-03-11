@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.16] - 2026-03-11
+
+### Fixed
+- changed app name consistent in lowercase
+
+
+### Maintenance
+- Merge pull request #29 from LuxFerre86/fix/app-name-in-lowercase
+
 ## [2026.03.15] - 2026-03-11
 
 ### Fixed
