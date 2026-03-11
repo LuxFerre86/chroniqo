@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.14] - 2026-03-11
+
+### Added
+- user registration is now disabled by default and can be enabled/dsiabled via env argument
+
+
+### Maintenance
+- Merge pull request #27 from LuxFerre86/feature/registration-disbaled-by-default
+
 ## [2026.03.13] - 2026-03-11
 
 ### Added
