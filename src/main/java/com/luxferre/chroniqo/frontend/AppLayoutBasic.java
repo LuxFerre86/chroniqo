@@ -1,6 +1,6 @@
 package com.luxferre.chroniqo.frontend;
 
-import com.luxferre.chroniqo.config.ApplicationInfoProperties;
+import com.luxferre.chroniqo.config.AppProperties;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.service.user.UserNotFoundException;
 import com.luxferre.chroniqo.service.user.UserService;
@@ -30,7 +30,7 @@ public class AppLayoutBasic extends AppLayout {
 
     private final AuthenticationContext authenticationContext;
 
-    public AppLayoutBasic(AuthenticationContext authenticationContext, UserService userService, ApplicationInfoProperties applicationInfoProperties) {
+    public AppLayoutBasic(AuthenticationContext authenticationContext, UserService userService, AppProperties appProperties) {
         this.authenticationContext = authenticationContext;
 
         addClassName("chroniqo-app-layout");
@@ -64,7 +64,7 @@ public class AppLayoutBasic extends AppLayout {
                 .set("filter", "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))");
 
         // Title
-        H1 title = new H1(applicationInfoProperties.getName());
+        H1 title = new H1(appProperties.getName());
         title.getStyle()
                 .set("font-size", "20px")
                 .set("font-weight", "700")
@@ -129,7 +129,7 @@ public class AppLayoutBasic extends AppLayout {
             drawerFooter.add(userEmail);
         }
 
-        Span version = new Span(applicationInfoProperties.getVersion());
+        Span version = new Span(appProperties.getVersion());
         version.getStyle()
                 .set("font-size", "11px")
                 .set("color", "var(--lumo-tertiary-text-color)");

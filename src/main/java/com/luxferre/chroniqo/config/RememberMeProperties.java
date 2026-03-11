@@ -24,7 +24,7 @@ public class RememberMeProperties {
     @PostConstruct
     public void log() {
         log.info("### {} ###", getClass().getSimpleName());
-        log.info("# key:             {}", key);
+        log.info("# key:             [set={}]", key != null && !key.isBlank());
         log.info("# useSecureCookie: {}", useSecureCookie);
         log.info("# cookieDomain:    {}", cookieDomain);
         log.info("# validity:        {}", validity);

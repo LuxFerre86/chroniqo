@@ -58,7 +58,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
                 .set("display", "block")
                 .set("margin-bottom", "1rem");
 
-        H1 title = new H1("ChroniQo");
+        H1 title = new H1("chroniqo");
         title.getStyle()
                 .set("font-size", "32px")
                 .set("font-weight", "700")
