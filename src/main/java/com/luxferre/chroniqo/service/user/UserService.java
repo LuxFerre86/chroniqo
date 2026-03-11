@@ -1,9 +1,11 @@
 package com.luxferre.chroniqo.service.user;
 
+import com.luxferre.chroniqo.config.AppProperties;
 import com.luxferre.chroniqo.config.DefaultUserDetailsService;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.service.EmailService;
+import com.luxferre.chroniqo.service.RegistrationDisabledException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +28,9 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
 
+
+    private final AppProperties appProperties;
+
     public User getCurrentUser() throws UserNotFoundException {
         return userDetailsService.getUsernameFromContext().flatMap(userRepository::findByEmail).orElseThrow(() -> new UserNotFoundException("Could not determine current user."));
     }
@@ -35,6 +40,10 @@ public class UserService {
      */
     @Transactional
     public User register(String email, String password, String firstName, String lastName) {
+        if (!appProperties.getRegistrationProperties().isEnabled()) {
+            throw new RegistrationDisabledException("Registration is currently disabled.");
+        }
+
         // Check if user already exists
         if (userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email already registered");

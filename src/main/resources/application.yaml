@@ -31,4 +31,6 @@ spring:
 app:
   base-url: ${APP_BASE_URL}
   name: chroniqo
+  registration:
+    enabled: ${REGISTRATION_ENABLED:false}
   version: ${APP_VERSION}

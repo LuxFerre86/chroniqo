@@ -1,6 +1,7 @@
 package com.luxferre.chroniqo.frontend;
 
 import com.luxferre.chroniqo.model.User;
+import com.luxferre.chroniqo.service.RegistrationDisabledException;
 import com.luxferre.chroniqo.service.user.UserService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -203,6 +204,12 @@ public class RegisterView extends VerticalLayout {
 
                 UI.getCurrent().navigate("login");
 
+            } catch (RegistrationDisabledException e) {
+                Notification.show(
+                        "Registration is currently disabled. Please contact the administrator.",
+                        5000,
+                        Notification.Position.MIDDLE
+                ).addThemeVariants(NotificationVariant.LUMO_ERROR);
             } catch (IllegalArgumentException e) {
                 Notification.show(
                         e.getMessage(),
