@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.11] - 2026-03-11
+
+### Fixed
+- avoid full email addresses in app logs
+
+
+### Maintenance
+- Merge pull request #24 from LuxFerre86/fix/app-log-privacy
+
 ## [2026.03.10] - 2026-03-11
 
 ### Added
