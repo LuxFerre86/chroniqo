@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.13] - 2026-03-11
+
+### Added
+- weekly target hours can now be configured in settings with values 0-80
+
+
+### Maintenance
+- Merge pull request #26 from LuxFerre86/feature/weekly-target-hourse-bound-validation
+
 ## [2026.03.12] - 2026-03-11
 
 ### Fixed
