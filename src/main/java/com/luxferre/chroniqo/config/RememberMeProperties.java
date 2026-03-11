@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.ClassUtils;
 
 import java.time.Duration;
 
@@ -23,11 +24,11 @@ public class RememberMeProperties {
 
     @PostConstruct
     public void log() {
-        log.info("### {} ###", getClass().getSimpleName());
+        log.info("### {} ###", ClassUtils.getUserClass(getClass()).getSimpleName());
         log.info("# key:             [set={}]", key != null && !key.isBlank());
         log.info("# useSecureCookie: {}", useSecureCookie);
         log.info("# cookieDomain:    {}", cookieDomain);
         log.info("# validity:        {}", validity);
-        log.info("### {} ###", getClass().getSimpleName());
+        log.info("### {} ###", ClassUtils.getUserClass(getClass()).getSimpleName());
     }
 }

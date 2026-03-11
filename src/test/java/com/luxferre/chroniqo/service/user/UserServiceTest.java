@@ -1,9 +1,11 @@
 package com.luxferre.chroniqo.service.user;
 
+import com.luxferre.chroniqo.config.AppProperties;
 import com.luxferre.chroniqo.config.DefaultUserDetailsService;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.service.EmailService;
+import com.luxferre.chroniqo.service.RegistrationDisabledException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,6 +39,10 @@ public class UserServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private AppProperties appProperties;
+    @Mock
+    private AppProperties.RegistrationProperties registrationProperties;
 
     // =========================================================================
     // register
@@ -49,6 +55,8 @@ public class UserServiceTest {
         void setUp() {
             lenient().when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
             lenient().when(passwordEncoder.encode(anyString())).thenReturn("hashed_password");
+            lenient().when(appProperties.getRegistrationProperties()).thenReturn(registrationProperties);
+            lenient().when(registrationProperties.isEnabled()).thenReturn(true);
         }
 
         @Test
@@ -376,6 +384,49 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> userService.updateProfile("unknown@example.com", "First", "Last", 40))
                     .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+
+    // =========================================================================
+    // register – registration disabled
+    // =========================================================================
+
+    @Nested
+    class RegisterWhenDisabled {
+
+        @BeforeEach
+        void disableRegistration() {
+            lenient().when(appProperties.getRegistrationProperties()).thenReturn(registrationProperties);
+            lenient().when(registrationProperties.isEnabled()).thenReturn(false);
+        }
+
+        @Test
+        void register_throwsRegistrationDisabledException() {
+            assertThatThrownBy(() -> userService.register(
+                    "new@example.com", "password123", "First", "Last"))
+                    .isInstanceOf(RegistrationDisabledException.class)
+                    .hasMessageContaining("disabled");
+        }
+
+        @Test
+        void register_doesNotSaveUser() {
+            try {
+                userService.register("new@example.com", "password123", "First", "Last");
+            } catch (RegistrationDisabledException ignored) {
+            }
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void register_doesNotSendEmail() {
+            try {
+                userService.register("new@example.com", "password123", "First", "Last");
+            } catch (RegistrationDisabledException ignored) {
+            }
+
+            verify(emailService, never()).sendVerificationEmail(any());
         }
     }
 
