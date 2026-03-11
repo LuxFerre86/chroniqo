@@ -177,7 +177,7 @@ public class SummaryServiceUnitTest {
         void weekday_withAbsence_workedMinutesIsZero_absenceTypeSet(AbsenceType absenceType) {
             // Even if there is a time entry, absence takes priority
             TimeEntryDTO entry = entry(WEEKDAY, LocalTime.of(9, 0), LocalTime.of(17, 0), 0);
-            Absence absence = absence(WEEKDAY, absenceType);
+            Absence absence = absence(absenceType);
 
             DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), List.of(absence), DAILY_TARGET_MINUTES);
 
@@ -217,14 +217,12 @@ public class SummaryServiceUnitTest {
     @Nested
     class GetWeeklyProgress {
 
-        private TimeTrackingService mockTimeTrackingService;
-        private UserService mockUserService;
         private SummaryService spySummaryService;
 
         @BeforeEach
         void setUp() {
-            mockTimeTrackingService = mock(TimeTrackingService.class);
-            mockUserService = mock(UserService.class);
+            TimeTrackingService mockTimeTrackingService = mock(TimeTrackingService.class);
+            UserService mockUserService = mock(UserService.class);
             spySummaryService = new SummaryService(mockTimeTrackingService, mockUserService);
 
             com.luxferre.chroniqo.model.User user = new com.luxferre.chroniqo.model.User();
@@ -250,8 +248,6 @@ public class SummaryServiceUnitTest {
 
         @Test
         void fullVacationWeek_hasTargetFalse_percentageZero() {
-            // All 7 days of the current week are absences
-            com.luxferre.chroniqo.model.Absence absence = new com.luxferre.chroniqo.model.Absence();
             // We need absences that cover the whole week — easiest to mock all days via entries
             // Instead, we verify the contract: if targetMinutes == 0, hasTarget must be false
             WeeklyProgressDTO dto = new WeeklyProgressDTO(0, 0, 0, false);
@@ -294,10 +290,45 @@ public class SummaryServiceUnitTest {
         return dto;
     }
 
-    private Absence absence(LocalDate date, AbsenceType type) {
+    private Absence absence(AbsenceType type) {
         Absence absence = new Absence();
-        absence.setDate(date);
+        absence.setDate(SummaryServiceUnitTest.WEEKDAY);
         absence.setType(type);
         return absence;
     }
+
+    // =========================================================================
+    // getDaySummaries – weeklyTargetHours clamping
+    // =========================================================================
+
+    @Nested
+    class WeeklyTargetHoursClamping {
+
+        @Test
+        void normalValue_usedAsIs() {
+            // 40h / 5 days = 480 min/day
+            int dailyTarget = summaryService.calculateDailyTargetMinutes(40);
+            assertThat(dailyTarget).isEqualTo(480);
+        }
+
+        @Test
+        void zeroValue_producesZeroDailyTarget() {
+            int dailyTarget = summaryService.calculateDailyTargetMinutes(0);
+            assertThat(dailyTarget).isZero();
+        }
+
+        @Test
+        void negativeValue_clampedToZero() {
+            int dailyTarget = summaryService.calculateDailyTargetMinutes(-10);
+            assertThat(dailyTarget).isZero();
+        }
+
+        @Test
+        void valueAboveMax_clampedToEighty() {
+            // 80h / 5 days = 960 min/day
+            int dailyTarget = summaryService.calculateDailyTargetMinutes(999);
+            assertThat(dailyTarget).isEqualTo(960);
+        }
+    }
+
 }

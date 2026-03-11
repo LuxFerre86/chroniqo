@@ -12,6 +12,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -40,6 +41,7 @@ public class SettingsView extends VerticalLayout {
     private final TextField firstNameField = new TextField("First Name");
     private final TextField lastNameField = new TextField("Last Name");
     private final EmailField emailField = new EmailField("Email");
+    private final IntegerField weeklyTargetHoursField = new IntegerField("Weekly Target Hours");
     private final Button saveProfileButton = new Button("Save Changes");
 
     // Password Section
@@ -120,10 +122,18 @@ public class SettingsView extends VerticalLayout {
         emailField.setReadOnly(true);
         emailField.setHelperText("Email cannot be changed");
 
+        weeklyTargetHoursField.setValue(currentUser.getWeeklyTargetHours());
+        weeklyTargetHoursField.setWidthFull();
+        weeklyTargetHoursField.setMin(0);
+        weeklyTargetHoursField.setMax(80);
+        weeklyTargetHoursField.setStepButtonsVisible(true);
+        weeklyTargetHoursField.setHelperText("0–80 hours per week (0 = no target)");
+
         saveProfileButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveProfileButton.addClickListener(e -> saveProfile());
 
-        section.add(sectionTitle, firstNameField, lastNameField, emailField, saveProfileButton);
+        section.add(sectionTitle, firstNameField, lastNameField, emailField,
+                weeklyTargetHoursField, saveProfileButton);
         return section;
     }
 
@@ -263,16 +273,28 @@ public class SettingsView extends VerticalLayout {
     }
 
     private void saveProfile() {
+        Integer weeklyHours = weeklyTargetHoursField.getValue();
+        if (weeklyHours == null || weeklyHours < 0 || weeklyHours > 80) {
+            Notification.show(
+                    "Weekly target hours must be between 0 and 80.",
+                    4000,
+                    Notification.Position.MIDDLE
+            ).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
         try {
             userService.updateProfile(
                     currentUser.getEmail(),
                     firstNameField.getValue(),
-                    lastNameField.getValue()
+                    lastNameField.getValue(),
+                    weeklyHours
             );
 
             // Update local user object
             currentUser.setFirstName(firstNameField.getValue());
             currentUser.setLastName(lastNameField.getValue());
+            currentUser.setWeeklyTargetHours(weeklyHours);
 
             Notification.show(
                     "Profile updated successfully!",
