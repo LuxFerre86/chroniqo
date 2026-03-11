@@ -20,6 +20,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -29,6 +30,7 @@ import java.util.Optional;
 @UIScope
 @Component
 @RolesAllowed("ROLE_USER")
+@Slf4j
 public class SettingsView extends VerticalLayout {
 
     private final UserService userService;
@@ -279,8 +281,9 @@ public class SettingsView extends VerticalLayout {
             ).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
         } catch (Exception e) {
+            log.error("Failed to update profile for user", e);
             Notification.show(
-                    "Failed to update profile: " + e.getMessage(),
+                    "Failed to update profile. Please try again.",
                     5000,
                     Notification.Position.MIDDLE
             ).addThemeVariants(NotificationVariant.LUMO_ERROR);

@@ -25,7 +25,7 @@ public class DefaultUserDetailsService implements UserDetailsService {
     @Override
     public @NonNull UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("Bad credentials"));
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())
