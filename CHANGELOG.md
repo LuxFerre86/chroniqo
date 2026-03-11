@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.12] - 2026-03-11
+
+### Fixed
+- avoid too much user details in error notifications/logs
+
+
+### Maintenance
+- Merge pull request #25 from LuxFerre86/fix/avoid-too-much-user-details-in-exceptions-and-logs
+
 ## [2026.03.11] - 2026-03-11
 
 ### Fixed
