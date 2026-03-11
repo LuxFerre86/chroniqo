@@ -189,7 +189,7 @@ public class UserServiceTest {
 
         @Test
         void changePassword_correctOldPassword_updatesSuccessfully() {
-            User user = userWithPassword("old_hash");
+            User user = userWithPassword();
             when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
             when(passwordEncoder.matches("oldPassword", "old_hash")).thenReturn(true);
             when(passwordEncoder.encode("newPassword")).thenReturn("new_hash");
@@ -203,7 +203,7 @@ public class UserServiceTest {
 
         @Test
         void changePassword_wrongOldPassword_throwsIllegalArgumentException() {
-            User user = userWithPassword("old_hash");
+            User user = userWithPassword();
             when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
             when(passwordEncoder.matches("wrongPassword", "old_hash")).thenReturn(false);
 
@@ -306,10 +306,78 @@ public class UserServiceTest {
         return user;
     }
 
-    private User userWithPassword(String hash) {
+    private User userWithPassword() {
         User user = new User();
         user.setEmail("user@example.com");
-        user.setPasswordHash(hash);
+        user.setPasswordHash("old_hash");
         return user;
     }
+
+    // =========================================================================
+    // updateProfile
+    // =========================================================================
+
+    @Nested
+    class UpdateProfile {
+
+        @BeforeEach
+        void setUp() {
+            lenient().when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        }
+
+        @Test
+        void updatesNameAndWeeklyTargetHours() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setFirstName("Old");
+            user.setLastName("Name");
+            user.setWeeklyTargetHours(0);
+            when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+
+            userService.updateProfile("user@example.com", "New", "Name", 40);
+
+            ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(captor.capture());
+            assertThat(captor.getValue().getFirstName()).isEqualTo("New");
+            assertThat(captor.getValue().getWeeklyTargetHours()).isEqualTo(40);
+        }
+
+        @Test
+        void weeklyTargetHoursZero_accepted() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setFirstName("First");
+            user.setLastName("Last");
+            when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+
+            userService.updateProfile("user@example.com", "First", "Last", 0);
+
+            ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(captor.capture());
+            assertThat(captor.getValue().getWeeklyTargetHours()).isZero();
+        }
+
+        @Test
+        void invalidWeeklyTargetHours_throwsIllegalArgument() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setFirstName("First");
+            user.setLastName("Last");
+            when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> userService.updateProfile("user@example.com", "First", "Last", 999))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("weeklyTargetHours must be between 0 and 80");
+        }
+
+        @Test
+        void unknownEmail_throwsIllegalArgument() {
+            when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.updateProfile("unknown@example.com", "First", "Last", 40))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+
 }

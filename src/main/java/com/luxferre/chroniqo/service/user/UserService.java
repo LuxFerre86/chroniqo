@@ -138,12 +138,13 @@ public class UserService {
      * Update user profile
      */
     @Transactional
-    public void updateProfile(String email, String firstName, String lastName) {
+    public void updateProfile(String email, String firstName, String lastName, int weeklyTargetHours) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         user.setFirstName(firstName);
         user.setLastName(lastName);
+        user.setWeeklyTargetHours(weeklyTargetHours);
         userRepository.save(user);
     }
 

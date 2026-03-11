@@ -55,7 +55,7 @@ public class SummaryService {
         List<Absence> absences =
                 timeTrackingService.getAbsences(startDate, endDate);
 
-        int dailyTargetMinutes = (user.getWeeklyTargetHours() * 60) / 5;
+        int dailyTargetMinutes = calculateDailyTargetMinutes(user.getWeeklyTargetHours());
 
         return startDate.datesUntil(endDate.plusDays(1L)).map(date -> createDaySummaryDTO(date, entries, absences, dailyTargetMinutes)).toList();
     }
@@ -127,5 +127,12 @@ public class SummaryService {
         return Math.max(0, minutes);
     }
 
-
+    /**
+     * Converts a weekly target in hours to a daily target in minutes,
+     * clamping the input to the valid range [0, 80] as a defensive measure.
+     */
+    int calculateDailyTargetMinutes(int weeklyTargetHours) {
+        int weeklyHours = Math.clamp(weeklyTargetHours, 0, 80);
+        return (weeklyHours * 60) / 5;
+    }
 }

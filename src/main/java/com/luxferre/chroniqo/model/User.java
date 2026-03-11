@@ -33,6 +33,14 @@ public class User {
 
     private int weeklyTargetHours;
 
+    public void setWeeklyTargetHours(int weeklyTargetHours) {
+        if (weeklyTargetHours < 0 || weeklyTargetHours > 80) {
+            throw new IllegalArgumentException(
+                    "weeklyTargetHours must be between 0 and 80, got: " + weeklyTargetHours);
+        }
+        this.weeklyTargetHours = weeklyTargetHours;
+    }
+
     @ElementCollection
     @CollectionTable(name = "user_workdays", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "workday")
