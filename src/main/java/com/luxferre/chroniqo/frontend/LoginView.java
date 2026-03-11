@@ -18,7 +18,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import org.springframework.stereotype.Component;
 
 @Route("login")
-@PageTitle("Login | ChroniQo")
+@PageTitle("Login | chroniqo")
 @AnonymousAllowed
 @UIScope
 @Component

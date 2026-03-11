@@ -24,11 +24,11 @@ public class EmailService {
     public void sendVerificationEmail(User user) {
         String verificationLink = appProperties.getBaseUrl() + "/verify-email?token=" + user.getVerificationToken();
 
-        String subject = "ChroniQo - Verify your email";
+        String subject = "chroniqo - Verify your email";
         String message = String.format("""
                 Hello %s,
                 
-                Welcome to ChroniQo! Please verify your email address by clicking the link below:
+                Welcome to chroniqo! Please verify your email address by clicking the link below:
                 
                 %s
                 
@@ -37,7 +37,7 @@ public class EmailService {
                 If you didn't create an account, please ignore this email.
                 
                 Best regards,
-                ChroniQo Team
+                chroniqo Team
                 """, user.getFirstName(), verificationLink);
 
         sendEmail(user.getEmail(), subject, message);
@@ -49,7 +49,7 @@ public class EmailService {
     public void sendPasswordResetEmail(User user) {
         String resetLink = appProperties.getBaseUrl() + "/reset-password-confirm?token=" + user.getResetToken();
 
-        String subject = "ChroniQo - Password Reset";
+        String subject = "chroniqo - Password Reset";
         String message = String.format("""
                 Hello %s,
                 
@@ -62,7 +62,7 @@ public class EmailService {
                 If you didn't request this, please ignore this email and your password will remain unchanged.
                 
                 Best regards,
-                ChroniQo Team
+                chroniqo Team
                 """, user.getFirstName(), resetLink);
 
         sendEmail(user.getEmail(), subject, message);

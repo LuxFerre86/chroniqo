@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @Route("reset-password-confirm")
-@PageTitle("Set New Password | ChroniQo")
+@PageTitle("Set New Password | chroniqo")
 @AnonymousAllowed
 @UIScope
 @Component
