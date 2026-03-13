@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.17] - 2026-03-13
+
+### Fixed
+- auto login after email verification
+
+
+### Maintenance
+- Merge pull request #30 from LuxFerre86/fix/auto-login-after-verfiy
+
 ## [2026.03.16] - 2026-03-11
 
 ### Fixed
