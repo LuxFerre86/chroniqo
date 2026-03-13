@@ -2,9 +2,9 @@ spring:
   application:
 
   datasource:
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+    url: ${DATABASE_URL:}
+    username: ${DATABASE_USERNAME:}
+    password: ${DATABASE_PASSWORD:}
   jpa:
     open-in-view: false
     properties:
@@ -13,8 +13,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${GMAIL_USERNAME}
-    password: ${GMAIL_PASSWORD}
+    username: ${GMAIL_USERNAME:}
+    password: ${GMAIL_PASSWORD:}
     properties:
       mail:
         smtp:
@@ -23,14 +23,14 @@ spring:
             enable: true
   security:
     remember-me:
-      key: ${REMEMBER_ME_KEY}
+      key: ${REMEMBER_ME_KEY:}
       use-secure-cookie: ${REMEMBER_ME_SECURE_COOKIE_ENABLED:true}
       validity: P30D
-      cookie-domain: ${REMEMBER_ME_COOKIE_DOMAIN:localhost}
+      cookie-domain: ${REMEMBER_ME_COOKIE_DOMAIN:}
 
 app:
-  base-url: ${APP_BASE_URL}
+  base-url: ${APP_BASE_URL:}
   name: chroniqo
   registration:
     enabled: ${REGISTRATION_ENABLED:false}
-  version: ${APP_VERSION}
+  version: ${APP_VERSION:}
