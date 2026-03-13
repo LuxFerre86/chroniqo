@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.19] - 2026-03-13
+
+### Added
+- added mariadb service in docker compose with initial schema
+
+
+### Maintenance
+- Merge pull request #32 from LuxFerre86/feature/added-mariadb-with-init-schema-in-docker-compose
+
 ## [2026.03.18] - 2026-03-13
 
 ### Fixed
