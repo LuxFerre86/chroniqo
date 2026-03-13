@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.18] - 2026-03-13
+
+### Fixed
+- implemented mandatory property validation
+
+
+### Maintenance
+- Merge pull request #31 from LuxFerre86/fix/mandatory-property-validation
+
 ## [2026.03.17] - 2026-03-13
 
 ### Fixed
