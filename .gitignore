@@ -61,5 +61,6 @@ types.d.ts
 index.html
 # Local environment variables – never commit this
 .env
+.env.localdb
 # Production env file
 .env.prod

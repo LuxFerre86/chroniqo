@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
@@ -43,6 +44,8 @@ public class UserServiceTest {
     private AppProperties appProperties;
     @Mock
     private AppProperties.RegistrationProperties registrationProperties;
+    @Mock
+    private UserDetails userDetails;
 
     // =========================================================================
     // register
@@ -113,6 +116,7 @@ public class UserServiceTest {
             User user = userWithVerificationToken("valid-token", LocalDateTime.now().plusHours(1));
             when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
             when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(userDetailsService.loadUserByUsername(any())).thenReturn(userDetails);
 
             boolean result = userService.verifyEmail("valid-token");
 

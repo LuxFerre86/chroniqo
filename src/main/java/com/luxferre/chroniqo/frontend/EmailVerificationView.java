@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Route("verify-email")
 @PageTitle("Verify Email | chroniqo")
@@ -47,12 +46,6 @@ public class EmailVerificationView extends VerticalLayout implements HasUrlParam
         if (params.containsKey("token")) {
             String token = params.get("token").getFirst();
             verificationSuccess = userService.verifyEmail(token);
-
-            if (verificationSuccess) {
-                // Auto-login after successful verification
-                Optional.ofNullable(userService.getCurrentUser()).ifPresent(user -> userService.autoLogin(user.getEmail()));
-            }
-
             renderContent();
         } else {
             renderErrorContent();
