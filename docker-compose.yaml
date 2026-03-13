@@ -1,23 +1,74 @@
+version: '3.8'
+
 services:
+  mariadb:
+    image: mariadb:11.6
+    container_name: chroniqo-db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MARIADB_DATABASE: chroniqo
+      MARIADB_USER: ${DATABASE_USERNAME}
+      MARIADB_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./src/main/resources/db/migration/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - chroniqo-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   chroniqo:
+    # image: ghcr.io/luxferre86/chroniqo:latest
+    # Uncomment for local build instead of pulling from registry:
     build:
       context: .
       dockerfile: Dockerfile
-      network: none
-      no_cache: true
       args:
-        - APP_VERSION=${APP_VERSION}
+        - APP_VERSION=${APP_VERSION:-dev}
+    container_name: chroniqo-app
+    restart: always
+    depends_on:
+      mariadb:
+        condition: service_healthy
     env_file:
       - .env
-    container_name: "chroniqo"
-    restart: always
-    mem_limit: 768M
-    mem_reservation: 256M
+    environment:
+      # Override DATABASE_URL to use internal Docker network
+      DATABASE_URL: jdbc:mariadb://mariadb:3306/chroniqo
+      REGISTRATION_ENABLED: true
     ports:
-      - "8180:8080"
+      - "8080:8080"
+    networks:
+      - chroniqo-network
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 256M
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8080"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 90s
+    volumes:
+      # Optional: Mount logs directory for persistent logs
+      - ./logs:/app/logs
+
+volumes:
+  mariadb-data:
+    driver: local
+
+networks:
+  chroniqo-network:
+    driver: bridge
