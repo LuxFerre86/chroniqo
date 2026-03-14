@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.03.21] - 2026-03-14
+
+### Maintenance
+- Merge pull request #34 from LuxFerre86/chore/removed-roadmap
+- chore: removed roadmap
+
 ## [2026.03.20] - 2026-03-14
 
 ### Maintenance
