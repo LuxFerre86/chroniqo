@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.22] - 2026-03-14
+
+### Added
+- added additional validation persist time records
+
+
+### Maintenance
+- Merge pull request #35 from LuxFerre86/feat/time-entry-persist-validation
+
 ## [2026.03.21] - 2026-03-14
 
 ### Maintenance
