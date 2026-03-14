@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.23] - 2026-03-14
+
+### Added
+- changed time picker steps to 5 minutes
+
+
+### Maintenance
+- Merge pull request #36 from LuxFerre86/feat/time-picker-steps
+
 ## [2026.03.22] - 2026-03-14
 
 ### Added
