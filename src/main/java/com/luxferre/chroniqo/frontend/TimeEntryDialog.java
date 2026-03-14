@@ -29,6 +29,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.Optional;
@@ -76,7 +77,9 @@ public class TimeEntryDialog extends Dialog {
         startDay.setLocale(UI.getCurrent().getLocale());
         endDay.setLocale(UI.getCurrent().getLocale());
         start.setLocale(UI.getCurrent().getLocale());
+        start.setStep(Duration.ofMinutes(5L));
         end.setLocale(UI.getCurrent().getLocale());
+        end.setStep(Duration.ofMinutes(5L));
 
         // Initialize error message component
         errorMessage.getStyle()
