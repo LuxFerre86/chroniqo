@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.03.20] - 2026-03-14
+
+### Maintenance
+- Merge pull request #33 from LuxFerre86/chore/readme-and-security-md
+- chore: improved readme.md and added and security.md
+
 ## [2026.03.19] - 2026-03-13
 
 ### Added
