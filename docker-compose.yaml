@@ -7,16 +7,13 @@ services:
     restart: always
     env_file:
       - .env
-    environment:
-      MARIADB_ROOT_PASSWORD: ${DATABASE_PASSWORD}
-      MARIADB_DATABASE: chroniqo
-      MARIADB_USER: ${DATABASE_USERNAME}
-      MARIADB_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
       - mariadb-data:/var/lib/mysql
       - ./src/main/resources/db/migration/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     ports:
-      - "3306:3306"
+      # Bound to localhost only – for local dev/tooling access (e.g. IntelliJ DataSource).
+      # Remove entirely in production; the app connects via the internal Docker network.
+      - "127.0.0.1:3306:3306"
     networks:
       - chroniqo-network
     healthcheck:
@@ -27,13 +24,13 @@ services:
       start_period: 30s
 
   chroniqo:
-    # image: ghcr.io/luxferre86/chroniqo:latest
+    image: ghcr.io/luxferre86/chroniqo:latest
     # Uncomment for local build instead of pulling from registry:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - APP_VERSION=${APP_VERSION:-dev}
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     - APP_VERSION=${APP_VERSION:-dev}
     container_name: chroniqo-app
     restart: always
     depends_on:
@@ -41,10 +38,6 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    environment:
-      # Override DATABASE_URL to use internal Docker network
-      DATABASE_URL: jdbc:mariadb://mariadb:3306/chroniqo
-      REGISTRATION_ENABLED: true
     ports:
       - "8080:8080"
     networks:
