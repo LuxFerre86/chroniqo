@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.03.33] - 2026-03-15
+
+### Maintenance
+- Merge pull request #49 from LuxFerre86/chore/custom-github-release-token
+- chore: using a custom PAT for pushing
+
 ## [2026.03.32] - 2026-03-15
 
 ### Maintenance
