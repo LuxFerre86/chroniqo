@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -43,5 +45,57 @@ class UserTest {
         User user = new User();
         user.setWeeklyTargetHours(80);
         assertThat(user.getWeeklyTargetHours()).isEqualTo(80);
+    }
+// =========================================================================
+    // isAccountLocked
+    // =========================================================================
+
+    @Test
+    void isAccountLocked_nullLockedUntil_returnsFalse() {
+        User user = new User();
+        // lockedUntil is null by default
+        assertThat(user.isAccountLocked()).isFalse();
+    }
+
+    @Test
+    void isAccountLocked_lockedUntilInFuture_returnsTrue() {
+        User user = new User();
+        user.setLockedUntil(LocalDateTime.now().plusMinutes(10));
+        assertThat(user.isAccountLocked()).isTrue();
+    }
+
+    @Test
+    void isAccountLocked_lockedUntilInPast_returnsFalse() {
+        User user = new User();
+        user.setLockedUntil(LocalDateTime.now().minusSeconds(1));
+        assertThat(user.isAccountLocked()).isFalse();
+    }
+
+    @Test
+    void isAccountLocked_lockedUntilExactlyNow_returnsFalse() {
+        // isBefore(now) == false when equal, but the window is so small it should be false
+        User user = new User();
+        user.setLockedUntil(LocalDateTime.now().minusNanos(1));
+        assertThat(user.isAccountLocked()).isFalse();
+    }
+
+    // =========================================================================
+    // getFullName
+    // =========================================================================
+
+    @Test
+    void getFullName_returnsFirstAndLastNameSeparatedBySpace() {
+        User user = new User();
+        user.setFirstName("Max");
+        user.setLastName("Mustermann");
+        assertThat(user.getFullName()).isEqualTo("Max Mustermann");
+    }
+
+    @Test
+    void getFullName_singleCharNames_stillConcatenatesCorrectly() {
+        User user = new User();
+        user.setFirstName("A");
+        user.setLastName("B");
+        assertThat(user.getFullName()).isEqualTo("A B");
     }
 }
