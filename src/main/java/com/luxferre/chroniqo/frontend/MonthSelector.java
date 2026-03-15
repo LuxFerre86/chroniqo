@@ -18,9 +18,19 @@ import java.time.format.TextStyle;
 import java.util.Locale;
 import java.util.stream.IntStream;
 
+/**
+ * Reusable navigation component for selecting a year-month.
+ *
+ * <p>Renders previous/next chevron buttons flanking a clickable month label.
+ * Clicking the label opens a modal picker with a year drop-down and a
+ * 3-column month grid. Changes are notified to the owner via
+ * {@link MonthChangeListener}.
+ *
+ * @author Luxferre86
+ * @since 14.02.2026
+ */
 public class MonthSelector extends HorizontalLayout {
 
-    // Getter und Setter
     @Getter
     private YearMonth selectedMonth;
     private final Span monthLabel;
@@ -31,7 +41,7 @@ public class MonthSelector extends HorizontalLayout {
         this.selectedMonth = YearMonth.now();
         addClassName("month-selector");
 
-        // Navigation Button zurück
+        // Navigate to previous month
         Button previousButton = new Button(VaadinIcon.CHEVRON_LEFT.create());
         previousButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
         previousButton.addClickListener(e -> navigateToPreviousMonth());
@@ -39,7 +49,7 @@ public class MonthSelector extends HorizontalLayout {
                 .set("color", "var(--lumo-secondary-text-color)")
                 .set("border-radius", "8px");
 
-        // Monatslabel (klickbar)
+        // Month label – clicking opens the month-picker dialog
         monthLabel = new Span(formatMonth(selectedMonth));
         monthLabel.addClassName("month-label");
         monthLabel.getStyle()
@@ -59,7 +69,7 @@ public class MonthSelector extends HorizontalLayout {
 
         monthLabel.addClickListener(e -> openMonthPickerDialog());
 
-        // Hover-Effekt
+        // Hover effect
         monthLabel.getElement().addEventListener("mouseenter", e -> monthLabel.getStyle()
                 .set("background", "linear-gradient(135deg, hsl(220, 20%, 16%) 0%, hsl(220, 20%, 14%) 100%)")
                 .set("border-color", "hsla(32, 40%, 50%, 0.25)")
@@ -72,7 +82,7 @@ public class MonthSelector extends HorizontalLayout {
                 .set("box-shadow", "0 2px 6px rgba(0, 0, 0, 0.3)")
                 .set("transform", "translateY(0)"));
 
-        // Navigation Button vorwärts
+        // Navigate to next month
         Button nextButton = new Button(VaadinIcon.CHEVRON_RIGHT.create());
         nextButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
         nextButton.addClickListener(e -> navigateToNextMonth());
@@ -80,7 +90,7 @@ public class MonthSelector extends HorizontalLayout {
                 .set("color", "var(--lumo-secondary-text-color)")
                 .set("border-radius", "8px");
 
-        // Layout konfigurieren
+        // Configure layout
         setAlignItems(Alignment.CENTER);
         setSpacing(true);
         getStyle()
@@ -113,7 +123,7 @@ public class MonthSelector extends HorizontalLayout {
         content.setSpacing(true);
         content.getStyle().set("gap", "1rem");
 
-        // Titel
+        // Dialog title
         Span title = new Span("Select Month");
         title.getStyle()
                 .set("font-size", "16px")
@@ -121,14 +131,14 @@ public class MonthSelector extends HorizontalLayout {
                 .set("color", "var(--lumo-body-text-color)")
                 .set("margin-bottom", "0.5rem");
 
-        // Jahr-Auswahl
+        // Year selector
         Select<Integer> yearSelect = new Select<>();
         yearSelect.setLabel("Year");
         yearSelect.setItems(IntStream.rangeClosed(2000, 2050).boxed().toList());
         yearSelect.setValue(selectedMonth.getYear());
         yearSelect.setWidthFull();
 
-        // Jahr-Änderung aktualisiert Grid
+        // Re-render month grid whenever the year changes
         Div monthGrid = createMonthGrid(dialog, yearSelect);
 
         yearSelect.addValueChangeListener(e -> {
@@ -159,7 +169,7 @@ public class MonthSelector extends HorizontalLayout {
             );
             monthButton.setWidthFull();
 
-            // Aktuellen Monat hervorheben
+            // Highlight the currently selected month
             YearMonth buttonMonth = YearMonth.of(yearSelect.getValue(), month);
             if (buttonMonth.equals(selectedMonth)) {
                 monthButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -169,7 +179,7 @@ public class MonthSelector extends HorizontalLayout {
                         .set("font-weight", "600")
                         .set("box-shadow", "0 3px 8px hsla(32, 95%, 50%, 0.3)");
             } else if (buttonMonth.equals(YearMonth.now())) {
-                // Heutiger Monat (aber nicht ausgewählt)
+                // Current month (not selected)
                 monthButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
                 monthButton.getStyle()
                         .set("border", "1px solid hsla(32, 60%, 50%, 0.3)")
@@ -207,6 +217,12 @@ public class MonthSelector extends HorizontalLayout {
         }
     }
 
+    /**
+     * Programmatically sets the selected month and updates the displayed label.
+     * Does not fire the {@link MonthChangeListener}.
+     *
+     * @param yearMonth the month to select
+     */
     public void setSelectedMonth(YearMonth yearMonth) {
         this.selectedMonth = yearMonth;
         updateLabel();

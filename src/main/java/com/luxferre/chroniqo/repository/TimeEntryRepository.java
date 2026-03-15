@@ -7,6 +7,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Spring Data JPA repository for
+ * {@link TimeEntry} entities.
+ *
+ * @author Luxferre86
+ * @since 14.02.2026
+ */
 public interface TimeEntryRepository extends JpaRepository<TimeEntry, String> {
 
     TimeEntry findByUserAndDate(User user, LocalDate date);

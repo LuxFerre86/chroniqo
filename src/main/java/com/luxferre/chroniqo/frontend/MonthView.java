@@ -22,6 +22,17 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Monthly calendar view ({@code /month}) that renders one card per day in a
+ * CSS grid layout.
+ *
+ * <p>Each day card shows the worked hours and daily balance. Clicking a card
+ * opens the {@link TimeEntryDialog} for that date. A statistics bar above the
+ * grid aggregates month-to-date and year-to-date target vs. worked hours.
+ *
+ * @author Luxferre86
+ * @since 14.02.2026
+ */
 @Route("month")
 @UIScope
 @Component
@@ -77,7 +88,7 @@ public class MonthView extends VerticalLayout {
     private void renderCalendar() {
         calendarGrid.removeAll();
 
-        // ===== Header =====
+        // ===== Header row =====
         DayOfWeek[] weekdays = {
                 DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
                 DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY
@@ -95,18 +106,18 @@ public class MonthView extends VerticalLayout {
             calendarGrid.add(header);
         }
 
-        // ===== Tage =====
+        // ===== Day cells =====
         LocalDate firstDay = currentMonth.atDay(1);
         int firstWeekdayIndex = firstDay.getDayOfWeek().getValue() - 1;
 
-        // Leere Zellen vor Monatsbeginn
+        // Empty placeholder cells before the first day of the month
         for (int i = 0; i < firstWeekdayIndex; i++) {
             Div emptyCell = new Div();
             emptyCell.addClassName("calendar-empty");
             calendarGrid.add(emptyCell);
         }
 
-        // Monatstage
+        // Day cards
         for (int day = 1; day <= currentMonth.lengthOfMonth(); day++) {
             LocalDate date = currentMonth.atDay(day);
             calendarGrid.add(createDayCard(date));

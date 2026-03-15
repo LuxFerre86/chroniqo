@@ -17,6 +17,18 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import org.springframework.stereotype.Component;
 
+/**
+ * Public login view ({@code /login}) based on Vaadin's
+ * {@link com.vaadin.flow.component.login.LoginForm}.
+ *
+ * <p>Adds a "Remember me" checkbox directly into the login form's DOM via
+ * JavaScript so that the checkbox value is submitted alongside the standard
+ * username/password fields. An error indicator is shown when the URL contains
+ * an {@code error} query parameter (set by Spring Security on failed login).
+ *
+ * @author Luxferre86
+ * @since 22.02.2026
+ */
 @Route("login")
 @PageTitle("Login | chroniqo")
 @AnonymousAllowed
@@ -134,6 +146,13 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         getElement().executeJs(executeJsForFieldString, "vaadinLoginPassword", element);
     }
 
+    /**
+     * Called by Vaadin before the view is shown. Activates the error state on
+     * the login form when Spring Security appended an {@code error} query
+     * parameter after a failed authentication attempt.
+     *
+     * @param event the navigation event
+     */
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         // Show error message if login failed

@@ -19,6 +19,19 @@ import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
 import java.util.List;
 
+/**
+ * Computes aggregated time-tracking summaries for the dashboard and monthly
+ * calendar view.
+ *
+ * <p>The central method is {@link #getSummary(LocalDate, LocalDate)},
+ * which joins time entries and absences for a date range and produces one
+ * {@link DaySummaryDTO} per calendar day, including
+ * worked minutes, daily target, running balance, and absence type.
+ * Convenience overloads exist for today, the current ISO week, and a full year.
+ *
+ * @author Luxferre86
+ * @since 28.02.2026
+ */
 @Service
 @RequiredArgsConstructor
 public class SummaryService {
@@ -27,11 +40,23 @@ public class SummaryService {
     private final UserService userService;
 
 
+    /**
+     * Returns the summary for today.
+     *
+     * @return today's {@link DaySummaryDTO},
+     * or {@code null} if no data is available
+     */
     public DaySummaryDTO getToday() {
         LocalDate today = LocalDate.now();
         return getSummary(today, today).stream().findFirst().orElse(null);
     }
 
+    /**
+     * Returns summaries for every day of the current ISO week
+     * (Monday through Sunday) relative to the current UI locale.
+     *
+     * @return list of {@link DaySummaryDTO}, one per day
+     */
     public List<DaySummaryDTO> getCurrentWeek() {
         LocalDate today = LocalDate.now();
         WeekFields weekFields = WeekFields.of(UI.getCurrent().getLocale());
@@ -40,12 +65,26 @@ public class SummaryService {
         return getSummary(weekStart, weekEnd);
     }
 
+    /**
+     * Returns summaries for every calendar day in the given year.
+     *
+     * @param year the calendar year to summarize
+     * @return list of {@link DaySummaryDTO}, one per day
+     */
     public List<DaySummaryDTO> getSummary(int year) {
         LocalDate yearStart = Year.of(year).atMonth(1).atDay(1);
         LocalDate yearEnd = yearStart.with(TemporalAdjusters.lastDayOfYear());
         return getSummary(yearStart, yearEnd);
     }
 
+    /**
+     * Returns summaries for every calendar day between {@code startDate} and
+     * {@code endDate} (inclusive).
+     *
+     * @param startDate first day of the range (inclusive)
+     * @param endDate   last day of the range (inclusive)
+     * @return list of {@link DaySummaryDTO}, one per day
+     */
     public List<DaySummaryDTO> getSummary(LocalDate startDate, LocalDate endDate) {
         User user = userService.getCurrentUser();
 
@@ -60,6 +99,14 @@ public class SummaryService {
         return startDate.datesUntil(endDate.plusDays(1L)).map(date -> createDaySummaryDTO(date, entries, absences, dailyTargetMinutes)).toList();
     }
 
+    /**
+     * Returns the aggregated progress towards the user's weekly hour target
+     * for the current ISO week.
+     *
+     * @return a {@link WeeklyProgressDTO} with worked
+     * minutes, target minutes, percentage, and a flag indicating whether
+     * a target is configured
+     */
     public WeeklyProgressDTO getWeeklyProgress() {
         List<DaySummaryDTO> currentWeek = getCurrentWeek();
         int workedMinutes = currentWeek.stream().mapToInt(DaySummaryDTO::workedMinutes).sum();
@@ -69,6 +116,16 @@ public class SummaryService {
         return new WeeklyProgressDTO(workedMinutes, targetMinutes, percentage, hasTarget);
     }
 
+    /**
+     * Builds a {@link DaySummaryDTO} for a single date
+     * by correlating time entries, absences, and the user's daily target.
+     *
+     * @param date               the calendar date to summarize
+     * @param entries            all time entries for the enclosing date range
+     * @param absences           all absences for the enclosing date range
+     * @param dailyTargetMinutes the user's daily working-time target in minutes
+     * @return the computed day summary
+     */
     DaySummaryDTO createDaySummaryDTO(LocalDate date, List<TimeEntryDTO> entries, List<Absence> absences, int dailyTargetMinutes) {
         TimeEntryDTO entry = entries.stream()
                 .filter(e -> e.getDate().equals(date))
@@ -100,6 +157,17 @@ public class SummaryService {
         );
     }
 
+    /**
+     * Computes net worked minutes for a time entry.
+     *
+     * <p>For a completed entry the result is
+     * {@code (endTime - startTime) - breakMinutes}, clamped to zero.
+     * For an in-progress entry (no end time) the calculation uses
+     * the current wall-clock time as a provisional end.
+     *
+     * @param entry the time entry to evaluate
+     * @return net worked minutes, never negative
+     */
     int calculateWorkedMinutes(TimeEntryDTO entry) {
         // If entry not complete, calculate from start time to now
         if (entry.getEndTime() == null && entry.getStartTime() != null) {

@@ -27,6 +27,14 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
+/**
+ * Authenticated settings view ({@code /settings}) that lets the current user
+ * update their profile (name, weekly target hours), change their password, and
+ * review account metadata (member-since date, last login).
+ *
+ * @author Luxferre86
+ * @since 22.02.2026
+ */
 @Route(value = "settings", layout = AppLayoutBasic.class)
 @PageTitle("Settings | chroniqo")
 @UIScope

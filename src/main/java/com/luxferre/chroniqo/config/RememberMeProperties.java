@@ -12,6 +12,18 @@ import org.springframework.validation.annotation.Validated;
 
 import java.time.Duration;
 
+/**
+ * Typed configuration properties for the remember-me cookie, bound to the
+ * {@code spring.security.remember-me.*} namespace in {@code application.yaml}.
+ *
+ * <p>{@code key} is mandatory and must not be blank — it is the HMAC secret
+ * used to sign remember-me tokens. {@code cookieDomain} is optional; when
+ * absent Spring Security scopes the cookie to the request domain automatically.
+ * Current values are logged at startup for easier diagnostics.
+ *
+ * @author Luxferre86
+ * @since 23.02.2026
+ */
 @Configuration
 @ConfigurationProperties(prefix = "spring.security.remember-me")
 @Setter
@@ -31,6 +43,10 @@ public class RememberMeProperties {
     private String cookieDomain;
     private Duration validity;
 
+    /**
+     * Logs the resolved property values at startup for diagnostics.
+     * The HMAC key is never logged in full — only whether it is set.
+     */
     @PostConstruct
     public void log() {
         log.info("### {} ###", ClassUtils.getUserClass(getClass()).getSimpleName());

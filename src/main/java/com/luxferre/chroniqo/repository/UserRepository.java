@@ -5,6 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
+/**
+ * Spring Data JPA repository for {@link User} entities.
+ *
+ * @author Luxferre86
+ * @since 14.02.2026
+ */
 public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByEmail(String email);

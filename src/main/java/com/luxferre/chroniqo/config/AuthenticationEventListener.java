@@ -25,7 +25,9 @@ public class AuthenticationEventListener {
 
     /**
      * Called after every successful authentication.
-     * Resets the failed attempt counter for the authenticated user.
+     * Resets the failed-attempt counter for the authenticated user.
+     *
+     * @param event the success event published by Spring Security
      */
     @EventListener
     public void onSuccess(AuthenticationSuccessEvent event) {
@@ -34,9 +36,12 @@ public class AuthenticationEventListener {
     }
 
     /**
-     * Called after every failed authentication attempt.
-     * Increments the failure counter and locks the account if the
-     * threshold is exceeded.
+     * Called after every failed authentication attempt, regardless of the
+     * failure reason (bad credentials, disabled account, locked account, etc.).
+     * Increments the failure counter and locks the account when the threshold
+     * is exceeded.
+     *
+     * @param event the failure event published by Spring Security
      */
     @EventListener
     public void onFailure(AbstractAuthenticationFailureEvent event) {

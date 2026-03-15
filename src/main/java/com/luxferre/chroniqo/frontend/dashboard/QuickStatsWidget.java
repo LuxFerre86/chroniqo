@@ -6,6 +6,17 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
+/**
+ * Dashboard widget showing the running time balance and the current week's
+ * progress towards the weekly hour target.
+ *
+ * <p>The progress bar fills proportionally and changes color at 80 % (amber)
+ * and 100 % (green). When no weekly target is configured the widget displays
+ * a neutral placeholder.
+ *
+ * @author Luxferre86
+ * @since 22.02.2026
+ */
 public class QuickStatsWidget extends HorizontalLayout {
 
     private final VerticalLayout weekProgressBox;
@@ -115,6 +126,12 @@ public class QuickStatsWidget extends HorizontalLayout {
         return box;
     }
 
+    /**
+     * Updates the balance display with the current cumulative time balance.
+     *
+     * @param balanceMinutes cumulative balance in minutes; positive = overtime,
+     *                       negative = under-hours
+     */
     public void updateBalance(int balanceMinutes) {
         balanceValue.setText(formatBalance(balanceMinutes));
 
@@ -127,6 +144,11 @@ public class QuickStatsWidget extends HorizontalLayout {
         }
     }
 
+    /**
+     * Updates the weekly progress bar and percentage label.
+     *
+     * @param progress the weekly progress data to display
+     */
     public void updateWeeklyProgress(WeeklyProgressDTO progress) {
         if (!progress.hasTarget()) {
             progressValue.setText("–");

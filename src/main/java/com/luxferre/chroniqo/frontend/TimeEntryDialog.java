@@ -35,6 +35,18 @@ import java.util.Objects;
 import java.util.Optional;
 
 
+/**
+ * Modal dialog for creating, editing, and deleting time entries and absences.
+ *
+ * <p>Three tabs allow the user to switch between working-time, vacation, and
+ * sick-leave entry modes. Validation errors from
+ * {@link com.luxferre.chroniqo.service.TimeEntryValidationException} are
+ * displayed as inline error banners rather than toast notifications so the
+ * user can correct the offending fields while the dialog stays open.
+ *
+ * @author Luxferre86
+ * @since 14.02.2026
+ */
 @Slf4j
 @UIScope
 @Component
@@ -166,6 +178,10 @@ public class TimeEntryDialog extends Dialog {
                 .set("border-top", "1px solid hsla(32, 30%, 50%, 0.15)");
     }
 
+    /**
+     * Configures the dialog for working-time entry mode (single date, time
+     * pickers and break field visible).
+     */
     public void renderWorkingTime() {
         startDay.setVisible(true);
         startDay.setLabel("Day");
@@ -179,6 +195,10 @@ public class TimeEntryDialog extends Dialog {
         deleteButton.setText("Delete");
     }
 
+    /**
+     * Configures the dialog for sick-leave entry mode (date range, time
+     * pickers hidden).
+     */
     public void renderSick() {
         startDay.setVisible(true);
         startDay.setLabel("Start");
@@ -193,6 +213,10 @@ public class TimeEntryDialog extends Dialog {
         deleteButton.setText("Remove Sick");
     }
 
+    /**
+     * Configures the dialog for vacation entry mode (date range, time
+     * pickers hidden).
+     */
     public void renderVacation() {
         startDay.setVisible(true);
         startDay.setLabel("Start");
@@ -207,6 +231,12 @@ public class TimeEntryDialog extends Dialog {
         deleteButton.setText("Remove Vacation");
     }
 
+    /**
+     * Opens the dialog pre-populated with the existing entry or absence for the
+     * given date. The correct tab is auto-selected based on existing data.
+     *
+     * @param date the calendar date to view or edit
+     */
     public void open(LocalDate date) {
         reset();
         clearErrorMessage();

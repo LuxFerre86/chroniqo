@@ -2,6 +2,9 @@ package com.luxferre.chroniqo.service.user;
 
 /**
  * Result of an email verification attempt.
+ *
+ * @author Luxferre86
+ * @since 15.03.2026
  */
 public enum EmailVerificationResult {
 
