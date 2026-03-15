@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.03.29] - 2026-03-15
+
+### Maintenance
+- Merge pull request #42 from LuxFerre86/chore/add-better-javadocs
+- chore: improved java docs
+
 ## [2026.03.28] - 2026-03-15
 
 ### Maintenance
