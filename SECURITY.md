@@ -22,7 +22,7 @@ We take security vulnerabilities seriously. If you discover a security issue in 
 **Preferred Method:** Use [GitHub Security Advisories](https://github.com/luxferre86/chroniqo/security/advisories/new)
 
 **Alternative Method:** Email the maintainer directly
-- **Email:** [Create an email via GitHub profile]
+- **Email:** Use the email linked on the [GitHub profile](https://github.com/luxferre86)
 - **Subject:** `[SECURITY] Chroniqo Vulnerability Report`
 
 ### What to Include

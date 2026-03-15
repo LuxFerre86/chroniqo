@@ -13,7 +13,19 @@
     <artifactId>chroniqo</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>chroniqo</name>
-    <description>chroniqo</description>
+    <description>A self-hosted time-tracking web application built with Spring Boot and Vaadin.</description>
+    <url>https://github.com/luxferre86/chroniqo</url>
+
+    <scm>
+        <connection>scm:git:git://github.com/luxferre86/chroniqo.git</connection>
+        <developerConnection>scm:git:ssh://github.com/luxferre86/chroniqo.git</developerConnection>
+        <url>https://github.com/luxferre86/chroniqo</url>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/luxferre86/chroniqo/issues</url>
+    </issueManagement>
 
     <properties>
         <java.version>21</java.version>
