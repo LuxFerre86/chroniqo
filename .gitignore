@@ -62,5 +62,6 @@ index.html
 # Local environment variables – never commit this
 .env
 .env.localdb
+docker-compose.local.yaml
 # Production env file
 .env.prod
