@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026.03.25] - 2026-03-15
+
+### Maintenance
+- Merge pull request #38 from LuxFerre86/chrore/docker-compose-example
+- chore: mariadb port binding for localhost only
+- chore: docker-compose.yaml as example/template compose
+
 ## [2026.03.24] - 2026-03-15
 
 ### Fixed
