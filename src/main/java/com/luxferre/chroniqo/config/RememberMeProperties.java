@@ -23,7 +23,11 @@ public class RememberMeProperties {
     @NotBlank
     private String key;
     private boolean useSecureCookie;
-    @NotBlank
+    /**
+     * Optional. When blank or not set, Spring Security applies the cookie to the
+     * domain of the current request. Set explicitly in production to scope the
+     * remember-me cookie to your domain (e.g. {@code example.com}).
+     */
     private String cookieDomain;
     private Duration validity;
 

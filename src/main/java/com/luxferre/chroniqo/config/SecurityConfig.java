@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
+import org.springframework.util.StringUtils;
 
 @Configuration
 @EnableWebSecurity
@@ -54,7 +55,9 @@ public class SecurityConfig {
     public LastLoginTokenBasedRememberMeServices lastLoginTokenBasedRememberMeServices(UserDetailsService userDetailsService, UserService userService) {
         LastLoginTokenBasedRememberMeServices rememberMeServices = new LastLoginTokenBasedRememberMeServices(rememberMeProperties.getKey(), userDetailsService, userService, TokenBasedRememberMeServices.RememberMeTokenAlgorithm.SHA256);
         rememberMeServices.setUseSecureCookie(rememberMeProperties.isUseSecureCookie());
-        rememberMeServices.setCookieDomain(rememberMeProperties.getCookieDomain());
+        if (StringUtils.hasText(rememberMeProperties.getCookieDomain())) {
+            rememberMeServices.setCookieDomain(rememberMeProperties.getCookieDomain());
+        }
         rememberMeServices.setTokenValiditySeconds(Math.toIntExact(rememberMeProperties.getValidity().getSeconds()));
         return rememberMeServices;
     }
