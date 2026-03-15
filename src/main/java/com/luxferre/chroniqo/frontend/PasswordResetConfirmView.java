@@ -1,6 +1,7 @@
 package com.luxferre.chroniqo.frontend;
 
 import com.luxferre.chroniqo.service.user.UserService;
+import com.luxferre.chroniqo.util.PasswordValidator;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -86,7 +87,7 @@ public class PasswordResetConfirmView extends VerticalLayout implements HasUrlPa
         // Password Fields
         newPasswordField.setRequired(true);
         newPasswordField.setWidthFull();
-        newPasswordField.setHelperText("At least 8 characters");
+        newPasswordField.setHelperText(PasswordValidator.HELPER_TEXT);
 
         confirmPasswordField.setRequired(true);
         confirmPasswordField.setWidthFull();
@@ -124,8 +125,7 @@ public class PasswordResetConfirmView extends VerticalLayout implements HasUrlPa
     private void setupValidation() {
         binder.forField(newPasswordField)
                 .asRequired("Password is required")
-                .withValidator(password -> password.length() >= 8,
-                        "Password must be at least 8 characters")
+                .withValidator(new PasswordValidator())
                 .bind(PasswordForm::getPassword, PasswordForm::setPassword);
 
         binder.forField(confirmPasswordField)
@@ -166,14 +166,3 @@ public class PasswordResetConfirmView extends VerticalLayout implements HasUrlPa
         private String confirmPassword;
     }
 }
-
-
-
-
-
-
-
-
-
-
-

@@ -16,6 +16,7 @@ import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.luxferre.chroniqo.util.PasswordValidator;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -160,7 +161,7 @@ public class SettingsView extends VerticalLayout {
 
         newPasswordField.setWidthFull();
         newPasswordField.setRequired(true);
-        newPasswordField.setHelperText("At least 8 characters");
+        newPasswordField.setHelperText(PasswordValidator.HELPER_TEXT);
 
         confirmPasswordField.setWidthFull();
         confirmPasswordField.setRequired(true);
@@ -260,8 +261,7 @@ public class SettingsView extends VerticalLayout {
 
         passwordBinder.forField(newPasswordField)
                 .asRequired("New password is required")
-                .withValidator(password -> password.length() >= 8,
-                        "Password must be at least 8 characters")
+                .withValidator(new PasswordValidator())
                 .bind(PasswordChangeForm::getNewPassword, PasswordChangeForm::setNewPassword);
 
         passwordBinder.forField(confirmPasswordField)
