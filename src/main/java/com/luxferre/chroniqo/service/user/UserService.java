@@ -25,6 +25,21 @@ import java.util.Optional;
 import java.util.UUID;
 
 
+/**
+ * Core service for user account management: registration, email verification,
+ * password management, and profile updates.
+ *
+ * <p>Registration creates an inactive account and sends a time-limited
+ * verification email. Password reset follows the same token-based pattern with
+ * a one-hour expiry. After successful email verification an auto-login is
+ * attempted via {@link #autoLogin(User)}; if the
+ * HTTP session cannot be established the caller receives
+ * {@link EmailVerificationResult#VERIFIED_LOGIN_REQUIRED}
+ * and is expected to redirect to the login page.
+ *
+ * @author Luxferre86
+ * @since 22.02.2026
+ */
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -37,12 +52,31 @@ public class UserService {
 
     private final AppProperties appProperties;
 
+    /**
+     * Returns the currently authenticated user by resolving the email from the
+     * {@link SecurityContextHolder}.
+     *
+     * @return the authenticated {@link User}
+     * @throws UserNotFoundException if no authenticated user can be determined
+     */
     public User getCurrentUser() throws UserNotFoundException {
         return userDetailsService.getUsernameFromContext().flatMap(userRepository::findByEmail).orElseThrow(() -> new UserNotFoundException("Could not determine current user."));
     }
 
     /**
-     * Register a new user
+     * Registers a new user account.
+     *
+     * <p>Creates the account in a disabled state and sends an email-verification
+     * message. The account is only activated once the user clicks the verification
+     * link.
+     *
+     * @param email     the unique email address for the new account
+     * @param password  the plain-text password (will be hashed before storage)
+     * @param firstName the user's first name
+     * @param lastName  the user's last name
+     * @return the persisted, not-yet-enabled {@link User}
+     * @throws RegistrationDisabledException if registration is globally disabled
+     * @throws IllegalArgumentException      if the email address is already registered
      */
     @Transactional
     public User register(String email, String password, String firstName, String lastName) {
@@ -75,6 +109,14 @@ public class UserService {
         return user;
     }
 
+    /**
+     * Resets the user's password if the supplied token is valid and not expired.
+     *
+     * @param token       the one-time reset token from the password-reset email
+     * @param newPassword the plain-text replacement password
+     * @return {@code true} on success; {@code false} if the token is unknown or
+     * expired
+     */
     @Transactional
     public boolean resetPassword(String token, String newPassword) {
         Optional<User> userOpt = userRepository.findByResetToken(token);
@@ -137,7 +179,12 @@ public class UserService {
     }
 
     /**
-     * Request password reset
+     * Generates a password-reset token and sends a reset-link email.
+     *
+     * <p>Silently does nothing when the email address is not registered, to avoid
+     * leaking information about which addresses exist in the system.
+     *
+     * @param email the email address that requested a password reset
      */
     @Transactional
     public void requestPasswordReset(String email) {
@@ -160,7 +207,14 @@ public class UserService {
     }
 
     /**
-     * Update user profile
+     * Updates the user's display name and weekly working-hour target.
+     *
+     * @param email             the email that identifies the user to update
+     * @param firstName         the new first name
+     * @param lastName          the new last name
+     * @param weeklyTargetHours the new weekly target in hours (0–80)
+     * @throws IllegalArgumentException if the user is not found or
+     *                                  {@code weeklyTargetHours} is outside [0, 80]
      */
     @Transactional
     public void updateProfile(String email, String firstName, String lastName, int weeklyTargetHours) {
@@ -174,7 +228,13 @@ public class UserService {
     }
 
     /**
-     * Change password (when user is logged in)
+     * Changes the password for an already-authenticated user.
+     *
+     * @param email       the email identifying the account to update
+     * @param oldPassword the current plain-text password for verification
+     * @param newPassword the desired new plain-text password
+     * @throws IllegalArgumentException if the user is not found or
+     *                                  {@code oldPassword} does not match the stored hash
      */
     @Transactional
     public void changePassword(String email, String oldPassword, String newPassword) {
@@ -192,7 +252,10 @@ public class UserService {
     }
 
     /**
-     * Update last login time
+     * Records the current timestamp as the user's last-login time.
+     * Silently does nothing when the email address is not found.
+     *
+     * @param email the email of the user who just authenticated
      */
     @Transactional
     public void updateLastLogin(String email) {
@@ -207,7 +270,7 @@ public class UserService {
      *
      * <p>Sets the authentication in the current thread's {@link SecurityContextHolder} and,
      * if a servlet request context is available, persists it to the HTTP session so that
-     * subsequent requests are recognised as authenticated.
+     * subsequent requests are recognized as authenticated.
      *
      * @return {@code true} if the security context was successfully persisted to the HTTP
      * session; {@code false} if no request context was available (e.g. background

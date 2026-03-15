@@ -24,6 +24,19 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 
+/**
+ * Public registration view ({@code /register}) allowing new users to create
+ * an account.
+ *
+ * <p>On successful form submission the account is created in a disabled state
+ * and a verification email is sent. The user is redirected to the login page
+ * with a prompt to check their inbox. Registration can be disabled globally
+ * via the {@code app.registration.enabled} property, in which case an error
+ * notification is shown.
+ *
+ * @author Luxferre86
+ * @since 22.02.2026
+ */
 @Route("register")
 @PageTitle("Sign Up | chroniqo")
 @AnonymousAllowed

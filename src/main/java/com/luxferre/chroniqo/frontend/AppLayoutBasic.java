@@ -22,6 +22,15 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import org.springframework.stereotype.Component;
 
+/**
+ * Root Vaadin application layout providing the shared navigation shell:
+ * a top navigation bar with the application title, the current user's name,
+ * and a logout button, plus a collapsible side-drawer with the main navigation
+ * links and a footer showing the user's email and the application version.
+ *
+ * @author Luxferre86
+ * @since 14.02.2026
+ */
 @Layout
 @AnonymousAllowed
 @UIScope

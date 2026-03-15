@@ -35,6 +35,13 @@ public class TimeEntryService {
     private static final int MAX_BREAK_MINUTES = 480; // 8 hours
     private static final int MAX_WORK_HOURS = 24;
 
+    /**
+     * Returns all time entries for the current user within the given date range.
+     *
+     * @param startDate first day of the range (inclusive)
+     * @param endDate   last day of the range (inclusive)
+     * @return list of {@link TimeEntryDTO} records
+     */
     public List<TimeEntryDTO> getTimeEntries(LocalDate startDate, LocalDate endDate) {
         User user = userService.getCurrentUser();
         return timeEntryRepository.findByUserAndDateBetween(user, startDate, endDate)
@@ -43,15 +50,25 @@ public class TimeEntryService {
                 .toList();
     }
 
+    /**
+     * Returns the time entry for the current user on the given date,
+     * or {@code null} if none exists.
+     *
+     * @param date the date to query
+     * @return the matching {@link TimeEntryDTO}, or
+     * {@code null}
+     */
     public TimeEntryDTO getTimeEntry(LocalDate date) {
         return getTimeEntries(date, date).stream().findFirst().orElse(null);
     }
 
     /**
-     * Saves or updates a time entry with comprehensive input validation.
+     * Saves or updates a time entry after comprehensive input validation.
+     * Creates a new entry if none exists for the date; updates the existing
+     * one otherwise.
      *
-     * @param timeEntryDTO the time entry data to save
-     * @throws TimeEntryValidationException if validation fails
+     * @param timeEntryDTO the time entry data to persist
+     * @throws TimeEntryValidationException if any validation rule is violated
      */
     @Transactional
     public void saveEntry(TimeEntryDTO timeEntryDTO) {
@@ -92,11 +109,23 @@ public class TimeEntryService {
         timeEntryRepository.save(entry);
     }
 
+    /**
+     * Deletes the time entry for the date carried in {@code timeEntryDTO}.
+     *
+     * @param timeEntryDTO identifies the entry to delete via its date
+     */
     @Transactional
     public void deleteEntry(TimeEntryDTO timeEntryDTO) {
         deleteEntries(timeEntryDTO.getDate(), timeEntryDTO.getDate());
     }
 
+
+    /**
+     * Deletes all time entries for the current user within the given date range.
+     *
+     * @param startDate first day of the range (inclusive)
+     * @param endDate   last day of the range (inclusive)
+     */
     @Transactional
     public void deleteEntries(LocalDate startDate, LocalDate endDate) {
         User user = userService.getCurrentUser();
@@ -180,6 +209,12 @@ public class TimeEntryService {
         }
     }
 
+    /**
+     * Maps a {@link TimeEntry} JPA entity to a {@link TimeEntryDTO}.
+     *
+     * @param timeEntry the entity to convert
+     * @return the corresponding DTO
+     */
     TimeEntryDTO createTimeEntryDTO(TimeEntry timeEntry) {
         return new TimeEntryDTO(
                 timeEntry.getDate(),

@@ -50,6 +50,13 @@ public class TimeEntryValidationException extends RuntimeException {
 
     // Convenience factory methods for common validation errors
 
+    /**
+     * Creates an exception for a required field that was {@code null}.
+     *
+     * @param field   the name of the null field
+     * @param message a human-readable description of the violation
+     * @return a configured {@link TimeEntryValidationException}
+     */
     public static TimeEntryValidationException nullValue(String field, String message) {
         return new TimeEntryValidationException(
                 ValidationErrorType.NULL_VALUE,
@@ -59,6 +66,12 @@ public class TimeEntryValidationException extends RuntimeException {
         );
     }
 
+    /**
+     * Creates an exception indicating that a date lies in the future.
+     *
+     * @param date the rejected future date
+     * @return a configured {@link TimeEntryValidationException}
+     */
     public static TimeEntryValidationException futureDate(Object date) {
         return new TimeEntryValidationException(
                 ValidationErrorType.FUTURE_DATE,
@@ -68,6 +81,13 @@ public class TimeEntryValidationException extends RuntimeException {
         );
     }
 
+    /**
+     * Creates an exception for a field that received a negative value.
+     *
+     * @param field the name of the offending field
+     * @param value the rejected negative value
+     * @return a configured {@link TimeEntryValidationException}
+     */
     public static TimeEntryValidationException negativeValue(String field, Object value) {
         return new TimeEntryValidationException(
                 ValidationErrorType.NEGATIVE_VALUE,
@@ -77,6 +97,14 @@ public class TimeEntryValidationException extends RuntimeException {
         );
     }
 
+    /**
+     * Creates an exception for a field whose value exceeds the permitted maximum.
+     *
+     * @param field the name of the offending field
+     * @param value the rejected value
+     * @param max   the maximum that was exceeded
+     * @return a configured {@link TimeEntryValidationException}
+     */
     public static TimeEntryValidationException valueTooLarge(String field, Object value, Object max) {
         return new TimeEntryValidationException(
                 ValidationErrorType.VALUE_TOO_LARGE,
@@ -86,6 +114,14 @@ public class TimeEntryValidationException extends RuntimeException {
         );
     }
 
+    /**
+     * Creates an exception for an invalid time range (e.g. end before start).
+     *
+     * @param message a description of why the range is invalid
+     * @param start   the range start value
+     * @param end     the range end value
+     * @return a configured {@link TimeEntryValidationException}
+     */
     public static TimeEntryValidationException invalidRange(String message, Object start, Object end) {
         return new TimeEntryValidationException(
                 ValidationErrorType.INVALID_RANGE,
@@ -95,6 +131,13 @@ public class TimeEntryValidationException extends RuntimeException {
         );
     }
 
+    /**
+     * Creates an exception for data that is internally inconsistent
+     * (e.g. break duration longer than total working time).
+     *
+     * @param message a description of the inconsistency
+     * @return a configured {@link TimeEntryValidationException}
+     */
     public static TimeEntryValidationException inconsistentData(String message) {
         return new TimeEntryValidationException(
                 ValidationErrorType.INCONSISTENT_DATA,

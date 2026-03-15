@@ -9,6 +9,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+/**
+ * JPA entity representing a user's time entry for a single working day.
+ *
+ * <p>An entry starts in {@link TimeEntryStatus#STARTED} state when only
+ * {@code startTime} is known, and transitions to
+ * {@link TimeEntryStatus#COMPLETED} once {@code endTime} is recorded.
+ * Net working time is computed externally.
+ *
+ * @author Luxferre86
+ * @since 14.02.2026
+ */
 @Getter
 @Setter
 @Entity

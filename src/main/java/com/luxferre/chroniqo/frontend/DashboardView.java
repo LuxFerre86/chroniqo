@@ -22,6 +22,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Main dashboard view shown at the application root ({@code "/"}).
+ *
+ * <p>Aggregates today's summary, the current-week bar chart, the running
+ * balance, and the weekly progress indicator. All widgets are refreshed on
+ * load and whenever the {@link TimeEntryDialog} is closed after a save or
+ * delete operation.
+ *
+ * @author Luxferre86
+ * @since 14.02.2026
+ */
 @Route(value = "", layout = AppLayoutBasic.class)
 @PageTitle("Dashboard | chroniqo")
 @PermitAll

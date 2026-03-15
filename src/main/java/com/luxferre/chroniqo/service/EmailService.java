@@ -9,6 +9,19 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service responsible for sending transactional emails (email verification and
+ * password reset).
+ *
+ * <p>All outbound mail is sent via the configured JavaMailSender (Gmail SMTP).
+ * Delivery failures are caught and logged; they do not propagate to callers so
+ * that a temporary mail-server issue cannot break registration or password-reset
+ * flows entirely. Email addresses are anonymized in log output via
+ * {@link #anonymize(String)}.
+ *
+ * @author Luxferre86
+ * @since 22.02.2026
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

@@ -21,6 +21,18 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Public view ({@code /reset-password-confirm?token=...}) where a user sets
+ * a new password after following the password-reset link from their email.
+ *
+ * <p>The reset token is extracted from the URL query parameter and passed to
+ * {@link UserService#resetPassword(String, String)}
+ * on form submission. Password strength is enforced via
+ * {@link PasswordValidator}.
+ *
+ * @author Luxferre86
+ * @since 22.02.2026
+ */
 @Route("reset-password-confirm")
 @PageTitle("Set New Password | chroniqo")
 @AnonymousAllowed
@@ -106,6 +118,13 @@ public class PasswordResetConfirmView extends VerticalLayout implements HasUrlPa
         add(container);
     }
 
+    /**
+     * Called by Vaadin with the URL path segment and query parameters.
+     * Extracts the {@code token} query parameter needed for the password reset.
+     *
+     * @param event     the navigation event
+     * @param parameter the optional path parameter (unused; token is a query param)
+     */
     @Override
     public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
         Map<String, List<String>> params = event.getLocation().getQueryParameters().getParameters();

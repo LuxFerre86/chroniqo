@@ -16,6 +16,20 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Public view rendered when a user follows the email-verification link
+ * ({@code /verify-email?token=...}).
+ *
+ * <p>Delegates token validation and auto-login to
+ * {@link UserService#verifyEmail(String)}.
+ * The rendered content depends on the
+ * {@link EmailVerificationResult}:
+ * a dashboard shortcut on successful login, a login redirect when the session
+ * could not be established, or an error card for invalid/expired tokens.
+ *
+ * @author Luxferre86
+ * @since 22.02.2026
+ */
 @Route("verify-email")
 @PageTitle("Verify Email | chroniqo")
 @AnonymousAllowed
@@ -40,6 +54,13 @@ public class EmailVerificationView extends VerticalLayout implements HasUrlParam
                 .set("background-attachment", "fixed");
     }
 
+    /**
+     * Called by Vaadin with the URL path segment and query parameters.
+     * Extracts the {@code token} query parameter and triggers email verification.
+     *
+     * @param event     the navigation event
+     * @param parameter the optional path parameter (unused; token is a query param)
+     */
     @Override
     public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
         Map<String, List<String>> params = event.getLocation().getQueryParameters().getParameters();

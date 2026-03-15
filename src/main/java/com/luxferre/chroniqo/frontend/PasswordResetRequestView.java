@@ -19,6 +19,17 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 
+/**
+ * Public view ({@code /reset-password}) where a user requests a password-reset
+ * email by entering their registered email address.
+ *
+ * <p>To prevent user enumeration, the same success message is shown regardless
+ * of whether the submitted address is registered — the underlying service
+ * silently ignores unknown addresses.
+ *
+ * @author Luxferre86
+ * @since 22.02.2026
+ */
 @Route("reset-password")
 @PageTitle("Reset Password | chroniqo")
 @AnonymousAllowed

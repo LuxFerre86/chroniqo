@@ -4,6 +4,18 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
+/**
+ * Reusable UI card that displays target hours, worked hours, and balance for
+ * both the current month and the current year side-by-side.
+ *
+ * <p>Values are updated independently via
+ * {@link #updateMonthStatistics(int, int)} and
+ * {@link #updateYearStatistics(int, int)}. Positive balances are rendered in
+ * green, negative balances in red.
+ *
+ * @author Luxferre86
+ * @since 14.02.2026
+ */
 public class StatisticsCard extends VerticalLayout {
     private final Span targetHoursValueMonth;
     private final Span targetHoursValueYear;
@@ -29,17 +41,17 @@ public class StatisticsCard extends VerticalLayout {
         statsLayout.getStyle().set("gap", "1.5rem");
         statsLayout.setAlignItems(Alignment.START);
 
-        // Soll-Stunden
+        // Target hours section
         VerticalLayout targetSection = createStatSection("Target Hours", "", "");
         targetHoursValueMonth = (Span) ((HorizontalLayout) targetSection.getComponentAt(1)).getComponentAt(0);
         targetHoursValueYear = (Span) ((HorizontalLayout) targetSection.getComponentAt(1)).getComponentAt(2);
 
-        // Ist-Stunden
+        // Worked hours section
         VerticalLayout workedSection = createStatSection("Worked Hours", "", "");
         workedHoursValueMonth = (Span) ((HorizontalLayout) workedSection.getComponentAt(1)).getComponentAt(0);
         workedHoursValueYear = (Span) ((HorizontalLayout) workedSection.getComponentAt(1)).getComponentAt(2);
 
-        // Bilanz
+        // Balance section
         VerticalLayout balanceSection = createStatSection("Balance", "", "");
         balanceValueMonth = (Span) ((HorizontalLayout) balanceSection.getComponentAt(1)).getComponentAt(0);
         balanceValueYear = (Span) ((HorizontalLayout) balanceSection.getComponentAt(1)).getComponentAt(2);
@@ -53,7 +65,7 @@ public class StatisticsCard extends VerticalLayout {
 
         add(statsLayout);
 
-        // Lumo Dark Styling mit warmen Akzenten
+        // Styling
         getStyle()
                 .set("background", "linear-gradient(135deg, hsl(220, 20%, 14%) 0%, hsl(220, 20%, 12%) 100%)")
                 .set("border", "1px solid hsla(32, 40%, 50%, 0.12)")
@@ -119,19 +131,25 @@ public class StatisticsCard extends VerticalLayout {
         return section;
     }
 
+    /**
+     * Updates the month-to-date column with fresh target and worked values.
+     *
+     * @param targetMinutes total target minutes for the month so far
+     * @param workedMinutes total worked minutes for the month so far
+     */
     public void updateMonthStatistics(int targetMinutes, int workedMinutes) {
-        // Soll-Stunden
+        // Target hours
         targetHoursValueMonth.setText(formatMinutes(targetMinutes));
         targetHoursValueMonth.getStyle()
                 .set("color", "var(--lumo-body-text-color)");
 
-        // Ist-Stunden - Warmer Akzent
+        // Worked hours
         workedHoursValueMonth.setText(formatMinutes(workedMinutes));
         workedHoursValueMonth.getStyle()
                 .set("color", "hsl(32, 100%, 65%)")
                 .set("text-shadow", "0 0 8px hsla(32, 95%, 58%, 0.3)");
 
-        // Bilanz
+        // Balance
         int balanceMinutes = workedMinutes - targetMinutes;
         balanceValueMonth.setText(formatBalance(balanceMinutes));
 
@@ -146,19 +164,25 @@ public class StatisticsCard extends VerticalLayout {
         }
     }
 
+    /**
+     * Updates the year-to-date column with fresh target and worked values.
+     *
+     * @param targetMinutes total target minutes for the year so far
+     * @param workedMinutes total worked minutes for the year so far
+     */
     public void updateYearStatistics(int targetMinutes, int workedMinutes) {
-        // Soll-Stunden
+        // Target hours
         targetHoursValueYear.setText(formatMinutes(targetMinutes));
         targetHoursValueYear.getStyle()
                 .set("color", "var(--lumo-secondary-text-color)");
 
-        // Ist-Stunden - Warmer Akzent
+        // Worked hours
         workedHoursValueYear.setText(formatMinutes(workedMinutes));
         workedHoursValueYear.getStyle()
                 .set("color", "hsl(32, 90%, 60%)")
                 .set("text-shadow", "0 0 6px hsla(32, 95%, 58%, 0.25)");
 
-        // Bilanz
+        // Balance
         int balanceMinutes = workedMinutes - targetMinutes;
         balanceValueYear.setText(formatBalance(balanceMinutes));
 
