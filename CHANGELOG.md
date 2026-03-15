@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.03.32] - 2026-03-15
+
+### Maintenance
+- Merge pull request #45 from LuxFerre86/chore/buy-me-a-coffee
+- chore: buy me a coffee
+
 ## [2026.03.31] - 2026-03-15
 
 ### Maintenance
