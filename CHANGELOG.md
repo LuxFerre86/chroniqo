@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.26] - 2026-03-15
+
+### Added
+- improved password validation
+
+
+### Maintenance
+- Merge pull request #39 from LuxFerre86/feature/improved-password-validation
+
 ## [2026.03.25] - 2026-03-15
 
 ### Maintenance
