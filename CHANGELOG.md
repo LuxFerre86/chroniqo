@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.03.28] - 2026-03-15
+
+### Maintenance
+- Merge pull request #41 from LuxFerre86/chore/improve-test-coverage
+- chore: improved test coverage
+
 ## [2026.03.27] - 2026-03-15
 
 ### Fixed
