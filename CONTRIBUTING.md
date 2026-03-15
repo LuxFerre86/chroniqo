@@ -92,3 +92,8 @@ When requesting a feature, please describe:
 - The problem you are trying to solve
 - Your proposed solution (even if rough)
 - Any alternatives you have considered
+
+## ☕ Supporting the project
+
+If chroniqo has been useful to you and you'd like to say thanks, you can
+[buy me a coffee](https://www.buymeacoffee.com/luxferre86). Not expected, always appreciated.

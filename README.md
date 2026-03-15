@@ -324,6 +324,7 @@ For commercial use without these obligations, contact the author via GitHub for 
 - **Feature requests:** [GitHub Issues](https://github.com/luxferre86/chroniqo/issues/new?template=feature_request.yml)
 - **Questions & ideas:** [GitHub Discussions](https://github.com/luxferre86/chroniqo/discussions)
 - **Security vulnerabilities:** See [SECURITY.md](SECURITY.md) — please do not use public issues
+- **Support the project:** [☕ Buy Me a Coffee](https://www.buymeacoffee.com/luxferre86)
 
 ---
 
