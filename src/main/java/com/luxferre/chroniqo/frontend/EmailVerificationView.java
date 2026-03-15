@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.frontend;
 
+import com.luxferre.chroniqo.service.user.EmailVerificationResult;
 import com.luxferre.chroniqo.service.user.UserService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -23,7 +24,7 @@ import java.util.Map;
 public class EmailVerificationView extends VerticalLayout implements HasUrlParameter<String> {
 
     private final UserService userService;
-    private boolean verificationSuccess = false;
+    private EmailVerificationResult verificationResult = EmailVerificationResult.INVALID;
 
     public EmailVerificationView(UserService userService) {
         this.userService = userService;
@@ -45,7 +46,7 @@ public class EmailVerificationView extends VerticalLayout implements HasUrlParam
 
         if (params.containsKey("token")) {
             String token = params.get("token").getFirst();
-            verificationSuccess = userService.verifyEmail(token);
+            verificationResult = userService.verifyEmail(token);
             renderContent();
         } else {
             renderErrorContent();
@@ -67,8 +68,8 @@ public class EmailVerificationView extends VerticalLayout implements HasUrlParam
                 .set("padding", "3rem 2.5rem")
                 .set("text-align", "center");
 
-        if (verificationSuccess) {
-            // Success
+        if (verificationResult == EmailVerificationResult.VERIFIED_LOGGED_IN) {
+            // Success – session established, user is logged in
             Span logo = new Span("✅");
             logo.getStyle()
                     .set("font-size", "64px")
@@ -96,6 +97,35 @@ public class EmailVerificationView extends VerticalLayout implements HasUrlParam
             dashboardButton.getStyle().set("margin-top", "1rem");
 
             container.add(logo, title, message, dashboardButton);
+        } else if (verificationResult == EmailVerificationResult.VERIFIED_LOGIN_REQUIRED) {
+            // Account verified but session could not be persisted – prompt manual login
+            Span logo = new Span("✅");
+            logo.getStyle()
+                    .set("font-size", "64px")
+                    .set("display", "block")
+                    .set("margin-bottom", "1.5rem");
+
+            H1 title = new H1("Email Verified!");
+            title.getStyle()
+                    .set("font-size", "28px")
+                    .set("font-weight", "700")
+                    .set("margin", "0 0 1rem 0")
+                    .set("color", "hsl(142, 75%, 55%)");
+
+            Span message = new Span("Your email has been successfully verified. Please log in to continue.");
+            message.getStyle()
+                    .set("color", "var(--lumo-body-text-color)")
+                    .set("margin-bottom", "2rem")
+                    .set("display", "block")
+                    .set("line-height", "1.6");
+
+            Button loginButton = new Button("Go to Login", e ->
+                    UI.getCurrent().navigate("login")
+            );
+            loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            loginButton.getStyle().set("margin-top", "1rem");
+
+            container.add(logo, title, message, loginButton);
         } else {
             renderErrorContent();
             return;

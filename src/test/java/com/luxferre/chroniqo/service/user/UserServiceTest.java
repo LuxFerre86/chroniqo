@@ -6,6 +6,9 @@ import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.service.EmailService;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,16 +17,19 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -111,41 +117,194 @@ public class UserServiceTest {
     @Nested
     class VerifyEmail {
 
+        @AfterEach
+        void clearContext() {
+            SecurityContextHolder.clearContext();
+            RequestContextHolder.resetRequestAttributes();
+        }
+
         @Test
-        void verifyEmail_validToken_enablesUserAndClearsToken() {
+        void verifyEmail_validToken_withRequestContext_returnsVerifiedLoggedIn() {
             User user = userWithVerificationToken("valid-token", LocalDateTime.now().plusHours(1));
             when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
             when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(userDetailsService.loadUserByUsername(any())).thenReturn(userDetails);
+            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
 
-            boolean result = userService.verifyEmail("valid-token");
+            HttpServletRequest request = mock(HttpServletRequest.class);
+            HttpSession session = mock(HttpSession.class);
+            when(request.getSession(true)).thenReturn(session);
+            RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
-            assertThat(result).isTrue();
+            EmailVerificationResult result = userService.verifyEmail("valid-token");
+
+            assertThat(result).isEqualTo(EmailVerificationResult.VERIFIED_LOGGED_IN);
             assertThat(user.isEnabled()).isTrue();
             assertThat(user.getVerificationToken()).isNull();
             assertThat(user.getVerificationTokenExpiryDate()).isNull();
         }
 
         @Test
-        void verifyEmail_expiredToken_returnsFalseAndDoesNotEnableUser() {
+        void verifyEmail_validToken_withRequestContext_persistsSecurityContextToSession() {
+            User user = userWithVerificationToken("valid-token", LocalDateTime.now().plusHours(1));
+            when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
+            when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(userDetailsService.loadUserByUsername(any())).thenReturn(userDetails);
+            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+
+            HttpServletRequest request = mock(HttpServletRequest.class);
+            HttpSession session = mock(HttpSession.class);
+            when(request.getSession(true)).thenReturn(session);
+            RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+            userService.verifyEmail("valid-token");
+
+            verify(session).setAttribute(
+                    eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY),
+                    any()
+            );
+        }
+
+        @Test
+        void verifyEmail_validToken_withoutRequestContext_returnsVerifiedLoginRequired() {
+            User user = userWithVerificationToken("valid-token", LocalDateTime.now().plusHours(1));
+            when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
+            when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(userDetailsService.loadUserByUsername(any())).thenReturn(userDetails);
+            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+
+            RequestContextHolder.resetRequestAttributes();
+
+            EmailVerificationResult result = userService.verifyEmail("valid-token");
+
+            assertThat(result).isEqualTo(EmailVerificationResult.VERIFIED_LOGIN_REQUIRED);
+            assertThat(user.isEnabled()).isTrue();
+            assertThat(user.getVerificationToken()).isNull();
+        }
+
+        @Test
+        void verifyEmail_expiredToken_returnsInvalidAndDoesNotEnableUser() {
             User user = userWithVerificationToken("expired-token", LocalDateTime.now().minusHours(1));
             when(userRepository.findByVerificationToken("expired-token")).thenReturn(Optional.of(user));
 
-            boolean result = userService.verifyEmail("expired-token");
+            EmailVerificationResult result = userService.verifyEmail("expired-token");
 
-            assertThat(result).isFalse();
+            assertThat(result).isEqualTo(EmailVerificationResult.INVALID);
             assertThat(user.isEnabled()).isFalse();
             verify(userRepository, never()).save(any());
         }
 
         @Test
-        void verifyEmail_unknownToken_returnsFalse() {
+        void verifyEmail_unknownToken_returnsInvalid() {
             when(userRepository.findByVerificationToken("unknown")).thenReturn(Optional.empty());
 
-            boolean result = userService.verifyEmail("unknown");
+            EmailVerificationResult result = userService.verifyEmail("unknown");
+
+            assertThat(result).isEqualTo(EmailVerificationResult.INVALID);
+            verify(userRepository, never()).save(any());
+        }
+    }
+
+    // =========================================================================
+    // autoLogin
+    // =========================================================================
+
+    @Nested
+    class AutoLogin {
+
+        @AfterEach
+        void cleanup() {
+            SecurityContextHolder.clearContext();
+            RequestContextHolder.resetRequestAttributes();
+        }
+
+        @Test
+        void autoLogin_withRequestContext_returnsTrue() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setPasswordHash("hash");
+            when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(userDetails);
+            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+
+            HttpServletRequest request = mock(HttpServletRequest.class);
+            HttpSession session = mock(HttpSession.class);
+            when(request.getSession(true)).thenReturn(session);
+            RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+            boolean result = userService.autoLogin(user);
+
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        void autoLogin_withRequestContext_persistsSecurityContextToSession() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setPasswordHash("hash");
+            when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(userDetails);
+            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+
+            HttpServletRequest request = mock(HttpServletRequest.class);
+            HttpSession session = mock(HttpSession.class);
+            when(request.getSession(true)).thenReturn(session);
+            RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+            userService.autoLogin(user);
+
+            verify(session).setAttribute(
+                    eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY),
+                    any()
+            );
+        }
+
+        @Test
+        void autoLogin_withRequestContext_setsAuthenticationInSecurityContextHolder() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setPasswordHash("hash");
+            when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(userDetails);
+            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+
+            HttpServletRequest request = mock(HttpServletRequest.class);
+            HttpSession session = mock(HttpSession.class);
+            when(request.getSession(true)).thenReturn(session);
+            RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+            userService.autoLogin(user);
+
+            assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+            assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+                    .isEqualTo(userDetails);
+        }
+
+        @Test
+        void autoLogin_withoutRequestContext_returnsFalse() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setPasswordHash("hash");
+            when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(userDetails);
+            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+
+            RequestContextHolder.resetRequestAttributes();
+
+            boolean result = userService.autoLogin(user);
 
             assertThat(result).isFalse();
-            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void autoLogin_withoutRequestContext_stillSetsSecurityContextHolder() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setPasswordHash("hash");
+            when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(userDetails);
+            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+
+            RequestContextHolder.resetRequestAttributes();
+
+            userService.autoLogin(user);
+
+            assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
         }
     }
 

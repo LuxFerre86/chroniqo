@@ -100,21 +100,27 @@ public class UserService {
     }
 
     /**
-     * Verify email with token
+     * Verify email with token and attempt auto-login.
+     *
+     * @return {@link EmailVerificationResult#INVALID} if the token is unknown or expired,
+     * {@link EmailVerificationResult#VERIFIED_LOGGED_IN} if the token is valid and
+     * the session was successfully established, or
+     * {@link EmailVerificationResult#VERIFIED_LOGIN_REQUIRED} if the token is valid
+     * but the session could not be persisted (user must log in manually).
      */
     @Transactional
-    public boolean verifyEmail(String token) {
+    public EmailVerificationResult verifyEmail(String token) {
         Optional<User> userOpt = userRepository.findByVerificationToken(token);
 
         if (userOpt.isEmpty()) {
-            return false;
+            return EmailVerificationResult.INVALID;
         }
 
         User user = userOpt.get();
 
         // Check if token is expired
         if (user.getVerificationTokenExpiryDate().isBefore(LocalDateTime.now())) {
-            return false;
+            return EmailVerificationResult.INVALID;
         }
 
         // Enable user
@@ -123,10 +129,11 @@ public class UserService {
         user.setVerificationTokenExpiryDate(null);
         userRepository.save(user);
 
-        // auto login for user
-        autoLogin(user);
-
-        return true;
+        // auto login for user - may fail silently if no request context is available
+        boolean sessionEstablished = autoLogin(user);
+        return sessionEstablished
+                ? EmailVerificationResult.VERIFIED_LOGGED_IN
+                : EmailVerificationResult.VERIFIED_LOGIN_REQUIRED;
     }
 
     /**
@@ -196,9 +203,18 @@ public class UserService {
     }
 
     /**
-     * Auto-login after registration
+     * Auto-login after email verification.
+     *
+     * <p>Sets the authentication in the current thread's {@link SecurityContextHolder} and,
+     * if a servlet request context is available, persists it to the HTTP session so that
+     * subsequent requests are recognised as authenticated.
+     *
+     * @return {@code true} if the security context was successfully persisted to the HTTP
+     * session; {@code false} if no request context was available (e.g. background
+     * thread or Vaadin push context), in which case the caller should redirect the
+     * user to the login page instead of assuming they are logged in.
      */
-    void autoLogin(User user) {
+    boolean autoLogin(User user) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(
@@ -212,11 +228,12 @@ public class UserService {
         if (attr != null) {
             HttpServletRequest request = attr.getRequest();
             HttpSession session = request.getSession(true);
-
             session.setAttribute(
                     HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                     context
             );
+            return true;
         }
+        return false;
     }
 }
