@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.03.31] - 2026-03-15
+
+### Maintenance
+- Merge pull request #44 from LuxFerre86/chore/github-workflows-and-readme
+- chore: improved *.md files
+
 ## [2026.03.30] - 2026-03-15
 
 ### Maintenance
