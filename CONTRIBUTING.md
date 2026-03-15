@@ -76,8 +76,19 @@ chore: remove unused test dependencies
 
 ## Reporting Issues
 
-Please use [GitHub Issues](https://github.com/luxferre86/chroniqo/issues) and include:
+Use the **Bug Report** template when opening a [GitHub Issue](https://github.com/luxferre86/chroniqo/issues/new/choose). Please include:
 - A clear description of the problem
 - Steps to reproduce
 - Expected vs. actual behaviour
 - Your environment (OS, Java version, browser if UI-related)
+
+## Requesting Features
+
+For small, focused improvements, use the **Feature Request** template on [GitHub Issues](https://github.com/luxferre86/chroniqo/issues/new/choose).
+
+For larger ideas or open-ended discussions (e.g. "should we support X?"), open a thread in [GitHub Discussions](https://github.com/luxferre86/chroniqo/discussions) instead — this keeps the issue tracker focused on actionable tasks.
+
+When requesting a feature, please describe:
+- The problem you are trying to solve
+- Your proposed solution (even if rough)
+- Any alternatives you have considered

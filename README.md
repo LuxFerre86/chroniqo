@@ -305,8 +305,9 @@ docker run --rm -v chroniqo_mariadb-data:/data -v $(pwd):/backup ubuntu tar xzf 
 
 Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
-**Development Setup:**
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed local development instructions.
+- **Found a bug?** → [Open a Bug Report](https://github.com/luxferre86/chroniqo/issues/new?template=bug_report.yml)
+- **Have an idea?** → [Open a Feature Request](https://github.com/luxferre86/chroniqo/issues/new?template=feature_request.yml) or start a [Discussion](https://github.com/luxferre86/chroniqo/discussions)
+- **Want to contribute code?** → See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and PR guidelines
 
 ## 📄 License
 
@@ -316,12 +317,13 @@ You are free to use, modify, and self-host this software. If you use it to provi
 
 For commercial use without these obligations, contact the author via GitHub for a commercial license. See [LICENSE](LICENSE) for full terms.
 
-## 🙏 Support
+## 🙏 Support & Community
 
-- **Issues:** [GitHub Issues](https://github.com/luxferre86/chroniqo/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/luxferre86/chroniqo/discussions)
-- **Security:** See [SECURITY.md](SECURITY.md) for vulnerability reporting
+- **Bug reports:** [GitHub Issues](https://github.com/luxferre86/chroniqo/issues/new?template=bug_report.yml)
+- **Feature requests:** [GitHub Issues](https://github.com/luxferre86/chroniqo/issues/new?template=feature_request.yml)
+- **Questions & ideas:** [GitHub Discussions](https://github.com/luxferre86/chroniqo/discussions)
+- **Security vulnerabilities:** See [SECURITY.md](SECURITY.md) — please do not use public issues
 
 ---
 
-**Made with joy by [LuxFerre86](https://github.com/luxferre86)**
+**Made by [LuxFerre86](https://github.com/luxferre86)**
