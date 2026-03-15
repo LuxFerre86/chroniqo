@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.24] - 2026-03-15
+
+### Fixed
+- potential NPE in auto login feature
+
+
+### Maintenance
+- Merge pull request #37 from LuxFerre86/fix/potential-auto-login-npe
+
 ## [2026.03.23] - 2026-03-14
 
 ### Added
