@@ -11,7 +11,9 @@ services:
       - mariadb-data:/var/lib/mysql
       - ./src/main/resources/db/migration/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     ports:
-      - "3306:3306"
+      # Bound to localhost only – for local dev/tooling access (e.g. IntelliJ DataSource).
+      # Remove entirely in production; the app connects via the internal Docker network.
+      - "127.0.0.1:3306:3306"
     networks:
       - chroniqo-network
     healthcheck:
