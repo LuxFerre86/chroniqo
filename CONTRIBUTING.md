@@ -1,6 +1,6 @@
 # Contributing to chroniqo
 
-Thank you for your interest in contributing! Here's everything you need to get started.
+Thank you for your interest in contributing! By participating you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). Here's everything you need to get started.
 
 ## Development Setup
 

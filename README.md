@@ -308,6 +308,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 - **Found a bug?** → [Open a Bug Report](https://github.com/luxferre86/chroniqo/issues/new?template=bug_report.yml)
 - **Have an idea?** → [Open a Feature Request](https://github.com/luxferre86/chroniqo/issues/new?template=feature_request.yml) or start a [Discussion](https://github.com/luxferre86/chroniqo/discussions)
 - **Want to contribute code?** → See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and PR guidelines
+- **Code of Conduct:** This project follows the [Contributor Covenant](CODE_OF_CONDUCT.md)
 
 ## 📄 License
 
@@ -326,4 +327,4 @@ For commercial use without these obligations, contact the author via GitHub for 
 
 ---
 
-**Made by [LuxFerre86](https://github.com/luxferre86)**
+**Made with joy by [LuxFerre86](https://github.com/luxferre86)**
