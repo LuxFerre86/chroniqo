@@ -119,4 +119,48 @@ public class TimeTrackingServiceTest {
         verify(absenceService).deleteAbsences(today, tomorrow);
     }
 
+    @Test
+    public void getTimeEntries_emptyRange_returnsEmptyList() {
+        LocalDate today = LocalDate.now();
+        when(timeEntryService.getTimeEntries(today, today)).thenReturn(Collections.emptyList());
+
+        List<TimeEntryDTO> result = timeTrackingService.getTimeEntries(today, today);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void getAbsences_emptyRange_returnsEmptyList() {
+        LocalDate today = LocalDate.now();
+        when(absenceService.getAbsences(today, today)).thenReturn(Collections.emptyList());
+
+        List<Absence> result = timeTrackingService.getAbsences(today, today);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void saveEntry_deletesAbsenceForSameDateAsEntry() {
+        LocalDate specificDate = LocalDate.of(2025, 6, 15);
+        TimeEntryDTO timeEntryDTO = new TimeEntryDTO();
+        timeEntryDTO.setDate(specificDate);
+
+        timeTrackingService.saveEntry(timeEntryDTO);
+
+        verify(absenceService).deleteAbsence(specificDate);
+        verify(timeEntryService).saveEntry(timeEntryDTO);
+    }
+
+    @Test
+    public void saveAbsence_deletesTimeEntriesForFullRange() {
+        LocalDate start = LocalDate.of(2025, 6, 1);
+        LocalDate end = LocalDate.of(2025, 6, 7);
+        AbsenceRequest absenceRequest = new AbsenceRequest(start, end, AbsenceType.SICK);
+
+        timeTrackingService.saveAbsence(absenceRequest);
+
+        verify(timeEntryService).deleteEntries(start, end);
+        verify(absenceService).saveAbsence(absenceRequest);
+    }
+
 }
