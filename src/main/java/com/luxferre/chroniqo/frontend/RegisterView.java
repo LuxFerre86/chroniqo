@@ -3,6 +3,7 @@ package com.luxferre.chroniqo.frontend;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
 import com.luxferre.chroniqo.service.user.UserService;
+import com.luxferre.chroniqo.util.PasswordValidator;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -103,7 +104,7 @@ public class RegisterView extends VerticalLayout {
 
         passwordField.setRequired(true);
         passwordField.setWidthFull();
-        passwordField.setHelperText("At least 8 characters");
+        passwordField.setHelperText(PasswordValidator.HELPER_TEXT);
 
         confirmPasswordField.setRequired(true);
         confirmPasswordField.setWidthFull();
@@ -172,8 +173,7 @@ public class RegisterView extends VerticalLayout {
 
         binder.forField(passwordField)
                 .asRequired("Password is required")
-                .withValidator(password -> password.length() >= 8,
-                        "Password must be at least 8 characters")
+                .withValidator(new PasswordValidator())
                 .bind(RegistrationForm::getPassword, RegistrationForm::setPassword);
 
         binder.forField(confirmPasswordField)
