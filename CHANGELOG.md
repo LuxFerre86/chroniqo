@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.27] - 2026-03-15
+
+### Fixed
+- removed not blank cookie domain validation
+
+
+### Maintenance
+- Merge pull request #40 from LuxFerre86/fix/removed-not-blank-cookie-domain-validation
+
 ## [2026.03.26] - 2026-03-15
 
 ### Added
