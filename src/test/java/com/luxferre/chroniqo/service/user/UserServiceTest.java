@@ -6,6 +6,7 @@ import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.service.EmailService;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
+import com.luxferre.chroniqo.service.event.UserChangedEvent;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.AfterEach;
@@ -17,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +27,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,6 +49,8 @@ public class UserServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
     @Mock
     private AppProperties appProperties;
     @Mock
@@ -78,12 +83,14 @@ public class UserServiceTest {
             assertThat(result.getPasswordHash()).isEqualTo("hashed_password");
             assertThat(result.getFirstName()).isEqualTo("Max");
             assertThat(result.getLastName()).isEqualTo("Mustermann");
-            assertThat(result.isEnabled()).isFalse(); // must not be active until email verified
+            assertThat(result.isEnabled()).isFalse();
             assertThat(result.getVerificationToken()).isNotNull();
             assertThat(result.getVerificationTokenExpiryDate()).isAfter(LocalDateTime.now());
 
             verify(userRepository).save(any(User.class));
             verify(emailService).sendVerificationEmail(any(User.class));
+            // registration does not fire UserChangedEvent — user is not yet active
+            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -96,6 +103,7 @@ public class UserServiceTest {
 
             verify(userRepository, never()).save(any());
             verify(emailService, never()).sendVerificationEmail(any());
+            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -129,7 +137,7 @@ public class UserServiceTest {
             when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
             when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(userDetailsService.loadUserByUsername(any())).thenReturn(userDetails);
-            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+            when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
 
             HttpServletRequest request = mock(HttpServletRequest.class);
             HttpSession session = mock(HttpSession.class);
@@ -150,7 +158,7 @@ public class UserServiceTest {
             when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
             when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(userDetailsService.loadUserByUsername(any())).thenReturn(userDetails);
-            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+            when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
 
             HttpServletRequest request = mock(HttpServletRequest.class);
             HttpSession session = mock(HttpSession.class);
@@ -160,9 +168,7 @@ public class UserServiceTest {
             userService.verifyEmail("valid-token");
 
             verify(session).setAttribute(
-                    eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY),
-                    any()
-            );
+                    eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY), any());
         }
 
         @Test
@@ -171,7 +177,7 @@ public class UserServiceTest {
             when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
             when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(userDetailsService.loadUserByUsername(any())).thenReturn(userDetails);
-            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+            when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
 
             RequestContextHolder.resetRequestAttributes();
 
@@ -224,16 +230,14 @@ public class UserServiceTest {
             user.setEmail("user@example.com");
             user.setPasswordHash("hash");
             when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(userDetails);
-            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+            when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
 
             HttpServletRequest request = mock(HttpServletRequest.class);
             HttpSession session = mock(HttpSession.class);
             when(request.getSession(true)).thenReturn(session);
             RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
-            boolean result = userService.autoLogin(user);
-
-            assertThat(result).isTrue();
+            assertThat(userService.autoLogin(user)).isTrue();
         }
 
         @Test
@@ -242,7 +246,7 @@ public class UserServiceTest {
             user.setEmail("user@example.com");
             user.setPasswordHash("hash");
             when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(userDetails);
-            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+            when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
 
             HttpServletRequest request = mock(HttpServletRequest.class);
             HttpSession session = mock(HttpSession.class);
@@ -252,9 +256,7 @@ public class UserServiceTest {
             userService.autoLogin(user);
 
             verify(session).setAttribute(
-                    eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY),
-                    any()
-            );
+                    eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY), any());
         }
 
         @Test
@@ -263,7 +265,7 @@ public class UserServiceTest {
             user.setEmail("user@example.com");
             user.setPasswordHash("hash");
             when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(userDetails);
-            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+            when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
 
             HttpServletRequest request = mock(HttpServletRequest.class);
             HttpSession session = mock(HttpSession.class);
@@ -283,13 +285,11 @@ public class UserServiceTest {
             user.setEmail("user@example.com");
             user.setPasswordHash("hash");
             when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(userDetails);
-            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+            when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
 
             RequestContextHolder.resetRequestAttributes();
 
-            boolean result = userService.autoLogin(user);
-
-            assertThat(result).isFalse();
+            assertThat(userService.autoLogin(user)).isFalse();
         }
 
         @Test
@@ -298,7 +298,7 @@ public class UserServiceTest {
             user.setEmail("user@example.com");
             user.setPasswordHash("hash");
             when(userDetailsService.loadUserByUsername("user@example.com")).thenReturn(userDetails);
-            when(userDetails.getAuthorities()).thenReturn(java.util.Collections.emptyList());
+            when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
 
             RequestContextHolder.resetRequestAttributes();
 
@@ -335,9 +335,7 @@ public class UserServiceTest {
             User user = userWithResetToken("expired-token", LocalDateTime.now().minusMinutes(1));
             when(userRepository.findByResetToken("expired-token")).thenReturn(Optional.of(user));
 
-            boolean result = userService.resetPassword("expired-token", "newPassword");
-
-            assertThat(result).isFalse();
+            assertThat(userService.resetPassword("expired-token", "newPassword")).isFalse();
             verify(userRepository, never()).save(any());
         }
 
@@ -345,9 +343,7 @@ public class UserServiceTest {
         void resetPassword_unknownToken_returnsFalse() {
             when(userRepository.findByResetToken("unknown")).thenReturn(Optional.empty());
 
-            boolean result = userService.resetPassword("unknown", "newPassword");
-
-            assertThat(result).isFalse();
+            assertThat(userService.resetPassword("unknown", "newPassword")).isFalse();
         }
     }
 
@@ -378,7 +374,8 @@ public class UserServiceTest {
             when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
             when(passwordEncoder.matches("wrongPassword", "old_hash")).thenReturn(false);
 
-            assertThatThrownBy(() -> userService.changePassword("user@example.com", "wrongPassword", "newPassword"))
+            assertThatThrownBy(() ->
+                    userService.changePassword("user@example.com", "wrongPassword", "newPassword"))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("incorrect");
 
@@ -389,7 +386,8 @@ public class UserServiceTest {
         void changePassword_unknownUser_throwsIllegalArgumentException() {
             when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> userService.changePassword("unknown@example.com", "pw", "newpw"))
+            assertThatThrownBy(() ->
+                    userService.changePassword("unknown@example.com", "pw", "newpw"))
                     .isInstanceOf(IllegalArgumentException.class);
         }
     }
@@ -419,7 +417,6 @@ public class UserServiceTest {
         void requestPasswordReset_unknownEmail_doesNothingAndDoesNotRevealExistence() {
             when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
-            // Should not throw and should not send email
             userService.requestPasswordReset("unknown@example.com");
 
             verify(emailService, never()).sendPasswordResetEmail(any());
@@ -442,8 +439,8 @@ public class UserServiceTest {
 
             userService.updateLastLogin("user@example.com");
 
-            assertThat(user.getLastLoginAt()).isNotNull();
-            assertThat(user.getLastLoginAt()).isBeforeOrEqualTo(LocalDateTime.now());
+            assertThat(user.getLastLoginAt()).isNotNull()
+                    .isBeforeOrEqualTo(LocalDateTime.now());
         }
 
         @Test
@@ -454,34 +451,6 @@ public class UserServiceTest {
 
             verify(userRepository, never()).save(any());
         }
-    }
-
-    // =========================================================================
-    // Helpers
-    // =========================================================================
-
-    private User userWithVerificationToken(String token, LocalDateTime expiry) {
-        User user = new User();
-        user.setEmail("user@example.com");
-        user.setEnabled(false);
-        user.setVerificationToken(token);
-        user.setVerificationTokenExpiryDate(expiry);
-        return user;
-    }
-
-    private User userWithResetToken(String token, LocalDateTime expiry) {
-        User user = new User();
-        user.setEmail("user@example.com");
-        user.setResetToken(token);
-        user.setResetTokenExpiryDate(expiry);
-        return user;
-    }
-
-    private User userWithPassword() {
-        User user = new User();
-        user.setEmail("user@example.com");
-        user.setPasswordHash("old_hash");
-        return user;
     }
 
     // =========================================================================
@@ -514,6 +483,19 @@ public class UserServiceTest {
         }
 
         @Test
+        void updateProfile_publishesUserChangedEvent() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setFirstName("First");
+            user.setLastName("Last");
+            when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+
+            userService.updateProfile("user@example.com", "First", "Last", 40);
+
+            verify(eventPublisher).publishEvent(any(UserChangedEvent.class));
+        }
+
+        @Test
         void weeklyTargetHoursZero_accepted() {
             User user = new User();
             user.setEmail("user@example.com");
@@ -536,20 +518,25 @@ public class UserServiceTest {
             user.setLastName("Last");
             when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
 
-            assertThatThrownBy(() -> userService.updateProfile("user@example.com", "First", "Last", 999))
+            assertThatThrownBy(() ->
+                    userService.updateProfile("user@example.com", "First", "Last", 999))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("weeklyTargetHours must be between 0 and 80");
+
+            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
         void unknownEmail_throwsIllegalArgument() {
             when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> userService.updateProfile("unknown@example.com", "First", "Last", 40))
+            assertThatThrownBy(() ->
+                    userService.updateProfile("unknown@example.com", "First", "Last", 40))
                     .isInstanceOf(IllegalArgumentException.class);
+
+            verify(eventPublisher, never()).publishEvent(any());
         }
     }
-
 
     // =========================================================================
     // register – registration disabled
@@ -566,8 +553,8 @@ public class UserServiceTest {
 
         @Test
         void register_throwsRegistrationDisabledException() {
-            assertThatThrownBy(() -> userService.register(
-                    "new@example.com", "password123", "First", "Last"))
+            assertThatThrownBy(() ->
+                    userService.register("new@example.com", "password123", "First", "Last"))
                     .isInstanceOf(RegistrationDisabledException.class)
                     .hasMessageContaining("disabled");
         }
@@ -593,5 +580,31 @@ public class UserServiceTest {
         }
     }
 
+    // =========================================================================
+    // Helpers
+    // =========================================================================
 
+    private User userWithVerificationToken(String token, LocalDateTime expiry) {
+        User user = new User();
+        user.setEmail("user@example.com");
+        user.setEnabled(false);
+        user.setVerificationToken(token);
+        user.setVerificationTokenExpiryDate(expiry);
+        return user;
+    }
+
+    private User userWithResetToken(String token, LocalDateTime expiry) {
+        User user = new User();
+        user.setEmail("user@example.com");
+        user.setResetToken(token);
+        user.setResetTokenExpiryDate(expiry);
+        return user;
+    }
+
+    private User userWithPassword() {
+        User user = new User();
+        user.setEmail("user@example.com");
+        user.setPasswordHash("old_hash");
+        return user;
+    }
 }

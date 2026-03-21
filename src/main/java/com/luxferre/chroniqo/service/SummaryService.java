@@ -5,9 +5,14 @@ import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.User;
+import com.luxferre.chroniqo.service.event.AbsenceBroadcaster;
+import com.luxferre.chroniqo.service.event.BroadcastListener;
+import com.luxferre.chroniqo.service.event.TimeEntryBroadcaster;
+import com.luxferre.chroniqo.service.event.UserBroadcaster;
 import com.luxferre.chroniqo.service.user.UserService;
 import com.luxferre.chroniqo.util.IsWeekendQuery;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.shared.Registration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +23,7 @@ import java.time.Year;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Computes aggregated time-tracking summaries for the dashboard and monthly
@@ -38,6 +44,9 @@ public class SummaryService {
 
     private final TimeTrackingService timeTrackingService;
     private final UserService userService;
+    private final TimeEntryBroadcaster timeEntryBroadcaster;
+    private final AbsenceBroadcaster absenceBroadcaster;
+    private final UserBroadcaster userBroadcaster;
 
 
     /**
@@ -114,6 +123,17 @@ public class SummaryService {
         int percentage = targetMinutes > 0 ? (workedMinutes * 100) / targetMinutes : 0;
         boolean hasTarget = targetMinutes > 0;
         return new WeeklyProgressDTO(workedMinutes, targetMinutes, percentage, hasTarget);
+    }
+
+    /**
+     * Registers a broadcast listener for time entry and absence events for the current user.
+     *
+     * @param listener the listener to register
+     * @return a set of registrations for the listener
+     */
+    public Set<Registration> register(BroadcastListener listener) {
+        User user = userService.getCurrentUser();
+        return Set.of(timeEntryBroadcaster.register(user, listener), absenceBroadcaster.register(user, listener), userBroadcaster.register(user, listener));
     }
 
     /**

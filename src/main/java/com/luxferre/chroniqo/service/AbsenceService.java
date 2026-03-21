@@ -4,9 +4,11 @@ import com.luxferre.chroniqo.dto.AbsenceRequest;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
+import com.luxferre.chroniqo.service.event.AbsenceChangedEvent;
 import com.luxferre.chroniqo.service.user.UserService;
 import com.luxferre.chroniqo.util.IsWeekendQuery;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class AbsenceService {
 
     private final AbsenceRepository repository;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Saves absences for every working day in the requested date range,
@@ -52,6 +55,8 @@ public class AbsenceService {
             absence.setType(absenceRequest.absenceType());
             return absence;
         }).toList());
+
+        eventPublisher.publishEvent(new AbsenceChangedEvent(user, getClass()));
     }
 
     /**
@@ -74,7 +79,11 @@ public class AbsenceService {
     @Transactional
     public void deleteAbsences(LocalDate startDate, LocalDate endDate) {
         User user = userService.getCurrentUser();
-        repository.deleteAll(repository.findByUserAndDateBetween(user, startDate, endDate));
+        List<Absence> absenceList = repository.findByUserAndDateBetween(user, startDate, endDate);
+        if (!absenceList.isEmpty()) {
+            repository.deleteAll(absenceList);
+            eventPublisher.publishEvent(new AbsenceChangedEvent(user, getClass()));
+        }
     }
 
     /**

@@ -6,9 +6,11 @@ import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.service.EmailService;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
+import com.luxferre.chroniqo.service.event.UserChangedEvent;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -48,6 +50,7 @@ public class UserService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
 
     private final AppProperties appProperties;
@@ -225,6 +228,8 @@ public class UserService {
         user.setLastName(lastName);
         user.setWeeklyTargetHours(weeklyTargetHours);
         userRepository.save(user);
+
+        eventPublisher.publishEvent(new UserChangedEvent(user, getClass()));
     }
 
     /**

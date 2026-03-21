@@ -2,6 +2,7 @@ package com.luxferre.chroniqo;
 
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.lumo.Lumo;
 import org.springframework.boot.SpringApplication;
@@ -28,6 +29,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         shortName = "Chroniqo",
         description = "Time Tracking Application"
 )
+@Push
 public class ChroniqoApplication implements AppShellConfigurator {
 
 
