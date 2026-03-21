@@ -13,6 +13,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -49,6 +50,7 @@ public class RegisterView extends VerticalLayout {
 
     private final TextField firstNameField = new TextField("First Name");
     private final TextField lastNameField = new TextField("Last Name");
+    private final IntegerField weeklyTargetHoursField = new IntegerField("Weekly Target Hours");
     private final EmailField emailField = new EmailField("Email");
     private final PasswordField passwordField = new PasswordField("Password");
     private final PasswordField confirmPasswordField = new PasswordField("Confirm Password");
@@ -111,6 +113,12 @@ public class RegisterView extends VerticalLayout {
         lastNameField.setRequired(true);
         lastNameField.setWidthFull();
 
+        weeklyTargetHoursField.setWidthFull();
+        weeklyTargetHoursField.setMin(0);
+        weeklyTargetHoursField.setMax(80);
+        weeklyTargetHoursField.setStepButtonsVisible(true);
+        weeklyTargetHoursField.setHelperText("0–80 hours per week (0 = no target)");
+
         emailField.setRequired(true);
         emailField.setWidthFull();
         emailField.setErrorMessage("Please enter a valid email address");
@@ -160,6 +168,7 @@ public class RegisterView extends VerticalLayout {
                 subtitle,
                 firstNameField,
                 lastNameField,
+                weeklyTargetHoursField,
                 emailField,
                 passwordField,
                 confirmPasswordField,
@@ -178,6 +187,11 @@ public class RegisterView extends VerticalLayout {
         binder.forField(lastNameField)
                 .asRequired("Last name is required")
                 .bind(RegistrationForm::getLastName, RegistrationForm::setLastName);
+
+        binder.forField(weeklyTargetHoursField)
+                .asRequired("Weekly Target Hours are required")
+                .withValidator(hours -> hours >= 0 && hours <= 80, "Please enter a value between 0 and 80")
+                .bind(RegistrationForm::getWeeklyTargetHours, RegistrationForm::setWeeklyTargetHours);
 
         binder.forField(emailField)
                 .asRequired("Email is required")
@@ -206,7 +220,8 @@ public class RegisterView extends VerticalLayout {
                         form.getEmail(),
                         form.getPassword(),
                         form.getFirstName(),
-                        form.getLastName()
+                        form.getLastName(),
+                        form.getWeeklyTargetHours()
                 );
 
                 Notification.show(
@@ -244,6 +259,7 @@ public class RegisterView extends VerticalLayout {
     public static class RegistrationForm {
         private String firstName;
         private String lastName;
+        private Integer weeklyTargetHours;
         private String email;
         private String password;
         private String confirmPassword;
