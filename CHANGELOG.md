@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.35] - 2026-03-21
+
+### Added
+- add weekly target hours in register view as mandatory field
+
+
+### Maintenance
+- Merge pull request #51 from LuxFerre86/feature/add-working-hours-in-register
+
 ## [2026.03.34] - 2026-03-21
 
 ### Added
