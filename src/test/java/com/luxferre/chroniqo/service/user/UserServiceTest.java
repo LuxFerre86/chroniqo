@@ -77,12 +77,13 @@ public class UserServiceTest {
         void register_newUser_savesUserAndSendsVerificationEmail() {
             when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
 
-            User result = userService.register("new@example.com", "password123", "Max", "Mustermann");
+            User result = userService.register("new@example.com", "password123", "Max", "Mustermann", 40);
 
             assertThat(result.getEmail()).isEqualTo("new@example.com");
             assertThat(result.getPasswordHash()).isEqualTo("hashed_password");
             assertThat(result.getFirstName()).isEqualTo("Max");
             assertThat(result.getLastName()).isEqualTo("Mustermann");
+            assertThat(result.getWeeklyTargetHours()).isEqualTo(40);
             assertThat(result.isEnabled()).isFalse();
             assertThat(result.getVerificationToken()).isNotNull();
             assertThat(result.getVerificationTokenExpiryDate()).isAfter(LocalDateTime.now());
@@ -97,7 +98,7 @@ public class UserServiceTest {
         void register_existingEmail_throwsIllegalArgumentException() {
             when(userRepository.findByEmail("existing@example.com")).thenReturn(Optional.of(new User()));
 
-            assertThatThrownBy(() -> userService.register("existing@example.com", "pw", "A", "B"))
+            assertThatThrownBy(() -> userService.register("existing@example.com", "pw", "A", "B", 40))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("already registered");
 
@@ -110,7 +111,7 @@ public class UserServiceTest {
         void register_passwordIsHashed_notStoredInPlaintext() {
             when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
-            userService.register("user@example.com", "myPlainPassword", "A", "B");
+            userService.register("user@example.com", "myPlainPassword", "A", "B", 40);
 
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
             verify(userRepository).save(captor.capture());
@@ -554,7 +555,7 @@ public class UserServiceTest {
         @Test
         void register_throwsRegistrationDisabledException() {
             assertThatThrownBy(() ->
-                    userService.register("new@example.com", "password123", "First", "Last"))
+                    userService.register("new@example.com", "password123", "First", "Last", 40))
                     .isInstanceOf(RegistrationDisabledException.class)
                     .hasMessageContaining("disabled");
         }
@@ -562,7 +563,7 @@ public class UserServiceTest {
         @Test
         void register_doesNotSaveUser() {
             try {
-                userService.register("new@example.com", "password123", "First", "Last");
+                userService.register("new@example.com", "password123", "First", "Last", 40);
             } catch (RegistrationDisabledException ignored) {
             }
 
@@ -572,7 +573,7 @@ public class UserServiceTest {
         @Test
         void register_doesNotSendEmail() {
             try {
-                userService.register("new@example.com", "password123", "First", "Last");
+                userService.register("new@example.com", "password123", "First", "Last", 40);
             } catch (RegistrationDisabledException ignored) {
             }
 

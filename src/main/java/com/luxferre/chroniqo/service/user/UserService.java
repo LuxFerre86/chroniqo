@@ -82,7 +82,7 @@ public class UserService {
      * @throws IllegalArgumentException      if the email address is already registered
      */
     @Transactional
-    public User register(String email, String password, String firstName, String lastName) {
+    public User register(String email, String password, String firstName, String lastName, Integer weeklyTargetHours) {
         if (!appProperties.getRegistrationProperties().isEnabled()) {
             throw new RegistrationDisabledException("Registration is currently disabled.");
         }
@@ -98,6 +98,7 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(password));
         user.setFirstName(firstName);
         user.setLastName(lastName);
+        user.setWeeklyTargetHours(weeklyTargetHours);
         user.setEnabled(false); // Disabled until email verified
 
         // Generate verification token
