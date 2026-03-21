@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.34] - 2026-03-21
+
+### Added
+- implement multi-session real-time UI synchronisation via Vaadin @Push
+
+
+### Maintenance
+- Merge pull request #50 from LuxFerre86/feature/refresh-views-on-update-event
+
 ## [2026.03.33] - 2026-03-15
 
 ### Maintenance
