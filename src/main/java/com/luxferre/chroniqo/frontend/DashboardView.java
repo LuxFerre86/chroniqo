@@ -6,6 +6,9 @@ import com.luxferre.chroniqo.frontend.dashboard.QuickStatsWidget;
 import com.luxferre.chroniqo.frontend.dashboard.TodaySummaryCard;
 import com.luxferre.chroniqo.frontend.dashboard.WeekChartWidget;
 import com.luxferre.chroniqo.service.SummaryService;
+import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.DetachEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H2;
@@ -15,12 +18,15 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.shared.Registration;
 import jakarta.annotation.security.PermitAll;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Main dashboard view shown at the application root ({@code "/"}).
@@ -40,6 +46,7 @@ public class DashboardView extends VerticalLayout {
 
     private final SummaryService summaryService;
     private final TimeEntryDialog timeEntryDialog;
+    private Set<Registration> registrations;
 
     // Widgets
     private final TodaySummaryCard todaySummaryCard;
@@ -54,9 +61,6 @@ public class DashboardView extends VerticalLayout {
         setSizeFull();
         setPadding(true);
         setSpacing(true);
-
-        // Dialog Listener - Refresh on close
-        this.timeEntryDialog.addClosedListener(event -> refreshDashboard());
 
         // Page Header
         HorizontalLayout header = createHeader();
@@ -94,8 +98,21 @@ public class DashboardView extends VerticalLayout {
         add(header, mainContent);
         setHorizontalComponentAlignment(Alignment.CENTER, mainContent);
 
-        // Load Data
+    }
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        UI ui = attachEvent.getUI();
+        registrations = summaryService.register(event -> ui.access(this::refreshDashboard));
         refreshDashboard();
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        super.onDetach(detachEvent);
+        Optional.ofNullable(registrations).ifPresent(regs -> regs.forEach(Registration::remove));
+        registrations = null;
     }
 
     private HorizontalLayout createHeader() {

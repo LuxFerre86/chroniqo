@@ -4,14 +4,19 @@ import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.service.SummaryService;
 import com.luxferre.chroniqo.util.IsWeekendQuery;
+import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.DetachEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.RolesAllowed;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -33,6 +38,7 @@ import java.util.stream.Collectors;
  * @author Luxferre86
  * @since 14.02.2026
  */
+@Slf4j
 @Route("month")
 @UIScope
 @Component
@@ -46,15 +52,11 @@ public class MonthView extends VerticalLayout {
     private Map<LocalDate, DaySummaryDTO> yearSummaries = new HashMap<>();
     private final TimeEntryDialog timeEntryDialog;
     private final StatisticsCard monthStatisticsCard;
+    private Set<Registration> registrations;
 
     public MonthView(SummaryService summaryService, TimeEntryDialog timeEntryDialog) {
         this.summaryService = summaryService;
         this.timeEntryDialog = timeEntryDialog;
-        this.timeEntryDialog.addClosedListener(event1 -> {
-            loadSummaries();
-            renderCalendar();
-            updateStatistics();
-        });
 
         setSizeFull();
         setPadding(true);
@@ -76,13 +78,31 @@ public class MonthView extends VerticalLayout {
         calendarGrid.addClassName("calendar-grid");
         calendarGrid.setWidthFull();
 
-        loadSummaries();
-        renderCalendar();
-        updateStatistics();
-
         add(monthSelector, monthStatisticsCard, calendarGrid);
         setHorizontalComponentAlignment(Alignment.CENTER, monthSelector);
         setFlexGrow(1, calendarGrid);
+    }
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        UI ui = attachEvent.getUI();
+        registrations = summaryService.register(event -> ui.access(() -> {
+            loadSummaries();
+            renderCalendar();
+            updateStatistics();
+        }));
+
+        loadSummaries();
+        renderCalendar();
+        updateStatistics();
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        super.onDetach(detachEvent);
+        Optional.ofNullable(registrations).ifPresent(regs -> regs.forEach(Registration::remove));
+        registrations = null;
     }
 
     private void renderCalendar() {

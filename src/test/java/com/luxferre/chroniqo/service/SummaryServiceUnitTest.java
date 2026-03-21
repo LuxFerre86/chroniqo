@@ -5,6 +5,9 @@ import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.AbsenceType;
+import com.luxferre.chroniqo.service.event.AbsenceBroadcaster;
+import com.luxferre.chroniqo.service.event.TimeEntryBroadcaster;
+import com.luxferre.chroniqo.service.event.UserBroadcaster;
 import com.luxferre.chroniqo.service.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -37,7 +40,10 @@ public class SummaryServiceUnitTest {
     void setUp() {
         summaryService = new SummaryService(
                 mock(TimeTrackingService.class),
-                mock(UserService.class)
+                mock(UserService.class),
+                mock(TimeEntryBroadcaster.class),
+                mock(AbsenceBroadcaster.class),
+                mock(UserBroadcaster.class)
         );
     }
 
@@ -223,7 +229,10 @@ public class SummaryServiceUnitTest {
         void setUp() {
             TimeTrackingService mockTimeTrackingService = mock(TimeTrackingService.class);
             UserService mockUserService = mock(UserService.class);
-            spySummaryService = new SummaryService(mockTimeTrackingService, mockUserService);
+            TimeEntryBroadcaster timeEntryBroadcaster = mock(TimeEntryBroadcaster.class);
+            AbsenceBroadcaster absenceBroadcaster = mock(AbsenceBroadcaster.class);
+            UserBroadcaster userBroadcaster = mock(UserBroadcaster.class);
+            spySummaryService = new SummaryService(mockTimeTrackingService, mockUserService, timeEntryBroadcaster, absenceBroadcaster, userBroadcaster);
 
             com.luxferre.chroniqo.model.User user = new com.luxferre.chroniqo.model.User();
             user.setWeeklyTargetHours(39);

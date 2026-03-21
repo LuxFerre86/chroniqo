@@ -104,7 +104,7 @@ public class EmailService {
      * Anonymizes an email address for safe logging.
      * Example: {@code john.doe@example.com} → {@code joh***@example.com}
      */
-    static String anonymize(String email) {
+    public String anonymize(String email) {
         if (email == null) return "[null]";
         int atIndex = email.indexOf('@');
         if (atIndex <= 0) return "[invalid]";

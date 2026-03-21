@@ -5,8 +5,10 @@ import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.TimeEntryStatus;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
+import com.luxferre.chroniqo.service.event.TimeEntryChangedEvent;
 import com.luxferre.chroniqo.service.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class TimeEntryService {
 
     private final TimeEntryRepository timeEntryRepository;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // Validation constants
     private static final int MIN_BREAK_MINUTES = 0;
@@ -107,6 +110,8 @@ public class TimeEntryService {
         }
 
         timeEntryRepository.save(entry);
+
+        eventPublisher.publishEvent(new TimeEntryChangedEvent(user, getClass()));
     }
 
     /**
@@ -129,9 +134,11 @@ public class TimeEntryService {
     @Transactional
     public void deleteEntries(LocalDate startDate, LocalDate endDate) {
         User user = userService.getCurrentUser();
-        timeEntryRepository.deleteAll(
-                timeEntryRepository.findByUserAndDateBetween(user, startDate, endDate)
-        );
+        List<TimeEntry> timeEntryList = timeEntryRepository.findByUserAndDateBetween(user, startDate, endDate);
+        if (!timeEntryList.isEmpty()) {
+            timeEntryRepository.deleteAll(timeEntryList);
+            eventPublisher.publishEvent(new TimeEntryChangedEvent(user, getClass()));
+        }
     }
 
     /**
