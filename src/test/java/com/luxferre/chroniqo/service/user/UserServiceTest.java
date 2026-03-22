@@ -26,9 +26,12 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -475,7 +478,7 @@ public class UserServiceTest {
             user.setWeeklyTargetHours(0);
             when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
 
-            userService.updateProfile("user@example.com", "New", "Name", 40);
+            userService.updateProfile("user@example.com", "New", "Name", 40, User.DEFAULT_WORKING_DAYS);
 
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
             verify(userRepository).save(captor.capture());
@@ -491,7 +494,7 @@ public class UserServiceTest {
             user.setLastName("Last");
             when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
 
-            userService.updateProfile("user@example.com", "First", "Last", 40);
+            userService.updateProfile("user@example.com", "First", "Last", 40, User.DEFAULT_WORKING_DAYS);
 
             verify(eventPublisher).publishEvent(any(UserChangedEvent.class));
         }
@@ -504,7 +507,7 @@ public class UserServiceTest {
             user.setLastName("Last");
             when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
 
-            userService.updateProfile("user@example.com", "First", "Last", 0);
+            userService.updateProfile("user@example.com", "First", "Last", 0, User.DEFAULT_WORKING_DAYS);
 
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
             verify(userRepository).save(captor.capture());
@@ -520,7 +523,7 @@ public class UserServiceTest {
             when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
 
             assertThatThrownBy(() ->
-                    userService.updateProfile("user@example.com", "First", "Last", 999))
+                    userService.updateProfile("user@example.com", "First", "Last", 999, User.DEFAULT_WORKING_DAYS))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("weeklyTargetHours must be between 0 and 80");
 
@@ -532,8 +535,46 @@ public class UserServiceTest {
             when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
             assertThatThrownBy(() ->
-                    userService.updateProfile("unknown@example.com", "First", "Last", 40))
+                    userService.updateProfile("unknown@example.com", "First", "Last", 40, User.DEFAULT_WORKING_DAYS))
                     .isInstanceOf(IllegalArgumentException.class);
+
+            verify(eventPublisher, never()).publishEvent(any());
+        }
+
+        @Test
+        void updateProfile_withCustomWorkingDays_persists() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setFirstName("First");
+            user.setLastName("Last");
+            when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+
+            Set<DayOfWeek> fourDayWeek = EnumSet.of(
+                    DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+                    DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY);
+
+            userService.updateProfile("user@example.com", "First", "Last", 32, fourDayWeek);
+
+            ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(captor.capture());
+            assertThat(captor.getValue().getWorkingDaysOrDefault())
+                    .containsExactlyInAnyOrder(
+                            DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+                            DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY);
+        }
+
+        @Test
+        void updateProfile_emptyWorkingDays_throwsIllegalArgument() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setFirstName("First");
+            user.setLastName("Last");
+            when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+
+            assertThatThrownBy(() ->
+                    userService.updateProfile("user@example.com", "First", "Last", 40, Set.of()))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("At least one working day");
 
             verify(eventPublisher, never()).publishEvent(any());
         }
