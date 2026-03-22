@@ -22,8 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -211,23 +213,27 @@ public class UserService {
     }
 
     /**
-     * Updates the user's display name and weekly working-hour target.
+     * Updates the user's display name, weekly working-hour target, and working days.
      *
      * @param email             the email that identifies the user to update
      * @param firstName         the new first name
      * @param lastName          the new last name
      * @param weeklyTargetHours the new weekly target in hours (0–80)
-     * @throws IllegalArgumentException if the user is not found or
-     *                                  {@code weeklyTargetHours} is outside [0, 80]
+     * @param workingDays       the new set of working days; must not be null or empty
+     * @throws IllegalArgumentException if the user is not found,
+     *                                  {@code weeklyTargetHours} is outside [0, 80],
+     *                                  or {@code workingDays} is null or empty
      */
     @Transactional
-    public void updateProfile(String email, String firstName, String lastName, int weeklyTargetHours) {
+    public void updateProfile(String email, String firstName, String lastName,
+                              int weeklyTargetHours, Set<DayOfWeek> workingDays) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setWeeklyTargetHours(weeklyTargetHours);
+        user.setWorkingDays(workingDays);
         userRepository.save(user);
 
         eventPublisher.publishEvent(new UserChangedEvent(user, getClass()));

@@ -4,6 +4,7 @@ import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.service.user.UserService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
@@ -25,7 +26,9 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.DayOfWeek;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Authenticated settings view ({@code /settings}) that lets the current user
@@ -51,6 +54,7 @@ public class SettingsView extends VerticalLayout {
     private final TextField lastNameField = new TextField("Last Name");
     private final EmailField emailField = new EmailField("Email");
     private final IntegerField weeklyTargetHoursField = new IntegerField("Weekly Target Hours");
+    private final CheckboxGroup<DayOfWeek> workingDaysField = new CheckboxGroup<>("Working Days");
     private final Button saveProfileButton = new Button("Save Changes");
 
     // Password Section
@@ -138,11 +142,18 @@ public class SettingsView extends VerticalLayout {
         weeklyTargetHoursField.setStepButtonsVisible(true);
         weeklyTargetHoursField.setHelperText("0–80 hours per week (0 = no target)");
 
+        workingDaysField.setItems(DayOfWeek.values());
+        workingDaysField.setItemLabelGenerator(day ->
+                day.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH));
+        workingDaysField.setValue(currentUser.getWorkingDaysOrDefault());
+        workingDaysField.setWidthFull();
+        workingDaysField.setHelperText("Select the days you are scheduled to work");
+
         saveProfileButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveProfileButton.addClickListener(e -> saveProfile());
 
         section.add(sectionTitle, firstNameField, lastNameField, emailField,
-                weeklyTargetHoursField, saveProfileButton);
+                weeklyTargetHoursField, workingDaysField, saveProfileButton);
         return section;
     }
 
@@ -291,18 +302,28 @@ public class SettingsView extends VerticalLayout {
             return;
         }
 
+        Set<DayOfWeek> selectedDays = workingDaysField.getValue();
+        if (selectedDays == null || selectedDays.isEmpty()) {
+            Notification.show("Please select at least one working day.",
+                            4000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
         try {
             userService.updateProfile(
                     currentUser.getEmail(),
                     firstNameField.getValue(),
                     lastNameField.getValue(),
-                    weeklyHours
+                    weeklyHours,
+                    selectedDays
             );
 
             // Update local user object
             currentUser.setFirstName(firstNameField.getValue());
             currentUser.setLastName(lastNameField.getValue());
             currentUser.setWeeklyTargetHours(weeklyHours);
+            currentUser.setWorkingDays(selectedDays);
 
             Notification.show(
                     "Profile updated successfully!",

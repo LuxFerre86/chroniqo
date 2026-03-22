@@ -5,6 +5,7 @@ import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.AbsenceType;
+import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.service.event.AbsenceBroadcaster;
 import com.luxferre.chroniqo.service.event.TimeEntryBroadcaster;
 import com.luxferre.chroniqo.service.event.UserBroadcaster;
@@ -15,10 +16,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -136,7 +140,7 @@ public class SummaryServiceUnitTest {
         void weekday_withCompletedEntry_correctBalanceAndTarget() {
             TimeEntryDTO entry = entry(WEEKDAY, LocalTime.of(7, 15), LocalTime.of(17, 45), 70);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
 
             assertThat(result.date()).isEqualTo(WEEKDAY);
             assertThat(result.workedMinutes()).isEqualTo(560);
@@ -147,7 +151,7 @@ public class SummaryServiceUnitTest {
 
         @Test
         void weekday_withNoEntry_balanceIsNegativeTarget() {
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, Collections.emptyList(), Collections.emptyList(), DAILY_TARGET_MINUTES);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, Collections.emptyList(), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
 
             assertThat(result.date()).isEqualTo(WEEKDAY);
             assertThat(result.workedMinutes()).isEqualTo(0);
@@ -160,7 +164,7 @@ public class SummaryServiceUnitTest {
         void weekend_withEntry_balanceEqualsWorkedMinutes_noTarget() {
             TimeEntryDTO entry = entry(WEEKEND, LocalTime.of(10, 0), LocalTime.of(14, 0), 0);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKEND, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKEND, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
 
             assertThat(result.date()).isEqualTo(WEEKEND);
             assertThat(result.workedMinutes()).isEqualTo(240);
@@ -171,7 +175,7 @@ public class SummaryServiceUnitTest {
 
         @Test
         void weekend_withNoEntry_zeroBalance_noTarget() {
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKEND, Collections.emptyList(), Collections.emptyList(), DAILY_TARGET_MINUTES);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKEND, Collections.emptyList(), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
 
             assertThat(result.workedMinutes()).isEqualTo(0);
             assertThat(result.targetMinutes()).isEqualTo(0);
@@ -185,7 +189,7 @@ public class SummaryServiceUnitTest {
             TimeEntryDTO entry = entry(WEEKDAY, LocalTime.of(9, 0), LocalTime.of(17, 0), 0);
             Absence absence = absence(absenceType);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), List.of(absence), DAILY_TARGET_MINUTES);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), List.of(absence), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
 
             assertThat(result.workedMinutes()).isEqualTo(0);
             assertThat(result.targetMinutes()).isEqualTo(0);
@@ -198,7 +202,7 @@ public class SummaryServiceUnitTest {
             // Break larger than work duration → workedMinutes must be 0, not negative
             TimeEntryDTO entry = entry(WEEKDAY, LocalTime.of(9, 0), LocalTime.of(9, 20), 60);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
 
             assertThat(result.workedMinutes()).isGreaterThanOrEqualTo(0);
             // balance may be negative (not enough hours worked), but workedMinutes must not be
@@ -210,9 +214,37 @@ public class SummaryServiceUnitTest {
             LocalDate otherDay = WEEKDAY.plusDays(1);
             TimeEntryDTO entry = entry(otherDay, LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
 
             assertThat(result.workedMinutes()).isEqualTo(0);
+        }
+
+        @Test
+        void createDaySummaryDTO_nonWorkday_configuredByUser_noTarget() {
+            // Saturday configured as non-workday (default)
+            LocalDate saturday = LocalDate.now()
+                    .with(java.time.temporal.TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    saturday, List.of(), List.of(), 480, User.DEFAULT_WORKING_DAYS);
+
+            assertThat(result.isWorkday()).isFalse();
+            assertThat(result.targetMinutes()).isZero();
+        }
+
+        @Test
+        void createDaySummaryDTO_saturdayIsWorkday_hasTarget() {
+            LocalDate saturday = LocalDate.now()
+                    .with(java.time.temporal.TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+            Set<DayOfWeek> sixDayWeek = EnumSet.of(
+                    DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                    DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY);
+
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    saturday, List.of(), List.of(), 480, sixDayWeek);
+
+            assertThat(result.isWorkday()).isTrue();
+            assertThat(result.targetMinutes()).isEqualTo(480);
         }
     }
 
@@ -316,27 +348,38 @@ public class SummaryServiceUnitTest {
         @Test
         void normalValue_usedAsIs() {
             // 40h / 5 days = 480 min/day
-            int dailyTarget = summaryService.calculateDailyTargetMinutes(40);
+            int dailyTarget = summaryService.calculateDailyTargetMinutes(40, 5);
             assertThat(dailyTarget).isEqualTo(480);
         }
 
         @Test
         void zeroValue_producesZeroDailyTarget() {
-            int dailyTarget = summaryService.calculateDailyTargetMinutes(0);
+            int dailyTarget = summaryService.calculateDailyTargetMinutes(0, 5);
             assertThat(dailyTarget).isZero();
         }
 
         @Test
         void negativeValue_clampedToZero() {
-            int dailyTarget = summaryService.calculateDailyTargetMinutes(-10);
+            int dailyTarget = summaryService.calculateDailyTargetMinutes(-10, 5);
             assertThat(dailyTarget).isZero();
         }
 
         @Test
         void valueAboveMax_clampedToEighty() {
             // 80h / 5 days = 960 min/day
-            int dailyTarget = summaryService.calculateDailyTargetMinutes(999);
+            int dailyTarget = summaryService.calculateDailyTargetMinutes(999, 5);
             assertThat(dailyTarget).isEqualTo(960);
+        }
+
+        @Test
+        void calculateDailyTargetMinutes_fourDayWeek_40h() {
+            // 40h / 4 days = 10h = 600 min per day
+            assertThat(summaryService.calculateDailyTargetMinutes(40, 4)).isEqualTo(600);
+        }
+
+        @Test
+        void calculateDailyTargetMinutes_zeroDays_returnsZero() {
+            assertThat(summaryService.calculateDailyTargetMinutes(40, 0)).isZero();
         }
     }
 
