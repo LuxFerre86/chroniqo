@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.36] - 2026-03-22
+
+### Added
+- working days are now configurable individual per user
+
+
+### Maintenance
+- Merge pull request #52 from LuxFerre86/feat/configurable-working-days
+
 ## [2026.03.35] - 2026-03-21
 
 ### Added
