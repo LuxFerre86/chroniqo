@@ -4,6 +4,7 @@ import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
+import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.service.event.AbsenceBroadcaster;
 import com.luxferre.chroniqo.service.event.BroadcastListener;
@@ -15,13 +16,11 @@ import com.vaadin.flow.shared.Registration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.DayOfWeek;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.Year;
+import java.time.*;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -29,11 +28,15 @@ import java.util.Set;
  * Computes aggregated time-tracking summaries for the dashboard and monthly
  * calendar view.
  *
- * <p>The central method is {@link #getSummary(LocalDate, LocalDate)},
- * which joins time entries and absences for a date range and produces one
- * {@link DaySummaryDTO} per calendar day, including worked minutes, daily
- * target, running balance, and absence type. Daily targets and workday
- * classification are based on the user's configured working days.
+ * <p>The central method is {@link #getSummary(LocalDate, LocalDate)}, which
+ * joins time entries, absences, and public holidays for a date range and
+ * produces one {@link DaySummaryDTO} per calendar day. Daily targets and
+ * workday classification respect the user's configured working days and country
+ * / subdivision for automatic public holiday detection.
+ *
+ * <p>Public holidays are resolved on the fly via {@link PublicHolidayService}
+ * and never stored in the database. A manually recorded absence always takes
+ * precedence over an automatically detected public holiday.
  *
  * @author Luxferre86
  * @since 28.02.2026
@@ -44,6 +47,7 @@ public class SummaryService {
 
     private final TimeTrackingService timeTrackingService;
     private final UserService userService;
+    private final PublicHolidayService publicHolidayService;
     private final TimeEntryBroadcaster timeEntryBroadcaster;
     private final AbsenceBroadcaster absenceBroadcaster;
     private final UserBroadcaster userBroadcaster;
@@ -51,7 +55,8 @@ public class SummaryService {
     /**
      * Returns the summary for today.
      *
-     * @return today's {@link DaySummaryDTO}, or {@code null} if no data is available
+     * @return today's {@link DaySummaryDTO}, or {@code null} if no data is
+     * available
      */
     public DaySummaryDTO getToday() {
         LocalDate today = LocalDate.now();
@@ -59,8 +64,8 @@ public class SummaryService {
     }
 
     /**
-     * Returns summaries for every day of the current ISO week
-     * (Monday through Sunday) relative to the current UI locale.
+     * Returns summaries for every day of the current ISO week (Monday through
+     * Sunday) relative to the current UI locale.
      *
      * @return list of {@link DaySummaryDTO}, one per day
      */
@@ -102,18 +107,24 @@ public class SummaryService {
         int dailyTargetMinutes = calculateDailyTargetMinutes(
                 user.getWeeklyTargetHours(), workingDays.size());
 
+        Set<LocalDate> holidays = user.getCountryCode() != null
+                ? loadHolidaysForRange(user.getCountryCode(),
+                user.getSubdivisionCode(), startDate, endDate)
+                : Set.of();
+
         return startDate.datesUntil(endDate.plusDays(1L))
-                .map(date -> createDaySummaryDTO(date, entries, absences,
-                        dailyTargetMinutes, workingDays))
+                .map(date -> createDaySummaryDTO(
+                        date, entries, absences,
+                        dailyTargetMinutes, workingDays, holidays))
                 .toList();
     }
 
     /**
-     * Returns the aggregated progress towards the user's weekly hour target
-     * for the current ISO week.
+     * Returns the aggregated progress towards the user's weekly hour target for
+     * the current ISO week.
      *
      * @return a {@link WeeklyProgressDTO} with worked minutes, target minutes,
-     *         percentage, and a flag indicating whether a target is configured
+     * percentage, and a flag indicating whether a target is configured
      */
     public WeeklyProgressDTO getWeeklyProgress() {
         List<DaySummaryDTO> currentWeek = getCurrentWeek();
@@ -141,39 +152,59 @@ public class SummaryService {
 
     /**
      * Builds a {@link DaySummaryDTO} for a single date by correlating time
-     * entries, absences, the user's daily target, and their configured working
-     * days.
+     * entries, absences, public holidays, the user's daily target, and their
+     * configured working days.
      *
-     * @param date               the calendar date to summarise
+     * <p>Priority order for a given date:
+     * <ol>
+     *   <li>Manually recorded absence (vacation, sick, or manually entered
+     *       holiday) — always wins</li>
+     *   <li>Automatically detected public holiday (from country/subdivision)</li>
+     *   <li>Non-working day per the user's working-days configuration</li>
+     *   <li>Normal working day with target and balance calculation</li>
+     * </ol>
+     *
+     * @param date               the calendar date to summarize
      * @param entries            all time entries for the enclosing date range
-     * @param absences           all absences for the enclosing date range
+     * @param absences           all manually recorded absences for the range
      * @param dailyTargetMinutes the user's daily working-time target in minutes
      * @param workingDays        the user's configured set of working days
+     * @param holidays           public holiday dates for the relevant year(s)
      * @return the computed day summary
      */
     DaySummaryDTO createDaySummaryDTO(LocalDate date, List<TimeEntryDTO> entries,
                                       List<Absence> absences, int dailyTargetMinutes,
-                                      Set<DayOfWeek> workingDays) {
+                                      Set<DayOfWeek> workingDays,
+                                      Set<LocalDate> holidays) {
         TimeEntryDTO entry = entries.stream()
                 .filter(e -> e.getDate().equals(date))
                 .findFirst()
                 .orElse(null);
 
         Absence absence = absences.stream()
-                .filter(a -> !date.isBefore(a.getDate()) && !date.isAfter(a.getDate()))
+                .filter(a -> a.getDate().equals(date))
                 .findFirst()
                 .orElse(null);
 
-        boolean isConfiguredWorkday = workingDays.contains(date.getDayOfWeek());
-        boolean isWorkday = isConfiguredWorkday && absence == null;
+        // Public holiday only applies when no manual absence is recorded
+        boolean isPublicHoliday = absence == null && holidays.contains(date);
 
-        int workedMinutes = (entry != null && absence == null)
+        boolean isConfiguredWorkday = workingDays.contains(date.getDayOfWeek());
+        boolean isWorkday = isConfiguredWorkday && absence == null && !isPublicHoliday;
+
+        int workedMinutes = (entry != null && absence == null && !isPublicHoliday)
                 ? calculateWorkedMinutes(entry)
                 : 0;
 
         int targetMinutes = isWorkday ? dailyTargetMinutes : 0;
-        // On non-working days any time worked counts as pure positive balance
-        int balance = isConfiguredWorkday ? workedMinutes - targetMinutes : workedMinutes;
+        // On non-configured workdays or public holidays, any time worked is surplus
+        int balance = (isConfiguredWorkday && !isPublicHoliday)
+                ? workedMinutes - targetMinutes
+                : workedMinutes;
+
+        AbsenceType effectiveAbsenceType = absence != null
+                ? absence.getType()
+                : (isPublicHoliday ? AbsenceType.HOLIDAY : null);
 
         return new DaySummaryDTO(
                 date,
@@ -181,17 +212,16 @@ public class SummaryService {
                 workedMinutes,
                 targetMinutes,
                 balance,
-                absence != null ? absence.getType() : null
-        );
+                effectiveAbsenceType);
     }
 
     /**
      * Computes net worked minutes for a time entry.
      *
      * <p>For a completed entry the result is
-     * {@code (endTime - startTime) - breakMinutes}, clamped to zero.
-     * For an in-progress entry (no end time) the calculation uses
-     * the current wall-clock time as a provisional end.
+     * {@code (endTime - startTime) - breakMinutes}, clamped to zero. For an
+     * in-progress entry (no end time) the calculation uses the current
+     * wall-clock time as a provisional end.
      *
      * @param entry the time entry to evaluate
      * @return net worked minutes, never negative
@@ -214,7 +244,7 @@ public class SummaryService {
         Duration duration = Duration.between(entry.getStartTime(), entry.getEndTime());
         int minutes = (int) duration.toMinutes();
         if (minutes < 0) {
-            minutes += 1440;
+            minutes += 1440; // midnight crossing
         }
         if (entry.getBreakMinutes() != null) {
             minutes -= entry.getBreakMinutes();
@@ -234,5 +264,24 @@ public class SummaryService {
         if (workingDaysCount <= 0) return 0;
         int weeklyHours = Math.clamp(weeklyTargetHours, 0, 80);
         return (weeklyHours * 60) / workingDaysCount;
+    }
+
+    /**
+     * Loads and merges public holidays from jollyday for all calendar years
+     * covered by the given date range.
+     */
+    private Set<LocalDate> loadHolidaysForRange(String countryCode,
+                                                String subdivisionCode,
+                                                LocalDate start, LocalDate end) {
+        if (start.getYear() == end.getYear()) {
+            return publicHolidayService.getHolidays(
+                    countryCode, subdivisionCode, Year.from(start));
+        }
+        Set<LocalDate> merged = new HashSet<>();
+        for (int year = start.getYear(); year <= end.getYear(); year++) {
+            merged.addAll(publicHolidayService.getHolidays(
+                    countryCode, subdivisionCode, Year.of(year)));
+        }
+        return Collections.unmodifiableSet(merged);
     }
 }

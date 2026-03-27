@@ -29,6 +29,11 @@ import java.util.stream.Collectors;
  * {@link com.luxferre.chroniqo.service.SummaryService} to compute daily targets
  * and the running time balance.
  *
+ * <p>Public holiday detection is driven by {@code countryCode} (ISO 3166-1
+ * alpha-2, e.g. {@code "DE"}) and {@code subdivisionCode} (full ISO 3166-2,
+ * e.g. {@code "DE-BY"}). When {@code countryCode} is {@code null} automatic
+ * holiday detection is disabled.
+ *
  * @author Luxferre86
  * @since 14.02.2026
  */
@@ -73,7 +78,8 @@ public class User {
     public void setWeeklyTargetHours(int weeklyTargetHours) {
         if (weeklyTargetHours < 0 || weeklyTargetHours > 80) {
             throw new IllegalArgumentException(
-                    "weeklyTargetHours must be between 0 and 80, got: " + weeklyTargetHours);
+                    "weeklyTargetHours must be between 0 and 80, got: "
+                            + weeklyTargetHours);
         }
         this.weeklyTargetHours = weeklyTargetHours;
     }
@@ -84,7 +90,19 @@ public class User {
     @Enumerated(EnumType.STRING)
     private List<DayOfWeek> workingDays;
 
-    private String federalState;
+    /**
+     * ISO 3166-1 alpha-2 country code for public holiday resolution
+     * (e.g. {@code "DE"} for Germany). {@code null} disables automatic
+     * public holiday detection.
+     */
+    private String countryCode;
+
+    /**
+     * Full ISO 3166-2 subdivision code for state/region-specific holidays
+     * (e.g. {@code "DE-BY"} for Bavaria). {@code null} means only nationwide
+     * holidays of the configured country are applied.
+     */
+    private String subdivisionCode;
 
     // ===== Authentication Fields =====
 
@@ -115,9 +133,9 @@ public class User {
     }
 
     /**
-     * Returns the user's configured working days as an {@link EnumSet}, falling
-     * back to {@link #DEFAULT_WORKING_DAYS} (Monday–Friday) when none have been
-     * configured yet.
+     * Returns the user's configured working days as a {@link Set}, falling
+     * back to {@link #DEFAULT_WORKING_DAYS} (Monday–Friday) when none have
+     * been configured yet.
      *
      * @return non-null, non-empty set of working days
      */
@@ -136,11 +154,10 @@ public class User {
      */
     public void setWorkingDays(Set<DayOfWeek> days) {
         if (days == null || days.isEmpty()) {
-            throw new IllegalArgumentException("At least one working day must be configured");
+            throw new IllegalArgumentException(
+                    "At least one working day must be configured");
         }
-        this.workingDays = days.stream()
-                .sorted()
-                .collect(Collectors.toList());
+        this.workingDays = days.stream().sorted().collect(Collectors.toList());
     }
 
     /**

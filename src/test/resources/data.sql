@@ -1,2 +1,2 @@
-INSERT INTO `users` (`id`, `email`, `password_hash`, `weekly_target_hours`, `federal_state`, `first_name`, `last_name`, `enabled`, `locked_until`, `created_at`, `last_login_at`, `reset_token`, `reset_token_expiry_date`, `verification_token`, `verification_token_expiry_date`) VALUES
-('a0000000-0000-0000-0000-000000000001', 'test@gmail.com', 'hash', 39, 'Berlin', 'First', 'Last', 1, null, '2025-01-01 08:00:00', '2026-02-28 20:37:04', NULL, NULL, NULL, NULL);
+INSERT INTO `users` (`id`, `email`, `password_hash`, `weekly_target_hours`, `country_code`, `subdivision_code`, `first_name`, `last_name`, `enabled`, `locked_until`, `created_at`, `last_login_at`, `reset_token`, `reset_token_expiry_date`, `verification_token`, `verification_token_expiry_date`) VALUES
+('a0000000-0000-0000-0000-000000000001', 'test@gmail.com', 'hash', 39, 'DE', 'BE', 'First', 'Last', 1, null, '2025-01-01 08:00:00', '2026-02-28 20:37:04', NULL, NULL, NULL, NULL);

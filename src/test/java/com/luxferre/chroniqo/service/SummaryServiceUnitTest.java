@@ -11,6 +11,7 @@ import com.luxferre.chroniqo.service.event.TimeEntryBroadcaster;
 import com.luxferre.chroniqo.service.event.UserBroadcaster;
 import com.luxferre.chroniqo.service.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,10 +20,9 @@ import org.junit.jupiter.params.provider.EnumSource;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.time.Year;
+import java.time.temporal.TemporalAdjusters;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,24 +31,27 @@ import static org.mockito.Mockito.when;
 
 public class SummaryServiceUnitTest {
 
-    // Package-private methods are tested directly without Spring context
     private SummaryService summaryService;
 
-    // Monday 2026-03-02 (a weekday, not a public holiday in most states)
+    // Monday 2026-03-02 — not a public holiday anywhere in Germany
     private static final LocalDate WEEKDAY = LocalDate.of(2026, 3, 2);
     // Saturday 2026-03-07
     private static final LocalDate WEEKEND = LocalDate.of(2026, 3, 7);
+    // New Year's Day — nationwide holiday in all German states
+    private static final LocalDate NEW_YEARS_DAY = LocalDate.of(2026, 1, 1);
+
     private static final int DAILY_TARGET_MINUTES = 468; // 39h / 5 days * 60
+    private static final Set<LocalDate> NO_HOLIDAYS = Set.of();
 
     @BeforeEach
     void setUp() {
         summaryService = new SummaryService(
                 mock(TimeTrackingService.class),
                 mock(UserService.class),
+                mock(PublicHolidayService.class),
                 mock(TimeEntryBroadcaster.class),
                 mock(AbsenceBroadcaster.class),
-                mock(UserBroadcaster.class)
-        );
+                mock(UserBroadcaster.class));
     }
 
     // =========================================================================
@@ -56,195 +59,467 @@ public class SummaryServiceUnitTest {
     // =========================================================================
 
     @Nested
+    @DisplayName("calculateWorkedMinutes")
     class CalculateWorkedMinutes {
 
         @Test
         void completedEntry_standardDay_returnsCorrectMinutes() {
-            TimeEntryDTO entry = entry(LocalTime.of(8, 0), LocalTime.of(17, 0), 30);
-
-            int result = summaryService.calculateWorkedMinutes(entry);
-
-            assertThat(result).isEqualTo(510); // 9h - 30min = 510min
+            assertThat(summaryService.calculateWorkedMinutes(
+                    entry(LocalTime.of(8, 0), LocalTime.of(17, 0), 30)))
+                    .isEqualTo(510);
         }
 
         @Test
         void completedEntry_withBreak_subtractsBreak() {
-            TimeEntryDTO entry = entry(LocalTime.of(7, 15), LocalTime.of(17, 45), 70);
-
-            int result = summaryService.calculateWorkedMinutes(entry);
-
-            assertThat(result).isEqualTo(560); // 10h30 - 70min = 560min
+            assertThat(summaryService.calculateWorkedMinutes(
+                    entry(LocalTime.of(7, 15), LocalTime.of(17, 45), 70)))
+                    .isEqualTo(560);
         }
 
         @Test
         void completedEntry_noBreak_returnsRawDuration() {
-            TimeEntryDTO entry = entry(LocalTime.of(9, 0), LocalTime.of(17, 0), null);
-
-            int result = summaryService.calculateWorkedMinutes(entry);
-
-            assertThat(result).isEqualTo(480); // exactly 8h
+            assertThat(summaryService.calculateWorkedMinutes(
+                    entry(LocalTime.of(9, 0), LocalTime.of(17, 0), null)))
+                    .isEqualTo(480);
         }
 
         @Test
         void completedEntry_midnightCrossing_handledCorrectly() {
-            // Start 22:00, end 02:00 – crosses midnight
-            TimeEntryDTO entry = entry(LocalTime.of(22, 0), LocalTime.of(2, 0), 0);
-
-            int result = summaryService.calculateWorkedMinutes(entry);
-
-            assertThat(result).isEqualTo(240); // 4 hours
+            assertThat(summaryService.calculateWorkedMinutes(
+                    entry(LocalTime.of(22, 0), LocalTime.of(2, 0), 0)))
+                    .isEqualTo(240);
         }
 
         @Test
         void startedEntry_noStartTime_returnsZero() {
-            TimeEntryDTO entry = entry(null, null, null);
-
-            int result = summaryService.calculateWorkedMinutes(entry);
-
-            assertThat(result).isEqualTo(0);
+            assertThat(summaryService.calculateWorkedMinutes(
+                    entry(null, null, null)))
+                    .isEqualTo(0);
         }
 
         @Test
         void startedEntry_breakLargerThanWorkedTime_returnsZeroNotNegative() {
-            // This is the bug-fix scenario: break > actual duration must not go negative
-            TimeEntryDTO entry = entry(LocalTime.of(9, 0), LocalTime.of(9, 30), 60);
-
-            int result = summaryService.calculateWorkedMinutes(entry);
-
-            assertThat(result).isEqualTo(0);
-            assertThat(result).isGreaterThanOrEqualTo(0);
+            assertThat(summaryService.calculateWorkedMinutes(
+                    entry(LocalTime.of(9, 0), LocalTime.of(9, 30), 60)))
+                    .isEqualTo(0);
         }
 
         @Test
-        void startedEntry_futurStartTime_returnsZeroNotNegative() {
-            // Start time in the future means no time has passed yet
-            TimeEntryDTO entry = new TimeEntryDTO();
-            entry.setDate(LocalDate.now());
-            entry.setStartTime(LocalTime.now().plusMinutes(30));
-            // no endTime means "running"
-
-            int result = summaryService.calculateWorkedMinutes(entry);
-
-            assertThat(result).isGreaterThanOrEqualTo(0);
+        void startedEntry_futureStartTime_returnsZeroNotNegative() {
+            TimeEntryDTO e = new TimeEntryDTO();
+            e.setDate(LocalDate.now());
+            e.setStartTime(LocalTime.now().plusMinutes(30));
+            assertThat(summaryService.calculateWorkedMinutes(e))
+                    .isGreaterThanOrEqualTo(0);
         }
     }
 
     // =========================================================================
-    // createDaySummaryDTO
+    // calculateDailyTargetMinutes
     // =========================================================================
 
     @Nested
+    @DisplayName("calculateDailyTargetMinutes")
+    class CalculateDailyTargetMinutes {
+
+        @Test
+        void fiveDayWeek_40h_returns480() {
+            assertThat(summaryService.calculateDailyTargetMinutes(40, 5)).isEqualTo(480);
+        }
+
+        @Test
+        void fourDayWeek_40h_returns600() {
+            assertThat(summaryService.calculateDailyTargetMinutes(40, 4)).isEqualTo(600);
+        }
+
+        @Test
+        void threeDayWeek_39h_returns780() {
+            assertThat(summaryService.calculateDailyTargetMinutes(39, 3)).isEqualTo(780);
+        }
+
+        @Test
+        void zeroHours_returnsZero() {
+            assertThat(summaryService.calculateDailyTargetMinutes(0, 5)).isZero();
+        }
+
+        @Test
+        void zeroDays_returnsZero() {
+            assertThat(summaryService.calculateDailyTargetMinutes(40, 0)).isZero();
+        }
+
+        @Test
+        void negativeHours_clampedToZero() {
+            assertThat(summaryService.calculateDailyTargetMinutes(-10, 5)).isZero();
+        }
+
+        @Test
+        void hoursAboveMax_clampedToEighty() {
+            // 80h / 5 days = 960 min/day
+            assertThat(summaryService.calculateDailyTargetMinutes(999, 5)).isEqualTo(960);
+        }
+    }
+
+    // =========================================================================
+    // createDaySummaryDTO — standard workday / weekend logic
+    // =========================================================================
+
+    @Nested
+    @DisplayName("createDaySummaryDTO — standard workday/weekend")
     class CreateDaySummaryDTO {
 
         @Test
         void weekday_withCompletedEntry_correctBalanceAndTarget() {
-            TimeEntryDTO entry = entry(WEEKDAY, LocalTime.of(7, 15), LocalTime.of(17, 45), 70);
+            TimeEntryDTO e = entry(WEEKDAY, LocalTime.of(7, 15), LocalTime.of(17, 45), 70);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    WEEKDAY, List.of(e), List.of(),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
 
             assertThat(result.date()).isEqualTo(WEEKDAY);
+            assertThat(result.isWorkday()).isTrue();
             assertThat(result.workedMinutes()).isEqualTo(560);
             assertThat(result.targetMinutes()).isEqualTo(DAILY_TARGET_MINUTES);
-            assertThat(result.balanceMinutes()).isEqualTo(560 - DAILY_TARGET_MINUTES); // +92
+            assertThat(result.balanceMinutes()).isEqualTo(560 - DAILY_TARGET_MINUTES);
             assertThat(result.absenceType()).isNull();
         }
 
         @Test
         void weekday_withNoEntry_balanceIsNegativeTarget() {
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, Collections.emptyList(), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    WEEKDAY, List.of(), List.of(),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
 
-            assertThat(result.date()).isEqualTo(WEEKDAY);
-            assertThat(result.workedMinutes()).isEqualTo(0);
+            assertThat(result.isWorkday()).isTrue();
+            assertThat(result.workedMinutes()).isZero();
             assertThat(result.targetMinutes()).isEqualTo(DAILY_TARGET_MINUTES);
             assertThat(result.balanceMinutes()).isEqualTo(-DAILY_TARGET_MINUTES);
-            assertThat(result.absenceType()).isNull();
         }
 
         @Test
         void weekend_withEntry_balanceEqualsWorkedMinutes_noTarget() {
-            TimeEntryDTO entry = entry(WEEKEND, LocalTime.of(10, 0), LocalTime.of(14, 0), 0);
+            TimeEntryDTO e = entry(WEEKEND, LocalTime.of(10, 0), LocalTime.of(14, 0), 0);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKEND, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    WEEKEND, List.of(e), List.of(),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
 
-            assertThat(result.date()).isEqualTo(WEEKEND);
+            assertThat(result.isWorkday()).isFalse();
             assertThat(result.workedMinutes()).isEqualTo(240);
-            assertThat(result.targetMinutes()).isEqualTo(0); // no target on weekends
-            assertThat(result.balanceMinutes()).isEqualTo(240); // all weekend work is surplus
-            assertThat(result.absenceType()).isNull();
+            assertThat(result.targetMinutes()).isZero();
+            assertThat(result.balanceMinutes()).isEqualTo(240);
         }
 
         @Test
-        void weekend_withNoEntry_zeroBalance_noTarget() {
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKEND, Collections.emptyList(), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
+        void weekend_withNoEntry_zeroEverything() {
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    WEEKEND, List.of(), List.of(),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
 
-            assertThat(result.workedMinutes()).isEqualTo(0);
-            assertThat(result.targetMinutes()).isEqualTo(0);
-            assertThat(result.balanceMinutes()).isEqualTo(0);
+            assertThat(result.workedMinutes()).isZero();
+            assertThat(result.targetMinutes()).isZero();
+            assertThat(result.balanceMinutes()).isZero();
         }
 
         @ParameterizedTest
         @EnumSource(AbsenceType.class)
-        void weekday_withAbsence_workedMinutesIsZero_absenceTypeSet(AbsenceType absenceType) {
-            // Even if there is a time entry, absence takes priority
-            TimeEntryDTO entry = entry(WEEKDAY, LocalTime.of(9, 0), LocalTime.of(17, 0), 0);
-            Absence absence = absence(absenceType);
+        void weekday_withAbsence_workedMinutesIsZero_absenceTypeSet(AbsenceType type) {
+            TimeEntryDTO e = entry(WEEKDAY, LocalTime.of(9, 0), LocalTime.of(17, 0), 0);
+            Absence a = absence(WEEKDAY, type);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), List.of(absence), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    WEEKDAY, List.of(e), List.of(a),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
 
-            assertThat(result.workedMinutes()).isEqualTo(0);
-            assertThat(result.targetMinutes()).isEqualTo(0);
-            assertThat(result.balanceMinutes()).isEqualTo(0);
-            assertThat(result.absenceType()).isEqualTo(absenceType);
-        }
-
-        @Test
-        void weekday_balanceAndWorkedMinutesNeverNegativeForWorked() {
-            // Break larger than work duration → workedMinutes must be 0, not negative
-            TimeEntryDTO entry = entry(WEEKDAY, LocalTime.of(9, 0), LocalTime.of(9, 20), 60);
-
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
-
-            assertThat(result.workedMinutes()).isGreaterThanOrEqualTo(0);
-            // balance may be negative (not enough hours worked), but workedMinutes must not be
+            assertThat(result.workedMinutes()).isZero();
+            assertThat(result.targetMinutes()).isZero();
+            assertThat(result.balanceMinutes()).isZero();
+            assertThat(result.absenceType()).isEqualTo(type);
         }
 
         @Test
         void entry_forDifferentDate_isIgnored() {
-            // Entry exists but for a different date — should not affect the day being evaluated
-            LocalDate otherDay = WEEKDAY.plusDays(1);
-            TimeEntryDTO entry = entry(otherDay, LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
+            TimeEntryDTO e = entry(WEEKDAY.plusDays(1),
+                    LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(WEEKDAY, List.of(entry), Collections.emptyList(), DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS);
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    WEEKDAY, List.of(e), List.of(),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
 
-            assertThat(result.workedMinutes()).isEqualTo(0);
+            assertThat(result.workedMinutes()).isZero();
+        }
+    }
+
+    // =========================================================================
+    // createDaySummaryDTO — configurable working days
+    // =========================================================================
+
+    @Nested
+    @DisplayName("createDaySummaryDTO — configurable working days")
+    class ConfigurableWorkingDays {
+
+        @Test
+        void saturdayIsWorkday_inSixDayWeek_hasTarget() {
+            LocalDate saturday = LocalDate.now()
+                    .with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+            Set<DayOfWeek> sixDayWeek = EnumSet.of(
+                    DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                    DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY);
+
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    saturday, List.of(), List.of(), 480, sixDayWeek, NO_HOLIDAYS);
+
+            assertThat(result.isWorkday()).isTrue();
+            assertThat(result.targetMinutes()).isEqualTo(480);
+            assertThat(result.balanceMinutes()).isEqualTo(-480);
         }
 
         @Test
-        void createDaySummaryDTO_nonWorkday_configuredByUser_noTarget() {
-            // Saturday configured as non-workday (default)
-            LocalDate saturday = LocalDate.now()
-                    .with(java.time.temporal.TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+        void mondayIsNotWorkday_inFourDayWeek_noTarget() {
+            LocalDate monday = LocalDate.now()
+                    .with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY));
+            Set<DayOfWeek> tueThuFri = EnumSet.of(
+                    DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                    DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
 
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    saturday, List.of(), List.of(), 480, User.DEFAULT_WORKING_DAYS);
+                    monday, List.of(), List.of(), 480, tueThuFri, NO_HOLIDAYS);
 
             assertThat(result.isWorkday()).isFalse();
             assertThat(result.targetMinutes()).isZero();
         }
 
         @Test
-        void createDaySummaryDTO_saturdayIsWorkday_hasTarget() {
-            LocalDate saturday = LocalDate.now()
-                    .with(java.time.temporal.TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
-            Set<DayOfWeek> sixDayWeek = EnumSet.of(
-                    DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
-                    DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY);
+        void mondayIsNotWorkday_workedAnywayOnMonday_countsAsSurplus() {
+            LocalDate monday = LocalDate.now()
+                    .with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY));
+            Set<DayOfWeek> tueThuFri = EnumSet.of(
+                    DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                    DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+            TimeEntryDTO e = entry(monday, LocalTime.of(9, 0), LocalTime.of(13, 0), 0);
 
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    saturday, List.of(), List.of(), 480, sixDayWeek);
+                    monday, List.of(e), List.of(), 480, tueThuFri, NO_HOLIDAYS);
+
+            assertThat(result.isWorkday()).isFalse();
+            assertThat(result.targetMinutes()).isZero();
+            assertThat(result.workedMinutes()).isEqualTo(240);
+            assertThat(result.balanceMinutes()).isEqualTo(240); // surplus
+        }
+    }
+
+    // =========================================================================
+    // createDaySummaryDTO — public holidays
+    // =========================================================================
+
+    @Nested
+    @DisplayName("createDaySummaryDTO — public holidays")
+    class PublicHolidays {
+
+        @Test
+        void publicHoliday_noEntry_isNotWorkday_absenceTypeHoliday() {
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    NEW_YEARS_DAY, List.of(), List.of(),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
+                    Set.of(NEW_YEARS_DAY));
+
+            assertThat(result.isWorkday()).isFalse();
+            assertThat(result.targetMinutes()).isZero();
+            assertThat(result.workedMinutes()).isZero();
+            assertThat(result.balanceMinutes()).isZero();
+            assertThat(result.absenceType()).isEqualTo(AbsenceType.HOLIDAY);
+        }
+
+        @Test
+        void publicHoliday_workedOnThatDay_zeroWorkedMinutes_holidayBadge() {
+            // Entry present but public holiday suppresses it (no target, no worked time)
+            TimeEntryDTO e = entry(NEW_YEARS_DAY,
+                    LocalTime.of(9, 0), LocalTime.of(13, 0), 0);
+
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    NEW_YEARS_DAY, List.of(e), List.of(),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
+                    Set.of(NEW_YEARS_DAY));
+
+            assertThat(result.isWorkday()).isFalse();
+            assertThat(result.targetMinutes()).isZero();
+            assertThat(result.workedMinutes()).isZero();
+            assertThat(result.absenceType()).isEqualTo(AbsenceType.HOLIDAY);
+        }
+
+        @Test
+        void manualAbsence_overridesPublicHoliday() {
+            Absence vacation = absence(NEW_YEARS_DAY, AbsenceType.VACATION);
+
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    NEW_YEARS_DAY, List.of(), List.of(vacation),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
+                    Set.of(NEW_YEARS_DAY));
+
+            assertThat(result.absenceType()).isEqualTo(AbsenceType.VACATION);
+        }
+
+        @Test
+        void regularWorkday_notInHolidaySet_notAffected() {
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    WEEKDAY, List.of(), List.of(),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
+                    Set.of(NEW_YEARS_DAY)); // holiday is a different date
 
             assertThat(result.isWorkday()).isTrue();
-            assertThat(result.targetMinutes()).isEqualTo(480);
+            assertThat(result.absenceType()).isNull();
+        }
+
+        @Test
+        void emptyHolidaySet_noEffect() {
+            // When no country is configured the holiday set is empty;
+            // New Year's Day is then treated as a normal working day
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    NEW_YEARS_DAY, List.of(), List.of(),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
+                    NO_HOLIDAYS);
+
+            assertThat(result.isWorkday()).isTrue();
+            assertThat(result.absenceType()).isNull();
+        }
+    }
+
+    // =========================================================================
+    // PublicHolidayService — live jollyday (no mocking)
+    // =========================================================================
+
+    @Nested
+    @DisplayName("PublicHolidayService — live jollyday integration")
+    class PublicHolidayServiceIntegration {
+
+        private PublicHolidayService holidayService;
+
+        @BeforeEach
+        void setUp() {
+            CountrySubdivisionRegistry registry = new CountrySubdivisionRegistry();
+            registry.init();
+            holidayService = new PublicHolidayService(registry);
+        }
+
+        @Test
+        void newYearsDay2026_isHolidayInGermany() {
+            assertThat(holidayService.isHoliday(
+                    LocalDate.of(2026, 1, 1), "DE", null)).isTrue();
+        }
+
+        @Test
+        void christmasDay2026_isHolidayInGermany() {
+            assertThat(holidayService.isHoliday(
+                    LocalDate.of(2026, 12, 25), "DE", null)).isTrue();
+        }
+
+        @Test
+        void epiphany2026_isHolidayInBavaria_notInBerlin() {
+            // 6 Jan — only BY, BW, ST in Germany
+            assertThat(holidayService.isHoliday(
+                    LocalDate.of(2026, 1, 6), "DE", "DE-BY")).isTrue();
+            assertThat(holidayService.isHoliday(
+                    LocalDate.of(2026, 1, 6), "DE", "DE-BE")).isFalse();
+        }
+
+        @Test
+        void fronleichnam2026_isHolidayInNRW_notInHamburg() {
+            // Corpus Christi 2026 = 4 June
+            assertThat(holidayService.isHoliday(
+                    LocalDate.of(2026, 6, 4), "DE", "DE-NW")).isTrue();
+            assertThat(holidayService.isHoliday(
+                    LocalDate.of(2026, 6, 4), "DE", "DE-HH")).isFalse();
+        }
+
+        @Test
+        void regularWorkday_isNotHoliday() {
+            // 2026-03-02 (Monday) — no holiday anywhere in Germany
+            assertThat(holidayService.isHoliday(WEEKDAY, "DE", "DE-BY")).isFalse();
+        }
+
+        @Test
+        void unsupportedCountry_returnsEmptySet() {
+            // A country code that jollyday has no calendar for
+            Set<LocalDate> result = holidayService.getHolidays("XX", null, Year.of(2026));
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        void nullCountry_returnsEmptySet() {
+            assertThat(holidayService.getHolidays(null, null, Year.of(2026))).isEmpty();
+        }
+
+        @Test
+        void results_areCached_sameInstanceReturned() {
+            Set<LocalDate> first = holidayService.getHolidays("DE", null, Year.of(2026));
+            Set<LocalDate> second = holidayService.getHolidays("DE", null, Year.of(2026));
+            assertThat(first).isSameAs(second);
+        }
+
+        @Test
+        void newYearsDay_isHolidayInAustria() {
+            assertThat(holidayService.isHoliday(
+                    LocalDate.of(2026, 1, 1), "AT", null)).isTrue();
+        }
+    }
+
+    // =========================================================================
+    // CountrySubdivisionRegistry
+    // =========================================================================
+
+    @Nested
+    @DisplayName("CountrySubdivisionRegistry")
+    class CountrySubdivisionRegistryTests {
+
+        private CountrySubdivisionRegistry registry;
+
+        @BeforeEach
+        void setUp() {
+            registry = new CountrySubdivisionRegistry();
+            registry.init();
+        }
+
+        @Test
+        void allCountries_containsGermany() {
+            assertThat(registry.getAllCountries()).containsKey("DE");
+            assertThat(registry.getAllCountries().get("DE")).isEqualTo("Germany");
+        }
+
+        @Test
+        void allCountries_isSortedAlphabetically() {
+            List<String> names = new java.util.ArrayList<>(
+                    registry.getAllCountries().values());
+            List<String> sorted = names.stream().sorted().toList();
+            assertThat(names).isEqualTo(sorted);
+        }
+
+        @Test
+        void germanySubdivisions_containsBavaria() {
+            Map<String, String> subs = registry.getSubdivisions("DE");
+            assertThat(subs).containsKey("DE-BY");
+            assertThat(subs.get("DE-BY")).isEqualTo("Bayern");
+        }
+
+        @Test
+        void subdivisions_caseInsensitive() {
+            assertThat(registry.getSubdivisions("de"))
+                    .isEqualTo(registry.getSubdivisions("DE"));
+        }
+
+        @Test
+        void hasHolidaySupport_germany_true() {
+            assertThat(registry.hasHolidaySupport("DE")).isTrue();
+        }
+
+        @Test
+        void hasHolidaySupport_unknownCode_false() {
+            assertThat(registry.hasHolidaySupport("XX")).isFalse();
+        }
+
+        @Test
+        void toJollyDaySubdivision_extractsSuffix() {
+            assertThat(registry.toJollyDaySubdivision("DE-BY")).isEqualTo("BY");
+            assertThat(registry.toJollyDaySubdivision("GB-ENG")).isEqualTo("ENG");
+            assertThat(registry.toJollyDaySubdivision("BY")).isEqualTo("BY");
         }
     }
 
@@ -253,64 +528,54 @@ public class SummaryServiceUnitTest {
     // =========================================================================
 
     @Nested
+    @DisplayName("getWeeklyProgress")
     class GetWeeklyProgress {
 
         private SummaryService spySummaryService;
 
         @BeforeEach
         void setUp() {
-            TimeTrackingService mockTimeTrackingService = mock(TimeTrackingService.class);
-            UserService mockUserService = mock(UserService.class);
-            TimeEntryBroadcaster timeEntryBroadcaster = mock(TimeEntryBroadcaster.class);
-            AbsenceBroadcaster absenceBroadcaster = mock(AbsenceBroadcaster.class);
-            UserBroadcaster userBroadcaster = mock(UserBroadcaster.class);
-            spySummaryService = new SummaryService(mockTimeTrackingService, mockUserService, timeEntryBroadcaster, absenceBroadcaster, userBroadcaster);
+            TimeTrackingService mockTts = mock(TimeTrackingService.class);
+            UserService mockUs = mock(UserService.class);
+            PublicHolidayService mockPhs = mock(PublicHolidayService.class);
 
-            com.luxferre.chroniqo.model.User user = new com.luxferre.chroniqo.model.User();
+            spySummaryService = new SummaryService(
+                    mockTts, mockUs, mockPhs,
+                    mock(TimeEntryBroadcaster.class),
+                    mock(AbsenceBroadcaster.class),
+                    mock(UserBroadcaster.class));
+
+            User user = new User();
             user.setWeeklyTargetHours(39);
-            when(mockUserService.getCurrentUser()).thenReturn(user);
-            when(mockTimeTrackingService.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
-            when(mockTimeTrackingService.getAbsences(any(), any())).thenReturn(Collections.emptyList());
+            when(mockUs.getCurrentUser()).thenReturn(user);
+            when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
+            when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
+            when(mockPhs.getHolidays(any(), any(), any(Year.class)))
+                    .thenReturn(Set.of());
 
-            // Set a fixed German locale for consistent week calculation
             com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
             ui.setLocale(java.util.Locale.GERMANY);
             com.vaadin.flow.component.UI.setCurrent(ui);
         }
 
         @Test
-        void normalWeek_hasTargetTrue_percentageCalculated() {
+        void normalWeek_hasTargetTrue_percentageZeroWithNoEntries() {
             WeeklyProgressDTO result = spySummaryService.getWeeklyProgress();
-
             assertThat(result.hasTarget()).isTrue();
             assertThat(result.targetMinutes()).isGreaterThan(0);
-            assertThat(result.percentage()).isEqualTo(0); // no entries = 0% done
-        }
-
-        @Test
-        void fullVacationWeek_hasTargetFalse_percentageZero() {
-            // We need absences that cover the whole week — easiest to mock all days via entries
-            // Instead, we verify the contract: if targetMinutes == 0, hasTarget must be false
-            WeeklyProgressDTO dto = new WeeklyProgressDTO(0, 0, 0, false);
-
-            assertThat(dto.hasTarget()).isFalse();
-            assertThat(dto.percentage()).isEqualTo(0);
-        }
-
-        @Test
-        void weeklyProgressDTO_hasTarget_percentageNeverExceedsInput() {
-            // Verify DTO construction: percentage is what the service calculates, not capped here
-            WeeklyProgressDTO over100 = new WeeklyProgressDTO(600, 468, 128, true);
-            assertThat(over100.percentage()).isEqualTo(128); // capping happens in the UI, not the DTO
-            assertThat(over100.hasTarget()).isTrue();
+            assertThat(result.percentage()).isEqualTo(0);
         }
 
         @Test
         void weeklyProgressDTO_noTarget_hasTargetFalse() {
             WeeklyProgressDTO noTarget = new WeeklyProgressDTO(0, 0, 0, false);
             assertThat(noTarget.hasTarget()).isFalse();
-            assertThat(noTarget.workedMinutes()).isEqualTo(0);
-            assertThat(noTarget.targetMinutes()).isEqualTo(0);
+        }
+
+        @Test
+        void weeklyProgressDTO_over100Percent_notCappedInDTO() {
+            WeeklyProgressDTO over100 = new WeeklyProgressDTO(600, 468, 128, true);
+            assertThat(over100.percentage()).isEqualTo(128);
         }
     }
 
@@ -318,69 +583,24 @@ public class SummaryServiceUnitTest {
     // Helpers
     // =========================================================================
 
-    private TimeEntryDTO entry(LocalTime start, LocalTime end, Integer breakMinutes) {
-        return entry(WEEKDAY, start, end, breakMinutes);
+    private TimeEntryDTO entry(LocalTime start, LocalTime end, Integer breakMin) {
+        return entry(WEEKDAY, start, end, breakMin);
     }
 
-    private TimeEntryDTO entry(LocalDate date, LocalTime start, LocalTime end, Integer breakMinutes) {
+    private TimeEntryDTO entry(LocalDate date, LocalTime start, LocalTime end,
+                               Integer breakMin) {
         TimeEntryDTO dto = new TimeEntryDTO();
         dto.setDate(date);
         dto.setStartTime(start);
         dto.setEndTime(end);
-        dto.setBreakMinutes(breakMinutes);
+        dto.setBreakMinutes(breakMin);
         return dto;
     }
 
-    private Absence absence(AbsenceType type) {
-        Absence absence = new Absence();
-        absence.setDate(SummaryServiceUnitTest.WEEKDAY);
-        absence.setType(type);
-        return absence;
+    private Absence absence(LocalDate date, AbsenceType type) {
+        Absence a = new Absence();
+        a.setDate(date);
+        a.setType(type);
+        return a;
     }
-
-    // =========================================================================
-    // getDaySummaries – weeklyTargetHours clamping
-    // =========================================================================
-
-    @Nested
-    class WeeklyTargetHoursClamping {
-
-        @Test
-        void normalValue_usedAsIs() {
-            // 40h / 5 days = 480 min/day
-            int dailyTarget = summaryService.calculateDailyTargetMinutes(40, 5);
-            assertThat(dailyTarget).isEqualTo(480);
-        }
-
-        @Test
-        void zeroValue_producesZeroDailyTarget() {
-            int dailyTarget = summaryService.calculateDailyTargetMinutes(0, 5);
-            assertThat(dailyTarget).isZero();
-        }
-
-        @Test
-        void negativeValue_clampedToZero() {
-            int dailyTarget = summaryService.calculateDailyTargetMinutes(-10, 5);
-            assertThat(dailyTarget).isZero();
-        }
-
-        @Test
-        void valueAboveMax_clampedToEighty() {
-            // 80h / 5 days = 960 min/day
-            int dailyTarget = summaryService.calculateDailyTargetMinutes(999, 5);
-            assertThat(dailyTarget).isEqualTo(960);
-        }
-
-        @Test
-        void calculateDailyTargetMinutes_fourDayWeek_40h() {
-            // 40h / 4 days = 10h = 600 min per day
-            assertThat(summaryService.calculateDailyTargetMinutes(40, 4)).isEqualTo(600);
-        }
-
-        @Test
-        void calculateDailyTargetMinutes_zeroDays_returnsZero() {
-            assertThat(summaryService.calculateDailyTargetMinutes(40, 0)).isZero();
-        }
-    }
-
 }
