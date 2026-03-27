@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.03.37] - 2026-03-27
+
+### Maintenance
+- Merge pull request #54 from LuxFerre86/chore/bump-up-spring-and-vaadin
+- chore: bump Spring Boot to 4.0.5 and Vaadin to 25.0.8
+
 ## [2026.03.36] - 2026-03-22
 
 ### Added
