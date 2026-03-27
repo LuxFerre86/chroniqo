@@ -1,22 +1,18 @@
-# Define your base image
-FROM debian:bookworm-slim
-ENV JAVA_HOME=/opt/java/openjdk
-ENV PATH "${JAVA_HOME}/bin:${PATH}"
-COPY --from=eclipse-temurin:21-jre /opt/java/openjdk /opt/java/openjdk
-
-# Continue with your application deployment
-RUN groupadd -g 999 appuser && \
-    useradd -r -u 999 -g appuser appuser && \
-    mkdir -p /app/logs && \
-    chown appuser:appuser /app/logs
-USER appuser
-
+FROM eclipse-temurin:21-jre-jammy
 ARG APP_VERSION=dev
 ARG JAR_FILE=target/*.jar
-ARG JVM_ARGS
-COPY ${JAR_FILE} /app/app.jar
-
+ARG JVM_ARGS=""
 ENV APP_VERSION=${APP_VERSION}
 
-WORKDIR "/app"
-ENTRYPOINT ["sh","-c","java $JVM_ARGS -jar app.jar"]
+RUN groupadd -g 999 appuser \
+ && useradd -r -u 999 -g appuser appuser \
+ && mkdir -p /app/logs \
+ && chown -R appuser:appuser /app
+
+WORKDIR /app
+COPY --chown=appuser:appuser ${JAR_FILE} /app/app.jar
+
+USER appuser
+EXPOSE 8080
+
+ENTRYPOINT ["sh","-c","exec java $JVM_ARGS -jar /app/app.jar"]
