@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.03.39] - 2026-03-27
+
+### Maintenance
+- Merge pull request #55 from LuxFerre86/chore/update-dockerfile
+- chore: update Dockerfile
+
 ## [2026.03.38] - 2026-03-27
 
 ### Added
