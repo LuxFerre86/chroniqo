@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026.03.38] - 2026-03-27
+
+### Added
+- add public holiday detection based on country and subdivision codes
+
+
+### Maintenance
+- Merge pull request #53 from LuxFerre86/feature/public-holiday-detection-via-country-and-subdivision
+- Merge branch 'master' into feature/public-holiday-detection-via-country-and-subdivision
+
 ## [2026.03.37] - 2026-03-27
 
 ### Maintenance
