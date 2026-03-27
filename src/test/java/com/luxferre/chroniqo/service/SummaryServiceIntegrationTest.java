@@ -1,6 +1,7 @@
 package com.luxferre.chroniqo.service;
 
 import com.luxferre.chroniqo.dto.DaySummaryDTO;
+import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.TimeEntryStatus;
 import com.luxferre.chroniqo.model.User;
@@ -136,12 +137,17 @@ public class SummaryServiceIntegrationTest {
     private void assertDaySummaryDTO(DaySummaryDTO daySummaryDTO, LocalDate date) {
         assertThat(daySummaryDTO).isNotNull();
         assertThat(daySummaryDTO.date()).isEqualTo(date);
-        assertThat(daySummaryDTO.workedMinutes()).isEqualTo(560);
         boolean isWeekend = date.query(new IsWeekendQuery());
-        if (isWeekend) {
+        if (!daySummaryDTO.isWorkday() && AbsenceType.HOLIDAY.equals(daySummaryDTO.absenceType())) {
+            assertThat(daySummaryDTO.workedMinutes()).isEqualTo(0);
+            assertThat(daySummaryDTO.targetMinutes()).isEqualTo(0);
+            assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(0);
+        } else if (isWeekend) {
+            assertThat(daySummaryDTO.workedMinutes()).isEqualTo(560);
             assertThat(daySummaryDTO.targetMinutes()).isEqualTo(0);
             assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(560);
         } else {
+            assertThat(daySummaryDTO.workedMinutes()).isEqualTo(560);
             assertThat(daySummaryDTO.targetMinutes()).isEqualTo(468);
             assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(92);
         }
