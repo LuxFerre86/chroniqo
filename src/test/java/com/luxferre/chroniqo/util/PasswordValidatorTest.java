@@ -178,4 +178,47 @@ class PasswordValidatorTest {
             assertThat(validator.apply(password, ctx).isError()).isFalse();
         }
     }
+
+    // =========================================================================
+    // Edge cases
+    // =========================================================================
+
+    @Nested
+    class EdgeCases {
+
+        @Test
+        void passwordWithAllRequiredClasses_atMinBoundary() {
+            String password = "Aa1!"; // 4 chars, but needs MIN_LENGTH chars
+            ValidationResult result = validator.apply(password, ctx);
+            assertThat(result.isError()).isTrue();
+        }
+
+        @Test
+        void passwordWithConsecutiveSpecialChars() {
+            String password = "Abc123!!!@@@xyz";
+            assertThat(validator.apply(password, ctx).isError()).isFalse();
+        }
+
+        @Test
+        void passwordWithUnicodeCharacters() {
+            String password = "Äöü123!Abc";
+            // Special chars check only counts ASCII special chars
+            ValidationResult result = validator.apply(password, ctx);
+            assertThat(result.isError()).isTrue(); // No ASCII special char
+        }
+
+        @Test
+        void passwordWithWhitespaceOnly() {
+            assertThat(validator.apply("     ", ctx).isError()).isTrue();
+        }
+
+        @Test
+        void passwordWithNumbers_verifyDigitCheck() {
+            String password = "abcdefGHIJ!@#$%^";
+            ValidationResult result = validator.apply(password, ctx);
+            // Missing digit
+            assertThat(result.isError()).isTrue();
+            assertThat(result.getErrorMessage()).containsIgnoringCase("digit");
+        }
+    }
 }

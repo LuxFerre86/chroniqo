@@ -28,11 +28,12 @@
     </issueManagement>
 
     <properties>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <jackson-core.version>3.1.0</jackson-core.version>
         <java.version>21</java.version>
         <lombok.version>1.18.42</lombok.version>
         <spring-boot.version>4.0.5</spring-boot.version> <!-- needed implicitly for plugin section / do NOT remove -->
         <vaadin.version>25.0.8</vaadin.version>
-        <jackson-core.version>3.1.0</jackson-core.version>
     </properties>
 
     <dependencyManagement>
@@ -114,6 +115,12 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
         </dependency>
 
         <dependency>

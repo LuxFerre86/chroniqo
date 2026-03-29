@@ -23,6 +23,7 @@ public record DaySummaryDTO(
         int workedMinutes,
         int targetMinutes,
         int balanceMinutes,
-        AbsenceType absenceType
+        AbsenceType absenceType,
+        String absenceLabel
 ) {
 }
