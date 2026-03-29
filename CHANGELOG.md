@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.40] - 2026-03-29
+
+### Added
+- enhance holiday and absence handling with new DTOs and improved CSS styling
+
+
+### Maintenance
+- Merge pull request #56 from LuxFerre86/feature/enhance-holdiay-and-absence-handling
+
 ## [2026.03.39] - 2026-03-27
 
 ### Maintenance
