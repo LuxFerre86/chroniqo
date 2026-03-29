@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.service;
 
+import de.focus_shift.jollyday.core.Holiday;
 import de.focus_shift.jollyday.core.HolidayCalendar;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -178,13 +179,25 @@ class PublicHolidayServiceTest {
         }
 
         @Test
-        @DisplayName("getHolidays: cached result is immutable (returns same Set instance)")
-        void getHolidays_cachedResult_returnsSameInstance() {
+        @DisplayName("getHolidays: cached result is immutable (returns not the same Set instance)")
+        void getHolidays_cachedResult_returnsNotTheSameInstance() {
             when(registry.getCalendar("DE"))
                     .thenReturn(Optional.of(HolidayCalendar.GERMANY));
 
             Set<LocalDate> first = service.getHolidays("DE", null, Year.of(2026));
             Set<LocalDate> second = service.getHolidays("DE", null, Year.of(2026));
+
+            assertThat(first).isNotSameAs(second);
+        }
+
+        @Test
+        @DisplayName("getHolidaysNew: cached result is immutable (returns same Set instance)")
+        void getHolidays_cachedResult_returnsSameInstance() {
+            when(registry.getCalendar("DE"))
+                    .thenReturn(Optional.of(HolidayCalendar.GERMANY));
+
+            Set<Holiday> first = service.getHolidaysNew("DE", null, Year.of(2026));
+            Set<Holiday> second = service.getHolidaysNew("DE", null, Year.of(2026));
 
             assertThat(first).isSameAs(second);
         }
@@ -450,12 +463,22 @@ class PublicHolidayServiceTest {
         }
 
         @Test
-        @DisplayName("getHolidays: result is cached — same Set instance returned twice")
-        void getHolidays_resultsAreCached() {
+        @DisplayName("getHolidays: result is cached — not the same Set instance is returned")
+        void getHolidays_resultsAreNotCached() {
             Set<LocalDate> first =
                     service.getHolidays("DE", null, Year.of(2026));
             Set<LocalDate> second =
                     service.getHolidays("DE", null, Year.of(2026));
+            assertThat(first).isNotSameAs(second);
+        }
+
+        @Test
+        @DisplayName("getHolidays: result is cached — same Set instance returned twice")
+        void getHolidays_resultsAreCached() {
+            Set<Holiday> first =
+                    service.getHolidaysNew("DE", null, Year.of(2026));
+            Set<Holiday> second =
+                    service.getHolidaysNew("DE", null, Year.of(2026));
             assertThat(first).isSameAs(second);
         }
 

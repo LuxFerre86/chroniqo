@@ -156,7 +156,7 @@ public class MonthView extends VerticalLayout {
             dayCard.addClassName("day-card--today");
         }
 
-        if (isWeekend) {
+        if (isWeekend || !summary.isWorkday()) {
             dayCard.addClassName("day-card--weekend");
         }
 
@@ -185,7 +185,7 @@ public class MonthView extends VerticalLayout {
 
         // Badge
         Div badgeContainer = new Div();
-        String dayTypeLabel = getDayTypeLabel(summary.absenceType());
+        String dayTypeLabel = summary.absenceLabel();
         if (StringUtils.hasText(dayTypeLabel)) {
             Span badge = new Span(dayTypeLabel);
             badge.addClassName("day-badge");
@@ -284,10 +284,6 @@ public class MonthView extends VerticalLayout {
     private String formatBalance(Integer minutes) {
         String sign = minutes >= 0 ? "+" : "";
         return sign + formatMinutes(minutes);
-    }
-
-    private String getDayTypeLabel(AbsenceType type) {
-        return Optional.ofNullable(type).map(AbsenceType::name).orElse(null);
     }
 
     private void loadSummaries() {

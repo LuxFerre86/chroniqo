@@ -10,6 +10,7 @@ import com.luxferre.chroniqo.service.event.AbsenceBroadcaster;
 import com.luxferre.chroniqo.service.event.TimeEntryBroadcaster;
 import com.luxferre.chroniqo.service.event.UserBroadcaster;
 import com.luxferre.chroniqo.service.user.UserService;
+import de.focus_shift.jollyday.core.Holiday;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,6 +23,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Year;
 import java.time.temporal.TemporalAdjusters;
+import java.time.temporal.WeekFields;
+import java.util.*;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -315,9 +318,26 @@ public class SummaryServiceUnitTest {
     @DisplayName("createDaySummaryDTO — public holidays")
     class PublicHolidays {
 
+        private SummaryService spySummaryService;
+
+        @BeforeEach
+        void setUp() {
+            UserService mockUs = mock(UserService.class);
+            User user = new User();
+            user.setCountryCode("DE");
+            user.setSubdivisionCode("DE-BY");
+            when(mockUs.getCurrentUser()).thenReturn(user);
+
+            spySummaryService = new SummaryService(
+                    mock(TimeTrackingService.class), mockUs, mock(PublicHolidayService.class),
+                    mock(TimeEntryBroadcaster.class),
+                    mock(AbsenceBroadcaster.class),
+                    mock(UserBroadcaster.class));
+        }
+
         @Test
         void publicHoliday_noEntry_isNotWorkday_absenceTypeHoliday() {
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+            DaySummaryDTO result = spySummaryService.createDaySummaryDTO(
                     NEW_YEARS_DAY, List.of(), List.of(),
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
                     Set.of(NEW_YEARS_DAY));
@@ -335,7 +355,7 @@ public class SummaryServiceUnitTest {
             TimeEntryDTO e = entry(NEW_YEARS_DAY,
                     LocalTime.of(9, 0), LocalTime.of(13, 0), 0);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+            DaySummaryDTO result = spySummaryService.createDaySummaryDTO(
                     NEW_YEARS_DAY, List.of(e), List.of(),
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
                     Set.of(NEW_YEARS_DAY));
@@ -350,7 +370,7 @@ public class SummaryServiceUnitTest {
         void manualAbsence_overridesPublicHoliday() {
             Absence vacation = absence(NEW_YEARS_DAY, AbsenceType.VACATION);
 
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+            DaySummaryDTO result = spySummaryService.createDaySummaryDTO(
                     NEW_YEARS_DAY, List.of(), List.of(vacation),
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
                     Set.of(NEW_YEARS_DAY));
@@ -360,7 +380,7 @@ public class SummaryServiceUnitTest {
 
         @Test
         void regularWorkday_notInHolidaySet_notAffected() {
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+            DaySummaryDTO result = spySummaryService.createDaySummaryDTO(
                     WEEKDAY, List.of(), List.of(),
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
                     Set.of(NEW_YEARS_DAY)); // holiday is a different date
@@ -373,7 +393,7 @@ public class SummaryServiceUnitTest {
         void emptyHolidaySet_noEffect() {
             // When no country is configured the holiday set is empty;
             // New Year's Day is then treated as a normal working day
-            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+            DaySummaryDTO result = spySummaryService.createDaySummaryDTO(
                     NEW_YEARS_DAY, List.of(), List.of(),
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
                     NO_HOLIDAYS);
@@ -444,14 +464,33 @@ public class SummaryServiceUnitTest {
         }
 
         @Test
+        void unsupportedCountry_new_returnsEmptySet() {
+            // A country code that jollyday has no calendar for
+            Set<Holiday> result = holidayService.getHolidaysNew("XX", null, Year.of(2026));
+            assertThat(result).isEmpty();
+        }
+
+        @Test
         void nullCountry_returnsEmptySet() {
             assertThat(holidayService.getHolidays(null, null, Year.of(2026))).isEmpty();
         }
 
         @Test
-        void results_areCached_sameInstanceReturned() {
+        void nullCountry_new_returnsEmptySet() {
+            assertThat(holidayService.getHolidaysNew(null, null, Year.of(2026))).isEmpty();
+        }
+
+        @Test
+        void results_areNotCached_sameInstanceReturned() {
             Set<LocalDate> first = holidayService.getHolidays("DE", null, Year.of(2026));
             Set<LocalDate> second = holidayService.getHolidays("DE", null, Year.of(2026));
+            assertThat(first).isNotSameAs(second);
+        }
+
+        @Test
+        void results_areCached_sameInstanceReturned() {
+            Set<Holiday> first = holidayService.getHolidaysNew("DE", null, Year.of(2026));
+            Set<Holiday> second = holidayService.getHolidaysNew("DE", null, Year.of(2026));
             assertThat(first).isSameAs(second);
         }
 
@@ -602,5 +641,175 @@ public class SummaryServiceUnitTest {
         a.setDate(date);
         a.setType(type);
         return a;
+    }
+
+    // =========================================================================
+    // getToday - retrieve today's summary
+    // =========================================================================
+
+    @Nested
+    @DisplayName("getToday")
+    class GetToday {
+
+        private SummaryService spySummaryService;
+
+        @BeforeEach
+        void setUp() {
+            TimeTrackingService mockTts = mock(TimeTrackingService.class);
+            UserService mockUs = mock(UserService.class);
+            PublicHolidayService mockPhs = mock(PublicHolidayService.class);
+
+            spySummaryService = new SummaryService(
+                    mockTts, mockUs, mockPhs,
+                    mock(TimeEntryBroadcaster.class),
+                    mock(AbsenceBroadcaster.class),
+                    mock(UserBroadcaster.class));
+
+            User user = new User();
+            user.setWeeklyTargetHours(39);
+            when(mockUs.getCurrentUser()).thenReturn(user);
+            when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
+            when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
+            when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
+
+            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
+            ui.setLocale(java.util.Locale.GERMANY);
+            com.vaadin.flow.component.UI.setCurrent(ui);
+        }
+
+        @Test
+        void getToday_returnsCurrentDateSummary() {
+            DaySummaryDTO result = spySummaryService.getToday();
+
+            assertThat(result).isNotNull();
+            assertThat(result.date()).isEqualTo(LocalDate.now());
+        }
+
+        @Test
+        void getToday_whenNoEntries_createsEmptyDaySummary() {
+            DaySummaryDTO result = spySummaryService.getToday();
+
+            assertThat(result).isNotNull();
+            assertThat(result.workedMinutes()).isZero();
+        }
+    }
+
+    // =========================================================================
+    // getCurrentWeek - retrieve week summaries
+    // =========================================================================
+
+    @Nested
+    @DisplayName("getCurrentWeek")
+    class GetCurrentWeek {
+
+        private SummaryService spySummaryService;
+
+        @BeforeEach
+        void setUp() {
+            TimeTrackingService mockTts = mock(TimeTrackingService.class);
+            UserService mockUs = mock(UserService.class);
+            PublicHolidayService mockPhs = mock(PublicHolidayService.class);
+
+            spySummaryService = new SummaryService(
+                    mockTts, mockUs, mockPhs,
+                    mock(TimeEntryBroadcaster.class),
+                    mock(AbsenceBroadcaster.class),
+                    mock(UserBroadcaster.class));
+
+            User user = new User();
+            user.setWeeklyTargetHours(39);
+            when(mockUs.getCurrentUser()).thenReturn(user);
+            when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
+            when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
+            when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
+
+            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
+            ui.setLocale(java.util.Locale.GERMANY);
+            com.vaadin.flow.component.UI.setCurrent(ui);
+        }
+
+        @Test
+        void getCurrentWeek_returnsSevenDaySummaries() {
+            List<DaySummaryDTO> result = spySummaryService.getCurrentWeek();
+
+            assertThat(result).hasSize(7);
+        }
+
+        @Test
+        void getCurrentWeek_allDatesAreInCurrentWeek() {
+            LocalDate today = LocalDate.now();
+            WeekFields weekFields = WeekFields.of(java.util.Locale.GERMANY);
+            LocalDate weekStart = today.with(weekFields.dayOfWeek(), 1);
+            LocalDate weekEnd = today.with(weekFields.dayOfWeek(), 7);
+
+            List<DaySummaryDTO> result = spySummaryService.getCurrentWeek();
+
+            for (DaySummaryDTO summary : result) {
+                assertThat(summary.date()).isAfterOrEqualTo(weekStart);
+                assertThat(summary.date()).isBeforeOrEqualTo(weekEnd);
+            }
+        }
+    }
+
+    // =========================================================================
+    // getSummary with year parameter
+    // =========================================================================
+
+    @Nested
+    @DisplayName("getSummary(year)")
+    class GetSummaryByYear {
+
+        private SummaryService spySummaryService;
+
+        @BeforeEach
+        void setUp() {
+            TimeTrackingService mockTts = mock(TimeTrackingService.class);
+            UserService mockUs = mock(UserService.class);
+            PublicHolidayService mockPhs = mock(PublicHolidayService.class);
+
+            spySummaryService = new SummaryService(
+                    mockTts, mockUs, mockPhs,
+                    mock(TimeEntryBroadcaster.class),
+                    mock(AbsenceBroadcaster.class),
+                    mock(UserBroadcaster.class));
+
+            User user = new User();
+            user.setWeeklyTargetHours(39);
+            when(mockUs.getCurrentUser()).thenReturn(user);
+            when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
+            when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
+            when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
+
+            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
+            ui.setLocale(java.util.Locale.GERMANY);
+            com.vaadin.flow.component.UI.setCurrent(ui);
+        }
+
+        @Test
+        void getSummaryYear_returns365DaySummaries() {
+            List<DaySummaryDTO> result = spySummaryService.getSummary(2026);
+
+            assertThat(result).hasSize(365);
+        }
+
+        @Test
+        void getSummaryYear_leapYear_returns366DaySummaries() {
+            List<DaySummaryDTO> result = spySummaryService.getSummary(2024); // leap year
+
+            assertThat(result).hasSize(366);
+        }
+
+        @Test
+        void getSummaryYear_allDatesInYear() {
+            List<DaySummaryDTO> result = spySummaryService.getSummary(2026);
+
+            LocalDate yearStart = LocalDate.of(2026, 1, 1);
+            LocalDate yearEnd = LocalDate.of(2026, 12, 31);
+
+            for (DaySummaryDTO summary : result) {
+                assertThat(summary.date()).isAfterOrEqualTo(yearStart);
+                assertThat(summary.date()).isBeforeOrEqualTo(yearEnd);
+            }
+        }
     }
 }

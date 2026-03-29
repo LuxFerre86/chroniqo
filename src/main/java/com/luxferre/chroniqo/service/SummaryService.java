@@ -15,14 +15,12 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.shared.Registration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.*;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Computes aggregated time-tracking summaries for the dashboard and monthly
@@ -206,25 +204,35 @@ public class SummaryService {
                 ? absence.getType()
                 : (isPublicHoliday ? AbsenceType.HOLIDAY : null);
 
+
+        String absenceName = getAbsenceName(date, isPublicHoliday, absence);
+
         return new DaySummaryDTO(
                 date,
                 isWorkday,
                 workedMinutes,
                 targetMinutes,
                 balance,
-                effectiveAbsenceType);
+                effectiveAbsenceType, absenceName);
     }
 
     /**
-     * Computes net worked minutes for a time entry.
+     * Computes the net working time in minutes for a time entry by subtracting
+     * the break duration from the gross duration.
      *
-     * <p>For a completed entry the result is
-     * {@code (endTime - startTime) - breakMinutes}, clamped to zero. For an
-     * in-progress entry (no end time) the calculation uses the current
-     * wall-clock time as a provisional end.
+     * <p>Handles three cases:
+     * <ul>
+     *   <li>Entry with start and end time: computes duration and subtracts break</li>
+     *   <li>Entry with only start time (incomplete): computes duration from start
+     *       to now and subtracts break</li>
+     *   <li>Entry without start time: returns zero (not started)</li>
+     * </ul>
      *
-     * @param entry the time entry to evaluate
-     * @return net worked minutes, never negative
+     * <p>Negative results (e.g. when break exceeds working time) are clamped to zero.
+     * Midnight-crossing durations are handled automatically.
+     *
+     * @param entry the time entry DTO to compute
+     * @return net working time in minutes, never negative
      */
     int calculateWorkedMinutes(TimeEntryDTO entry) {
         if (entry.getEndTime() == null && entry.getStartTime() != null) {
@@ -267,8 +275,46 @@ public class SummaryService {
     }
 
     /**
+     * Resolves the display name for an absence or public holiday on the given date.
+     *
+     * <p>Priority order:
+     * <ol>
+     *   <li>If a manual absence exists, returns its type name (capitalized)</li>
+     *   <li>If the date is a public holiday, attempts to load the holiday name
+     *       from the jollyday library</li>
+     *   <li>Otherwise, returns {@code null}</li>
+     * </ol>
+     *
+     * @param date            the date to resolve
+     * @param isPublicHoliday whether the date matches a public holiday
+     * @param absence         a manually recorded absence, or {@code null}
+     * @return the absence/holiday name, or {@code null}
+     */
+    String getAbsenceName(LocalDate date, boolean isPublicHoliday, Absence absence) {
+        if (absence != null) {
+            return StringUtils.capitalize(absence.getType().name().toLowerCase());
+        } else if (isPublicHoliday) {
+            // Attempt to find a matching holiday name for the date
+            User currentUser = userService.getCurrentUser();
+            return publicHolidayService.getHoliday(date, currentUser.getCountryCode(), currentUser.getSubdivisionCode()).map(holiday -> holiday.getDescription(Locale.ROOT)).orElse("Holiday");
+        }
+        return null;
+    }
+
+    /**
      * Loads and merges public holidays from jollyday for all calendar years
      * covered by the given date range.
+     *
+     * <p>For single-year ranges, delegates directly to
+     * {@link PublicHolidayService#getHolidays(String, String, Year)}. For
+     * multi-year ranges, loads holidays for each year separately and merges
+     * them into a single immutable set.
+     *
+     * @param countryCode     ISO country code (case-insensitive)
+     * @param subdivisionCode full ISO 3166-2 code, or {@code null}
+     * @param start           first day of the range (inclusive)
+     * @param end             last day of the range (inclusive)
+     * @return immutable set of all public holidays in the range
      */
     private Set<LocalDate> loadHolidaysForRange(String countryCode,
                                                 String subdivisionCode,

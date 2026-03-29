@@ -638,4 +638,50 @@ public class UserServiceTest {
         user.setPasswordHash("old_hash");
         return user;
     }
+
+    // =========================================================================
+    // getCurrentUser
+    // =========================================================================
+
+    @Nested
+    class GetCurrentUser {
+
+        @BeforeEach
+        void setUp() {
+            lenient().when(userDetailsService.getUsernameFromContext())
+                    .thenReturn(Optional.of("user@example.com"));
+        }
+
+        @Test
+        void getCurrentUser_validContext_returnsUser() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            when(userRepository.findByEmail("user@example.com"))
+                    .thenReturn(Optional.of(user));
+
+            User result = userService.getCurrentUser();
+
+            assertThat(result).isNotNull();
+            assertThat(result.getEmail()).isEqualTo("user@example.com");
+        }
+
+        @Test
+        void getCurrentUser_noContextEmail_throwsUserNotFoundException() {
+            when(userDetailsService.getUsernameFromContext())
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.getCurrentUser())
+                    .isInstanceOf(UserNotFoundException.class);
+        }
+
+        @Test
+        void getCurrentUser_emailNotInRepository_throwsUserNotFoundException() {
+            when(userRepository.findByEmail("user@example.com"))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.getCurrentUser())
+                    .isInstanceOf(UserNotFoundException.class)
+                    .hasMessageContaining("Could not determine current user");
+        }
+    }
 }

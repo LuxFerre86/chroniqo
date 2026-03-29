@@ -47,7 +47,7 @@ public class PublicHolidayService {
     private record CacheKey(String countryCode, String subdivisionCode, Year year) {
     }
 
-    private final Map<CacheKey, Set<LocalDate>> cache = new ConcurrentHashMap<>();
+    private final Map<CacheKey, Set<Holiday>> cache = new ConcurrentHashMap<>();
 
     /**
      * Returns all public holidays for the given country, optional subdivision,
@@ -72,7 +72,50 @@ public class PublicHolidayService {
         String normCountry = countryCode.toUpperCase();
         String normSub = subdivisionCode != null ? subdivisionCode.toUpperCase() : "";
         CacheKey key = new CacheKey(normCountry, normSub, year);
+        return cache.computeIfAbsent(key, k -> loadHolidays(normCountry, normSub, year)).stream().map(Holiday::getActualDate).collect(Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * Returns all public holidays for the given country, optional subdivision,
+     * and year as {@link Holiday} objects.
+     *
+     * <p>This is an alternative to {@link #getHolidays(String, String, Year)}
+     * that preserves the full Holiday object including additional metadata.
+     * Results are cached for performance.
+     *
+     * @param countryCode     ISO 3166-1 alpha-2 code (case-insensitive);
+     *                        {@code null} returns an empty set immediately
+     * @param subdivisionCode full ISO 3166-2 code (e.g. {@code "DE-BY"}),
+     *                        or {@code null} for nationwide holidays only
+     * @param year            the calendar year
+     * @return immutable set of Holiday objects; never {@code null}
+     */
+    public Set<Holiday> getHolidaysNew(String countryCode,
+                                       String subdivisionCode, Year year) {
+        if (countryCode == null) {
+            return Set.of();
+        }
+        String normCountry = countryCode.toUpperCase();
+        String normSub = subdivisionCode != null ? subdivisionCode.toUpperCase() : "";
+        CacheKey key = new CacheKey(normCountry, normSub, year);
         return cache.computeIfAbsent(key, k -> loadHolidays(normCountry, normSub, year));
+    }
+
+    /**
+     * Returns the holiday for the given date, if it exists in the specified
+     * country and subdivision.
+     *
+     * @param date            the date to query
+     * @param countryCode     ISO 3166-1 alpha-2 code; {@code null} → empty optional
+     * @param subdivisionCode full ISO 3166-2 code; may be {@code null}
+     * @return Optional containing the Holiday if found, otherwise empty
+     */
+    public Optional<Holiday> getHoliday(LocalDate date, String countryCode,
+                                        String subdivisionCode) {
+        if (countryCode == null) {
+            return Optional.empty();
+        }
+        return getHolidaysNew(countryCode, subdivisionCode, Year.from(date)).stream().filter(h -> h.getActualDate().equals(date)).findFirst();
     }
 
     /**
@@ -96,8 +139,21 @@ public class PublicHolidayService {
     // Private helpers
     // -------------------------------------------------------------------------
 
-    private Set<LocalDate> loadHolidays(String countryCode,
-                                        String subdivisionCode, Year year) {
+    /**
+     * Loads the set of holidays for the given country, subdivision, and year
+     * from the Jollyday library. Results are not cached at this level; caching
+     * is handled by the caller.
+     *
+     * <p>If the country is not supported by Jollyday, a warning is logged
+     * and an empty set is returned.
+     *
+     * @param countryCode     normalized upper-case country code
+     * @param subdivisionCode normalized upper-case subdivision code (may be blank)
+     * @param year            the calendar year
+     * @return immutable set of Holiday objects, or empty set on error
+     */
+    private Set<Holiday> loadHolidays(String countryCode,
+                                      String subdivisionCode, Year year) {
         Optional<HolidayCalendar> calendarOpt = registry.getCalendar(countryCode);
         if (calendarOpt.isEmpty()) {
             log.warn("No jollyday calendar for country '{}' — automatic holiday detection disabled for this country", countryCode);
@@ -116,7 +172,7 @@ public class PublicHolidayService {
                 holidaySet = manager.getHolidays(year, regionSuffix);
             }
 
-            return holidaySet.stream().map(Holiday::getActualDate).collect(Collectors.toUnmodifiableSet());
+            return holidaySet.stream().collect(Collectors.toUnmodifiableSet());
 
         } catch (Exception e) {
             log.error("Failed to load holidays for country={} subdivision={} year={}", countryCode, subdivisionCode, year, e);

@@ -19,10 +19,26 @@ import java.time.LocalTime;
 import java.util.List;
 
 /**
- * Service for managing time tracking entries.
- * Validates all input data before persistence to ensure data integrity.
+ * Service for managing time tracking entries with comprehensive validation.
  *
- * @author LuxFerre86
+ * <p>Handles CRUD operations on {@link TimeEntry} entities and supports both
+ * started (incomplete) and completed entries. All input data is validated before
+ * persistence to ensure data integrity and prevent invalid states.
+ *
+ * <p>Validation rules enforced:
+ * <ul>
+ *   <li>Date must not be in the future</li>
+ *   <li>Break duration must be between 0 and 480 minutes</li>
+ *   <li>End time must be after start time</li>
+ *   <li>Total work hours (including breaks) must not exceed 24 hours</li>
+ *   <li>Break duration must not exceed total time span</li>
+ * </ul>
+ *
+ * <p>Time entries are automatically transitioned between {@link TimeEntryStatus#STARTED}
+ * and {@link TimeEntryStatus#COMPLETED} states based on whether both start and end
+ * times are present.
+ *
+ * @author Luxferre86
  * @since 12.03.2026
  */
 @RequiredArgsConstructor
@@ -142,10 +158,21 @@ public class TimeEntryService {
     }
 
     /**
-     * Validates a time entry DTO.
+     * Validates a time entry DTO according to the application's business rules.
+     *
+     * <p>Checks:
+     * <ul>
+     *   <li>DTO itself is not null</li>
+     *   <li>Date is set and not in the future</li>
+     *   <li>Break minutes (if set) are non-negative and do not exceed 8 hours</li>
+     *   <li>End time is after start time (when both are set)</li>
+     *   <li>End time is not equal to start time</li>
+     *   <li>Break duration does not exceed total work span</li>
+     *   <li>Total duration (with break) does not exceed 24 hours</li>
+     * </ul>
      *
      * @param dto the time entry to validate
-     * @throws TimeEntryValidationException if validation fails
+     * @throws TimeEntryValidationException if any validation rule is violated
      */
     private void validateTimeEntry(TimeEntryDTO dto) {
         if (dto == null) {
