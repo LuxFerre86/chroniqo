@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.03.41] - 2026-03-30
+
+### Added
+- enhance docker compose healthcheck with use of actuator
+
+
+### Maintenance
+- Merge pull request #57 from LuxFerre86/feat/enhance-docker-healthcheck
+
 ## [2026.03.40] - 2026-03-29
 
 ### Added
