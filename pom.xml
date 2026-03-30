@@ -81,6 +81,11 @@
             <artifactId>spring-boot-mail</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- 3.1.0 instead of 3.0.4 fixing CVE-2026-29062 -->
         <dependency>
             <groupId>tools.jackson.core</groupId>
