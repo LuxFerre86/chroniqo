@@ -27,7 +27,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @PWA(
         name = "Chroniqo",
         shortName = "Chroniqo",
-        description = "Time Tracking Application"
+        description = "Time Tracking Application",
+        themeColor = "#0F141A",
+        backgroundColor = "#0F141A"
 )
 @Push
 public class ChroniqoApplication implements AppShellConfigurator {
