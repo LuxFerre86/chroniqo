@@ -9,6 +9,7 @@ import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -66,9 +67,9 @@ public class AppLayoutBasic extends AppLayout {
                 .set("padding-left", "0.5rem");
 
         // Logo
-        Span logo = new Span("⏱");
+        Image logo = new Image("icons/icon-32x32.png", "Logo");
         logo.getStyle()
-                .set("font-size", "24px")
+                .set("font-size", "32px")
                 .set("line-height", "1")
                 .set("filter", "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))");
 

@@ -10,6 +10,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -149,7 +150,7 @@ public class RegisterView extends VerticalLayout {
                 .set("box-shadow", "0 20px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 hsla(38, 50%, 70%, 0.05)")
                 .set("padding", "3rem 2.5rem");
 
-        Span logo = new Span("⏱");
+        Image logo = new Image("icons/icon-48x48.png", "Logo");
         logo.getStyle()
                 .set("font-size", "48px")
                 .set("text-align", "center")
