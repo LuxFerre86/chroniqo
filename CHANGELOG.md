@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026.03.42] - 2026-03-31
+
+### Added
+- use new icon instead of clock emojis
+- added custom favicon
+- changed theme_color and icon for PWA
+
+
+### Maintenance
+- Merge pull request #58 from LuxFerre86/feat/pwa-design
+
 ## [2026.03.41] - 2026-03-30
 
 ### Added
