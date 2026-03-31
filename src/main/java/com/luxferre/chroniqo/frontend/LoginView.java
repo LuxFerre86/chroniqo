@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -63,7 +64,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
                 .set("padding", "3rem 2.5rem");
 
         // Logo & Title
-        Span logo = new Span("⏱");
+        Image logo = new Image("icons/icon-48x48.png", "Logo");
         logo.getStyle()
                 .set("font-size", "48px")
                 .set("text-align", "center")
