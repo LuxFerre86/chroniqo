@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.4] - 2026-04-06
+
+### Added
+- introduce AbsenceTypeDTO for absence classification and update related references
+
+
+### Maintenance
+- Merge pull request #64 from LuxFerre86/feat/introduce-AbsenceTypeDTO
+
 ## [2026.04.3] - 2026-04-06
 
 ### Fixed
