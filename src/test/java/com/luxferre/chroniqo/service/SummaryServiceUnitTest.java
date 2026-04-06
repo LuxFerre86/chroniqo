@@ -19,13 +19,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import java.time.Clock;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Year;
+import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
-import java.util.*;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,7 +60,8 @@ public class SummaryServiceUnitTest {
                 mock(PublicHolidayService.class),
                 mock(TimeEntryBroadcaster.class),
                 mock(AbsenceBroadcaster.class),
-                mock(UserBroadcaster.class));
+                mock(UserBroadcaster.class),
+                Clock.systemDefaultZone());
     }
 
     // =========================================================================
@@ -342,7 +345,8 @@ public class SummaryServiceUnitTest {
                     mock(TimeTrackingService.class), mockUs, mock(PublicHolidayService.class),
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    Clock.systemDefaultZone());
         }
 
         @Test
@@ -591,7 +595,8 @@ public class SummaryServiceUnitTest {
                     mockTts, mockUs, mockPhs,
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    Clock.systemDefaultZone());
 
             User user = new User();
             user.setWeeklyTargetHours(39);
@@ -661,6 +666,7 @@ public class SummaryServiceUnitTest {
     class GetToday {
 
         private SummaryService spySummaryService;
+        private Clock fixedClock;
 
         @BeforeEach
         void setUp() {
@@ -668,11 +674,14 @@ public class SummaryServiceUnitTest {
             UserService mockUs = mock(UserService.class);
             PublicHolidayService mockPhs = mock(PublicHolidayService.class);
 
+            fixedClock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
             spySummaryService = new SummaryService(
                     mockTts, mockUs, mockPhs,
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    fixedClock);
 
             User user = new User();
             user.setWeeklyTargetHours(39);
@@ -691,7 +700,7 @@ public class SummaryServiceUnitTest {
             DaySummaryDTO result = spySummaryService.getToday();
 
             assertThat(result).isNotNull();
-            assertThat(result.date()).isEqualTo(LocalDate.now());
+            assertThat(result.date()).isEqualTo(LocalDate.now(fixedClock));
         }
 
         @Test
@@ -715,6 +724,7 @@ public class SummaryServiceUnitTest {
         private UserService mockUs;
         private PublicHolidayService mockPhs;
         private SummaryService sut;
+        private Clock fixedClock;
 
         @BeforeEach
         void setUp() {
@@ -722,13 +732,16 @@ public class SummaryServiceUnitTest {
             mockUs = mock(UserService.class);
             mockPhs = mock(PublicHolidayService.class);
 
+            fixedClock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
             sut = new SummaryService(
                     mockTts,
                     mockUs,
                     mockPhs,
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    fixedClock);
 
             User user = new User();
             user.setWeeklyTargetHours(40);
@@ -740,7 +753,7 @@ public class SummaryServiceUnitTest {
 
         @Test
         void usesYearStartToTodayRange() {
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(fixedClock);
             LocalDate yearStart = today.with(TemporalAdjusters.firstDayOfYear());
 
             sut.getCurrentBalance();
@@ -751,7 +764,7 @@ public class SummaryServiceUnitTest {
 
         @Test
         void delegatesToRangeSummaryAggregation() {
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(fixedClock);
             LocalDate yearStart = today.with(TemporalAdjusters.firstDayOfYear());
 
             int expected = sut.getSummary(yearStart, today).stream()
@@ -765,7 +778,7 @@ public class SummaryServiceUnitTest {
 
         @Test
         void getSummary_holidayRange_resolvesCurrentUserOnlyOnce() {
-            LocalDate startDate = LocalDate.of(LocalDate.now().getYear(), 1, 1);
+            LocalDate startDate = LocalDate.now(fixedClock).with(TemporalAdjusters.firstDayOfYear());
             LocalDate endDate = startDate.plusDays(2);
             when(mockPhs.getHolidays(any(), any(), any(Year.class)))
                     .thenReturn(Set.of(startDate));
@@ -794,7 +807,8 @@ public class SummaryServiceUnitTest {
                     mockTts, mockUs, mockPhs,
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    Clock.systemDefaultZone());
 
             User user = new User();
             user.setWeeklyTargetHours(39);
@@ -851,7 +865,8 @@ public class SummaryServiceUnitTest {
                     mockTts, mockUs, mockPhs,
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    Clock.systemDefaultZone());
 
             User user = new User();
             user.setWeeklyTargetHours(39);

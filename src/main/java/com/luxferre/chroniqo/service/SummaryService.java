@@ -49,6 +49,7 @@ public class SummaryService {
     private final TimeEntryBroadcaster timeEntryBroadcaster;
     private final AbsenceBroadcaster absenceBroadcaster;
     private final UserBroadcaster userBroadcaster;
+    private final Clock clock;
 
     /**
      * Returns the summary for today.
@@ -57,7 +58,7 @@ public class SummaryService {
      * available
      */
     public DaySummaryDTO getToday() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         return getSummary(today, today).stream().findFirst().orElse(null);
     }
 
@@ -68,7 +69,7 @@ public class SummaryService {
      * @return list of {@link DaySummaryDTO}, one per day
      */
     public List<DaySummaryDTO> getCurrentWeek() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         WeekFields weekFields = WeekFields.of(UI.getCurrent().getLocale());
         LocalDate weekStart = today.with(weekFields.dayOfWeek(), 1);
         LocalDate weekEnd = today.with(weekFields.dayOfWeek(), 7);
@@ -82,7 +83,7 @@ public class SummaryService {
      * @return summed balance minutes for the current year-to-date period
      */
     public int getCurrentBalance() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         LocalDate yearStart = today.with(TemporalAdjusters.firstDayOfYear());
         return getSummary(yearStart, today).stream()
                 .mapToInt(DaySummaryDTO::balanceMinutes)
@@ -258,7 +259,7 @@ public class SummaryService {
      */
     int calculateWorkedMinutes(TimeEntryDTO entry) {
         if (entry.getEndTime() == null && entry.getStartTime() != null) {
-            LocalTime now = LocalTime.now();
+            LocalTime now = LocalTime.now(clock);
             int minutes = Math.toIntExact(
                     Duration.between(entry.getStartTime(), now).toMinutes());
             if (entry.getBreakMinutes() != null) {
