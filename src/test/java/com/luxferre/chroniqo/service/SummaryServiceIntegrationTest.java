@@ -1,12 +1,11 @@
 package com.luxferre.chroniqo.service;
 
 import com.luxferre.chroniqo.dto.DaySummaryDTO;
-import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.TimeEntryStatus;
 import com.luxferre.chroniqo.model.User;
-import com.luxferre.chroniqo.util.IsWeekendQuery;
 import com.vaadin.flow.component.UI;
+import de.focus_shift.jollyday.core.Holiday;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +21,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +37,9 @@ public class SummaryServiceIntegrationTest {
 
     @Autowired
     private TestEntityManager entityManager;
+
+    @Autowired
+    private PublicHolidayService publicHolidayService;
 
     private User testUser;
 
@@ -134,12 +137,8 @@ public class SummaryServiceIntegrationTest {
     private void assertDaySummaryDTO(DaySummaryDTO daySummaryDTO, LocalDate date) {
         assertThat(daySummaryDTO).isNotNull();
         assertThat(daySummaryDTO.date()).isEqualTo(date);
-        boolean isWeekend = date.query(new IsWeekendQuery());
-        if (!daySummaryDTO.isWorkday() && AbsenceType.HOLIDAY.equals(daySummaryDTO.absenceType())) {
-            assertThat(daySummaryDTO.workedMinutes()).isEqualTo(0);
-            assertThat(daySummaryDTO.targetMinutes()).isEqualTo(0);
-            assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(0);
-        } else if (isWeekend) {
+        Optional<Holiday> holiday = publicHolidayService.getHoliday(date, testUser.getCountryCode(), testUser.getSubdivisionCode());
+        if (!daySummaryDTO.isWorkday() || holiday.isPresent()) {
             assertThat(daySummaryDTO.workedMinutes()).isEqualTo(560);
             assertThat(daySummaryDTO.targetMinutes()).isEqualTo(0);
             assertThat(daySummaryDTO.balanceMinutes()).isEqualTo(560);

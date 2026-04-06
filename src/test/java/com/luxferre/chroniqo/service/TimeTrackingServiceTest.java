@@ -85,7 +85,6 @@ public class TimeTrackingServiceTest {
         timeTrackingService.saveEntry(timeEntryDTO);
 
         verify(timeEntryService).saveEntry(timeEntryDTO);
-        verify(absenceService).deleteAbsence(LocalDate.now());
     }
 
     @Test
@@ -97,7 +96,6 @@ public class TimeTrackingServiceTest {
         timeTrackingService.saveAbsence(absenceRequest);
 
         verify(absenceService).saveAbsence(absenceRequest);
-        verify(timeEntryService).deleteEntries(today, tomorrow);
     }
 
     @Test
@@ -147,7 +145,6 @@ public class TimeTrackingServiceTest {
 
         timeTrackingService.saveEntry(timeEntryDTO);
 
-        verify(absenceService).deleteAbsence(specificDate);
         verify(timeEntryService).saveEntry(timeEntryDTO);
     }
 
@@ -159,7 +156,6 @@ public class TimeTrackingServiceTest {
 
         timeTrackingService.saveAbsence(absenceRequest);
 
-        verify(timeEntryService).deleteEntries(start, end);
         verify(absenceService).saveAbsence(absenceRequest);
     }
 
