@@ -19,18 +19,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import java.time.Clock;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Year;
+import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
-import java.util.*;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SummaryServiceUnitTest {
@@ -55,7 +60,8 @@ public class SummaryServiceUnitTest {
                 mock(PublicHolidayService.class),
                 mock(TimeEntryBroadcaster.class),
                 mock(AbsenceBroadcaster.class),
-                mock(UserBroadcaster.class));
+                mock(UserBroadcaster.class),
+                Clock.systemDefaultZone());
     }
 
     // =========================================================================
@@ -176,8 +182,9 @@ public class SummaryServiceUnitTest {
             TimeEntryDTO e = entry(WEEKDAY, LocalTime.of(7, 15), LocalTime.of(17, 45), 70);
 
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    WEEKDAY, List.of(e), List.of(),
-                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
+                    WEEKDAY, e, null,
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS,
+                    null, null);
 
             assertThat(result.date()).isEqualTo(WEEKDAY);
             assertThat(result.isWorkday()).isTrue();
@@ -190,8 +197,9 @@ public class SummaryServiceUnitTest {
         @Test
         void weekday_withNoEntry_balanceIsNegativeTarget() {
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    WEEKDAY, List.of(), List.of(),
-                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
+                    WEEKDAY, null, null,
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS,
+                    null, null);
 
             assertThat(result.isWorkday()).isTrue();
             assertThat(result.workedMinutes()).isZero();
@@ -204,8 +212,9 @@ public class SummaryServiceUnitTest {
             TimeEntryDTO e = entry(WEEKEND, LocalTime.of(10, 0), LocalTime.of(14, 0), 0);
 
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    WEEKEND, List.of(e), List.of(),
-                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
+                    WEEKEND, e, null,
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS,
+                    null, null);
 
             assertThat(result.isWorkday()).isFalse();
             assertThat(result.workedMinutes()).isEqualTo(240);
@@ -216,8 +225,9 @@ public class SummaryServiceUnitTest {
         @Test
         void weekend_withNoEntry_zeroEverything() {
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    WEEKEND, List.of(), List.of(),
-                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
+                    WEEKEND, null, null,
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS,
+                    null, null);
 
             assertThat(result.workedMinutes()).isZero();
             assertThat(result.targetMinutes()).isZero();
@@ -231,8 +241,9 @@ public class SummaryServiceUnitTest {
             Absence a = absence(WEEKDAY, type);
 
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    WEEKDAY, List.of(e), List.of(a),
-                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
+                    WEEKDAY, e, a,
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS,
+                    null, null);
 
             assertThat(result.workedMinutes()).isEqualTo(480);
             assertThat(result.targetMinutes()).isZero();
@@ -241,13 +252,11 @@ public class SummaryServiceUnitTest {
         }
 
         @Test
-        void entry_forDifferentDate_isIgnored() {
-            TimeEntryDTO e = entry(WEEKDAY.plusDays(1),
-                    LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
-
+        void nullEntry_resultsInZeroWorkedMinutes() {
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    WEEKDAY, List.of(e), List.of(),
-                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
+                    WEEKDAY, null, null,
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS,
+                    null, null);
 
             assertThat(result.workedMinutes()).isZero();
         }
@@ -270,7 +279,8 @@ public class SummaryServiceUnitTest {
                     DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY);
 
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    saturday, List.of(), List.of(), 480, sixDayWeek, NO_HOLIDAYS);
+                    saturday, null, null, 480, sixDayWeek, NO_HOLIDAYS,
+                    null, null);
 
             assertThat(result.isWorkday()).isTrue();
             assertThat(result.targetMinutes()).isEqualTo(480);
@@ -286,7 +296,8 @@ public class SummaryServiceUnitTest {
                     DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
 
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    monday, List.of(), List.of(), 480, tueThuFri, NO_HOLIDAYS);
+                    monday, null, null, 480, tueThuFri, NO_HOLIDAYS,
+                    null, null);
 
             assertThat(result.isWorkday()).isFalse();
             assertThat(result.targetMinutes()).isZero();
@@ -302,7 +313,8 @@ public class SummaryServiceUnitTest {
             TimeEntryDTO e = entry(monday, LocalTime.of(9, 0), LocalTime.of(13, 0), 0);
 
             DaySummaryDTO result = summaryService.createDaySummaryDTO(
-                    monday, List.of(e), List.of(), 480, tueThuFri, NO_HOLIDAYS);
+                    monday, e, null, 480, tueThuFri, NO_HOLIDAYS,
+                    null, null);
 
             assertThat(result.isWorkday()).isFalse();
             assertThat(result.targetMinutes()).isZero();
@@ -333,15 +345,16 @@ public class SummaryServiceUnitTest {
                     mock(TimeTrackingService.class), mockUs, mock(PublicHolidayService.class),
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    Clock.systemDefaultZone());
         }
 
         @Test
         void publicHoliday_noEntry_isNotWorkday_absenceTypeHoliday() {
             DaySummaryDTO result = spySummaryService.createDaySummaryDTO(
-                    NEW_YEARS_DAY, List.of(), List.of(),
+                    NEW_YEARS_DAY, null, null,
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
-                    Set.of(NEW_YEARS_DAY));
+                    Set.of(NEW_YEARS_DAY), "DE", "DE-BY");
 
             assertThat(result.isWorkday()).isFalse();
             assertThat(result.targetMinutes()).isZero();
@@ -356,9 +369,9 @@ public class SummaryServiceUnitTest {
                     LocalTime.of(9, 0), LocalTime.of(13, 0), 0);
 
             DaySummaryDTO result = spySummaryService.createDaySummaryDTO(
-                    NEW_YEARS_DAY, List.of(e), List.of(),
+                    NEW_YEARS_DAY, e, null,
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
-                    Set.of(NEW_YEARS_DAY));
+                    Set.of(NEW_YEARS_DAY), "DE", "DE-BY");
 
             assertThat(result.isWorkday()).isFalse();
             assertThat(result.targetMinutes()).isZero();
@@ -371,9 +384,9 @@ public class SummaryServiceUnitTest {
             Absence vacation = absence(NEW_YEARS_DAY, AbsenceType.VACATION);
 
             DaySummaryDTO result = spySummaryService.createDaySummaryDTO(
-                    NEW_YEARS_DAY, List.of(), List.of(vacation),
+                    NEW_YEARS_DAY, null, vacation,
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
-                    Set.of(NEW_YEARS_DAY));
+                    Set.of(NEW_YEARS_DAY), "DE", "DE-BY");
 
             assertThat(result.absenceType()).isEqualTo(AbsenceTypeDTO.VACATION);
         }
@@ -381,9 +394,9 @@ public class SummaryServiceUnitTest {
         @Test
         void regularWorkday_notInHolidaySet_notAffected() {
             DaySummaryDTO result = spySummaryService.createDaySummaryDTO(
-                    WEEKDAY, List.of(), List.of(),
+                    WEEKDAY, null, null,
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
-                    Set.of(NEW_YEARS_DAY)); // holiday is a different date
+                    Set.of(NEW_YEARS_DAY), "DE", "DE-BY"); // holiday is a different date
 
             assertThat(result.isWorkday()).isTrue();
             assertThat(result.absenceType()).isNull();
@@ -394,9 +407,9 @@ public class SummaryServiceUnitTest {
             // When no country is configured the holiday set is empty;
             // New Year's Day is then treated as a normal working day
             DaySummaryDTO result = spySummaryService.createDaySummaryDTO(
-                    NEW_YEARS_DAY, List.of(), List.of(),
+                    NEW_YEARS_DAY, null, null,
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
-                    NO_HOLIDAYS);
+                    NO_HOLIDAYS, "DE", "DE-BY");
 
             assertThat(result.isWorkday()).isTrue();
             assertThat(result.absenceType()).isNull();
@@ -582,7 +595,8 @@ public class SummaryServiceUnitTest {
                     mockTts, mockUs, mockPhs,
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    Clock.systemDefaultZone());
 
             User user = new User();
             user.setWeeklyTargetHours(39);
@@ -652,6 +666,7 @@ public class SummaryServiceUnitTest {
     class GetToday {
 
         private SummaryService spySummaryService;
+        private Clock fixedClock;
 
         @BeforeEach
         void setUp() {
@@ -659,11 +674,14 @@ public class SummaryServiceUnitTest {
             UserService mockUs = mock(UserService.class);
             PublicHolidayService mockPhs = mock(PublicHolidayService.class);
 
+            fixedClock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
             spySummaryService = new SummaryService(
                     mockTts, mockUs, mockPhs,
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    fixedClock);
 
             User user = new User();
             user.setWeeklyTargetHours(39);
@@ -682,7 +700,7 @@ public class SummaryServiceUnitTest {
             DaySummaryDTO result = spySummaryService.getToday();
 
             assertThat(result).isNotNull();
-            assertThat(result.date()).isEqualTo(LocalDate.now());
+            assertThat(result.date()).isEqualTo(LocalDate.now(fixedClock));
         }
 
         @Test
@@ -697,6 +715,81 @@ public class SummaryServiceUnitTest {
     // =========================================================================
     // getCurrentWeek - retrieve week summaries
     // =========================================================================
+
+    @Nested
+    @DisplayName("getCurrentBalance")
+    class GetCurrentBalance {
+
+        private TimeTrackingService mockTts;
+        private UserService mockUs;
+        private PublicHolidayService mockPhs;
+        private SummaryService sut;
+        private Clock fixedClock;
+
+        @BeforeEach
+        void setUp() {
+            mockTts = mock(TimeTrackingService.class);
+            mockUs = mock(UserService.class);
+            mockPhs = mock(PublicHolidayService.class);
+
+            fixedClock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+            sut = new SummaryService(
+                    mockTts,
+                    mockUs,
+                    mockPhs,
+                    mock(TimeEntryBroadcaster.class),
+                    mock(AbsenceBroadcaster.class),
+                    mock(UserBroadcaster.class),
+                    fixedClock);
+
+            User user = new User();
+            user.setWeeklyTargetHours(40);
+            when(mockUs.getCurrentUser()).thenReturn(user);
+            when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
+            when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
+            when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
+        }
+
+        @Test
+        void usesYearStartToTodayRange() {
+            LocalDate today = LocalDate.now(fixedClock);
+            LocalDate yearStart = today.with(TemporalAdjusters.firstDayOfYear());
+
+            sut.getCurrentBalance();
+
+            verify(mockTts).getTimeEntries(eq(yearStart), eq(today));
+            verify(mockTts).getAbsences(eq(yearStart), eq(today));
+        }
+
+        @Test
+        void delegatesToRangeSummaryAggregation() {
+            LocalDate today = LocalDate.now(fixedClock);
+            LocalDate yearStart = today.with(TemporalAdjusters.firstDayOfYear());
+
+            int expected = sut.getSummary(yearStart, today).stream()
+                    .mapToInt(DaySummaryDTO::balanceMinutes)
+                    .sum();
+
+            int actual = sut.getCurrentBalance();
+
+            assertThat(actual).isEqualTo(expected);
+        }
+
+        @Test
+        void getSummary_holidayRange_resolvesCurrentUserOnlyOnce() {
+            LocalDate startDate = LocalDate.now(fixedClock).with(TemporalAdjusters.firstDayOfYear());
+            LocalDate endDate = startDate.plusDays(2);
+            when(mockPhs.getHolidays(any(), any(), any(Year.class)))
+                    .thenReturn(Set.of(startDate));
+            when(mockPhs.getHoliday(eq(startDate), any(), any()))
+                    .thenReturn(Optional.empty());
+
+            sut.getSummary(startDate, endDate);
+
+            verify(mockUs, times(1)).getCurrentUser();
+        }
+    }
 
     @Nested
     @DisplayName("getCurrentWeek")
@@ -714,7 +807,8 @@ public class SummaryServiceUnitTest {
                     mockTts, mockUs, mockPhs,
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    Clock.systemDefaultZone());
 
             User user = new User();
             user.setWeeklyTargetHours(39);
@@ -771,7 +865,8 @@ public class SummaryServiceUnitTest {
                     mockTts, mockUs, mockPhs,
                     mock(TimeEntryBroadcaster.class),
                     mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class));
+                    mock(UserBroadcaster.class),
+                    Clock.systemDefaultZone());
 
             User user = new User();
             user.setWeeklyTargetHours(39);
