@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.9] - 2026-04-06
+
+### Added
+- update application configuration and enhance Dockerfile for better runtime handling
+
+
+### Maintenance
+- Merge pull request #69 from LuxFerre86/feat/update-config-and-java-docs
+
 ## [2026.04.8] - 2026-04-06
 
 ### Added
