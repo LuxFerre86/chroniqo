@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.3] - 2026-04-06
+
+### Fixed
+- fixed width and height for the time entry dialog on tab change
+
+
+### Maintenance
+- Merge pull request #63 from LuxFerre86/fix/fixed-width-and-heigh-for-time-entry-dialog
+
 ## [2026.04.2] - 2026-04-06
 
 ### Fixed
