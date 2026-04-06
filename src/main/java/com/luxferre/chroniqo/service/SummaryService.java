@@ -1,10 +1,10 @@
 package com.luxferre.chroniqo.service;
 
+import com.luxferre.chroniqo.dto.AbsenceTypeDTO;
 import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
-import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.service.event.AbsenceBroadcaster;
 import com.luxferre.chroniqo.service.event.BroadcastListener;
@@ -200,9 +200,9 @@ public class SummaryService {
                 ? workedMinutes - targetMinutes
                 : workedMinutes;
 
-        AbsenceType effectiveAbsenceType = absence != null
-                ? absence.getType()
-                : (isPublicHoliday ? AbsenceType.HOLIDAY : null);
+        AbsenceTypeDTO effectiveAbsenceType = absence != null
+                ? AbsenceTypeDTO.of(absence.getType())
+                : (isPublicHoliday ? AbsenceTypeDTO.HOLIDAY : null);
 
 
         String absenceName = getAbsenceName(date, isPublicHoliday, absence);

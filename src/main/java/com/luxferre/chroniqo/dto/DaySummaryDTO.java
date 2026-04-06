@@ -1,6 +1,5 @@
 package com.luxferre.chroniqo.dto;
 
-import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.service.SummaryService;
 
 import java.time.LocalDate;
@@ -23,7 +22,7 @@ public record DaySummaryDTO(
         int workedMinutes,
         int targetMinutes,
         int balanceMinutes,
-        AbsenceType absenceType,
+        AbsenceTypeDTO absenceType,
         String absenceLabel
 ) {
 }

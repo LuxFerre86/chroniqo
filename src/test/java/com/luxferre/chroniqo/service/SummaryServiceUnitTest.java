@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.service;
 
+import com.luxferre.chroniqo.dto.AbsenceTypeDTO;
 import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
@@ -236,7 +237,7 @@ public class SummaryServiceUnitTest {
             assertThat(result.workedMinutes()).isEqualTo(480);
             assertThat(result.targetMinutes()).isZero();
             assertThat(result.balanceMinutes()).isEqualTo(480);
-            assertThat(result.absenceType()).isEqualTo(type);
+            assertThat(result.absenceType()).isEqualTo(AbsenceTypeDTO.of(type));
         }
 
         @Test
@@ -346,7 +347,7 @@ public class SummaryServiceUnitTest {
             assertThat(result.targetMinutes()).isZero();
             assertThat(result.workedMinutes()).isZero();
             assertThat(result.balanceMinutes()).isZero();
-            assertThat(result.absenceType()).isEqualTo(AbsenceType.HOLIDAY);
+            assertThat(result.absenceType()).isEqualTo(AbsenceTypeDTO.HOLIDAY);
         }
 
         @Test
@@ -362,7 +363,7 @@ public class SummaryServiceUnitTest {
             assertThat(result.isWorkday()).isFalse();
             assertThat(result.targetMinutes()).isZero();
             assertThat(result.workedMinutes()).isEqualTo(240);
-            assertThat(result.absenceType()).isEqualTo(AbsenceType.HOLIDAY);
+            assertThat(result.absenceType()).isEqualTo(AbsenceTypeDTO.HOLIDAY);
         }
 
         @Test
@@ -374,7 +375,7 @@ public class SummaryServiceUnitTest {
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS,
                     Set.of(NEW_YEARS_DAY));
 
-            assertThat(result.absenceType()).isEqualTo(AbsenceType.VACATION);
+            assertThat(result.absenceType()).isEqualTo(AbsenceTypeDTO.VACATION);
         }
 
         @Test
