@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.1] - 2026-04-06
+
+### Fixed
+- working hours can now be recorded both on public holidays and on days with absences.
+
+
+### Maintenance
+- Merge pull request #61 from LuxFerre86/fix/working-hours-on-holidays-or-absence
+
 ## [2026.04.0] - 2026-04-06
 
 ### Fixed
