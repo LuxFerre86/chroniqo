@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.2] - 2026-04-06
+
+### Fixed
+- actuator health is permitted for anonymous users
+
+
+### Maintenance
+- Merge pull request #62 from LuxFerre86/fix/actuator-not-public
+
 ## [2026.04.1] - 2026-04-06
 
 ### Fixed
