@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.0] - 2026-04-06
+
+### Fixed
+- SummaryServiceIntegrationTest
+
+
+### Maintenance
+- Merge pull request #60 from LuxFerre86/fix/summary-service-integration-test
+
 ## [2026.03.42] - 2026-03-31
 
 ### Added
