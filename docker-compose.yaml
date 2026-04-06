@@ -9,7 +9,6 @@ services:
       - .env
     volumes:
       - mariadb-data:/var/lib/mysql
-      - ./src/main/resources/db/migration/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     ports:
       # Bound to localhost only – for local dev/tooling access (e.g. IntelliJ DataSource).
       # Remove entirely in production; the app connects via the internal Docker network.

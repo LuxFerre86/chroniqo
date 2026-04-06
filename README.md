@@ -95,7 +95,7 @@ EXIT;
 
 2. **Initialize schema:**
 ```bash
-mysql -u chroniqo -p chroniqo < src/main/resources/db/migration/schema.sql
+mysql -u chroniqo -p chroniqo < src/main/resources/db/migration/V1__Initial_schema.sql
 ```
 
 3. **Configure environment variables:**
@@ -152,7 +152,7 @@ All configuration is done via environment variables. See [`.env.example`](.env.e
 
 ## 📊 Database Schema
 
-The database schema is automatically created on first startup. For manual initialization or upgrades, see [`src/main/resources/db/migration/schema.sql`](src/main/resources/db/migration/schema.sql).
+The database schema is automatically created on first startup. For manual initialization or upgrades, see [`src/main/resources/db/migration/V1__Initial_schema.sql`](src/main/resources/db/migration/V1__Initial_schema.sql).
 
 **Tables:**
 - `users` – User accounts and authentication
