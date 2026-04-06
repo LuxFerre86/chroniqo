@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.5] - 2026-04-06
+
+### Added
+- add Flyway integration and initial database schema for user management
+
+
+### Maintenance
+- Merge pull request #65 from LuxFerre86/feat/flyway-integration
+
 ## [2026.04.4] - 2026-04-06
 
 ### Added
