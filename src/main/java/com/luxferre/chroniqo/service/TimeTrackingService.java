@@ -13,10 +13,9 @@ import java.util.List;
 /**
  * Facade service that coordinates time entries and absences.
  *
- * <p>Saving a time entry automatically removes any absence on the same date,
- * and saving an absence removes any time entries within the absence date range.
- * This mutual-exclusion invariant is enforced here rather than in the
- * individual services so that the UI only needs a single call per user action.
+ * <p>Provides a single entry point for UI-layer operations that involve both
+ * time entries and absences, delegating to {@link TimeEntryService} and
+ * {@link AbsenceService} respectively.
  *
  * @author Luxferre86
  * @since 01.03.2026
@@ -76,7 +75,7 @@ public class TimeTrackingService {
     }
 
     /**
-     * Saves or updates a time entry.
+     * Saves or updates a time entry for the current user.
      *
      * @param timeEntryDTO the time entry data to persist
      * @throws TimeEntryValidationException if validation fails
@@ -97,7 +96,7 @@ public class TimeTrackingService {
     }
 
     /**
-     * Saves absence records for the requested date range .
+     * Saves absence records for the requested date range.
      *
      * @param absenceRequest the absence range and type to record
      */

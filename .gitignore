@@ -65,3 +65,4 @@ index.html
 docker-compose.local.yaml
 # Production env file
 .env.prod
+/mvnw.cmd

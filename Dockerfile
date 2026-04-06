@@ -34,6 +34,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl --fail --silent http://localhost:8080/actuator/health/readiness || exit 1
 
-# Use exec form to properly handle signals
-ENTRYPOINT ["java"]
-CMD ["-jar", "/app/app.jar"]
+# Shell form so that JAVA_OPTS and JVM_ARGS env-variables are expanded at runtime
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS $JVM_ARGS -jar /app/app.jar"]
