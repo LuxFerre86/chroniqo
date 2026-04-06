@@ -29,11 +29,13 @@
 
     <properties>
         <commons-lang3.version>3.20.0</commons-lang3.version>
-        <jackson-core.version>3.1.0</jackson-core.version>
+        <icu4j.version>78.3</icu4j.version>
+        <jackson-core.version>3.1.1</jackson-core.version>
         <java.version>21</java.version>
-        <lombok.version>1.18.42</lombok.version>
+        <jollyday.version>2.5.0</jollyday.version>
+        <lombok.version>1.18.44</lombok.version>
         <spring-boot.version>4.0.5</spring-boot.version> <!-- needed implicitly for plugin section / do NOT remove -->
-        <vaadin.version>25.0.8</vaadin.version>
+        <vaadin.version>25.1.1</vaadin.version>
     </properties>
 
     <dependencyManagement>
@@ -91,7 +93,7 @@
             <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
 
-        <!-- 3.1.0 instead of 3.0.4 fixing CVE-2026-29062 -->
+        <!-- 3.1.1 instead of 3.0.4 fixing CVE-2026-29062 -->
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -101,19 +103,19 @@
         <dependency>
             <groupId>de.focus-shift</groupId>
             <artifactId>jollyday-core</artifactId>
-            <version>2.3.0</version>
+            <version>${jollyday.version}</version>
         </dependency>
 
         <dependency>
             <groupId>de.focus-shift</groupId>
             <artifactId>jollyday-jaxb</artifactId>
-            <version>2.3.0</version>
+            <version>${jollyday.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.ibm.icu</groupId>
             <artifactId>icu4j</artifactId>
-            <version>78.3</version>
+            <version>${icu4j.version}</version>
             <scope>compile</scope>
         </dependency>
 
