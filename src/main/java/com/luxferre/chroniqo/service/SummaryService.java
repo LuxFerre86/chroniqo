@@ -76,6 +76,20 @@ public class SummaryService {
     }
 
     /**
+     * Returns the running time balance from the first day of the current year
+     * up to and including today.
+     *
+     * @return summed balance minutes for the current year-to-date period
+     */
+    public int getCurrentBalance() {
+        LocalDate today = LocalDate.now();
+        LocalDate yearStart = today.with(TemporalAdjusters.firstDayOfYear());
+        return getSummary(yearStart, today).stream()
+                .mapToInt(DaySummaryDTO::balanceMinutes)
+                .sum();
+    }
+
+    /**
      * Returns summaries for every calendar day in the given year.
      *
      * @param year the calendar year to summarize
@@ -100,6 +114,14 @@ public class SummaryService {
 
         List<TimeEntryDTO> entries = timeTrackingService.getTimeEntries(startDate, endDate);
         List<Absence> absences = timeTrackingService.getAbsences(startDate, endDate);
+        Map<LocalDate, TimeEntryDTO> entriesByDate = new HashMap<>();
+        for (TimeEntryDTO entry : entries) {
+            entriesByDate.put(entry.getDate(), entry);
+        }
+        Map<LocalDate, Absence> absencesByDate = new HashMap<>();
+        for (Absence absence : absences) {
+            absencesByDate.put(absence.getDate(), absence);
+        }
 
         Set<DayOfWeek> workingDays = user.getWorkingDaysOrDefault();
         int dailyTargetMinutes = calculateDailyTargetMinutes(
@@ -112,8 +134,14 @@ public class SummaryService {
 
         return startDate.datesUntil(endDate.plusDays(1L))
                 .map(date -> createDaySummaryDTO(
-                        date, entries, absences,
-                        dailyTargetMinutes, workingDays, holidays))
+                        date,
+                        entriesByDate.get(date),
+                        absencesByDate.get(date),
+                        dailyTargetMinutes,
+                        workingDays,
+                        holidays,
+                        user.getCountryCode(),
+                        user.getSubdivisionCode()))
                 .toList();
     }
 
@@ -149,40 +177,34 @@ public class SummaryService {
     }
 
     /**
-     * Builds a {@link DaySummaryDTO} for a single date by correlating time
-     * entries, absences, public holidays, the user's daily target, and their
-     * configured working days.
+     * Builds a {@link DaySummaryDTO} for a single date.
      *
      * <p>Priority order for a given date:
      * <ol>
-     *   <li>Manually recorded absence (vacation, sick, or manually entered
-     *       holiday) — always wins</li>
+     *   <li>Manually recorded absence (vacation, sick) — always wins</li>
      *   <li>Automatically detected public holiday (from country/subdivision)</li>
      *   <li>Non-working day per the user's working-days configuration</li>
      *   <li>Normal working day with target and balance calculation</li>
      * </ol>
      *
      * @param date               the calendar date to summarize
-     * @param entries            all time entries for the enclosing date range
-     * @param absences           all manually recorded absences for the range
+     * @param entry              optional time entry for {@code date}
+     * @param absence            optional absence for {@code date}
      * @param dailyTargetMinutes the user's daily working-time target in minutes
      * @param workingDays        the user's configured set of working days
      * @param holidays           public holiday dates for the relevant year(s)
+     * @param countryCode        user's country code used for holiday naming
+     * @param subdivisionCode    user's subdivision code used for holiday naming
      * @return the computed day summary
      */
-    DaySummaryDTO createDaySummaryDTO(LocalDate date, List<TimeEntryDTO> entries,
-                                      List<Absence> absences, int dailyTargetMinutes,
+    DaySummaryDTO createDaySummaryDTO(LocalDate date,
+                                      TimeEntryDTO entry,
+                                      Absence absence,
+                                      int dailyTargetMinutes,
                                       Set<DayOfWeek> workingDays,
-                                      Set<LocalDate> holidays) {
-        TimeEntryDTO entry = entries.stream()
-                .filter(e -> e.getDate().equals(date))
-                .findFirst()
-                .orElse(null);
-
-        Absence absence = absences.stream()
-                .filter(a -> a.getDate().equals(date))
-                .findFirst()
-                .orElse(null);
+                                      Set<LocalDate> holidays,
+                                      String countryCode,
+                                      String subdivisionCode) {
 
         // Public holiday only applies when no manual absence is recorded
         boolean isPublicHoliday = absence == null && holidays.contains(date);
@@ -204,8 +226,8 @@ public class SummaryService {
                 ? AbsenceTypeDTO.of(absence.getType())
                 : (isPublicHoliday ? AbsenceTypeDTO.HOLIDAY : null);
 
-
-        String absenceName = getAbsenceName(date, isPublicHoliday, absence);
+        String absenceName = getAbsenceName(
+                date, isPublicHoliday, absence, countryCode, subdivisionCode);
 
         return new DaySummaryDTO(
                 date,
@@ -284,19 +306,20 @@ public class SummaryService {
      *       from the jollyday library</li>
      *   <li>Otherwise, returns {@code null}</li>
      * </ol>
-     *
-     * @param date            the date to resolve
-     * @param isPublicHoliday whether the date matches a public holiday
-     * @param absence         a manually recorded absence, or {@code null}
-     * @return the absence/holiday name, or {@code null}
      */
-    String getAbsenceName(LocalDate date, boolean isPublicHoliday, Absence absence) {
+
+    private String getAbsenceName(LocalDate date,
+                                  boolean isPublicHoliday,
+                                  Absence absence,
+                                  String countryCode,
+                                  String subdivisionCode) {
         if (absence != null) {
             return StringUtils.capitalize(absence.getType().name().toLowerCase());
         } else if (isPublicHoliday) {
-            // Attempt to find a matching holiday name for the date
-            User currentUser = userService.getCurrentUser();
-            return publicHolidayService.getHoliday(date, currentUser.getCountryCode(), currentUser.getSubdivisionCode()).map(holiday -> holiday.getDescription(Locale.ROOT)).orElse("Holiday");
+            return publicHolidayService
+                    .getHoliday(date, countryCode, subdivisionCode)
+                    .map(holiday -> holiday.getDescription(Locale.ROOT))
+                    .orElse("Holiday");
         }
         return null;
     }

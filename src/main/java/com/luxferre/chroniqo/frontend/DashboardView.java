@@ -197,11 +197,6 @@ public class DashboardView extends VerticalLayout {
      * Get current balance
      */
     int getCurrentBalance() {
-        LocalDate today = LocalDate.now();
-        return summaryService.getSummary(today.getYear())
-                .stream()
-                .filter(s -> s.date().isBefore(today) || s.date().equals(today))
-                .mapToInt(DaySummaryDTO::balanceMinutes)
-                .sum();
+        return summaryService.getCurrentBalance();
     }
 }
