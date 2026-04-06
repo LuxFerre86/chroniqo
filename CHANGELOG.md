@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.04.7] - 2026-04-06
+
+### Maintenance
+- Merge pull request #67 from LuxFerre86/chore/dependency-update
+- chore: update dependencies to latest versions in pom.xml and package.json
+
 ## [2026.04.6] - 2026-04-06
 
 ### Maintenance
