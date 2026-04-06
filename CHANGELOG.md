@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.04.6] - 2026-04-06
+
+### Maintenance
+- Merge pull request #66 from LuxFerre86/chore/update-README
+- chore: update README with Docker setup instructions and environment variable details
+
 ## [2026.04.5] - 2026-04-06
 
 ### Added
