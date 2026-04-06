@@ -108,6 +108,7 @@ public class TimeEntryDialog extends Dialog {
         // Dialog Styling
         addClassName("chroniqo-dialog");
         setWidth("500px");
+        setHeight("580px");
         setCloseOnEsc(true);
         setCloseOnOutsideClick(false);
 
