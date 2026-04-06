@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026.04.10] - 2026-04-06
+
+### Fixed
+- inject Clock into SummaryService to eliminate flaky midnight test
+
+
+### Maintenance
+- Merge pull request #70 from LuxFerre86/chore/optimize-dashboard-view-performance
+- chore: optimize dashboard view performance by refactoring balance calculation and enhancing summary data retrieval
+
 ## [2026.04.9] - 2026-04-06
 
 ### Added
