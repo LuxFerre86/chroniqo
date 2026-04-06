@@ -21,6 +21,15 @@ spring:
           auth: true
           starttls:
             enable: true
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health
+    endpoint:
+      health:
+        probes:
+          enabled: true
   security:
     remember-me:
       key: ${REMEMBER_ME_KEY:}
