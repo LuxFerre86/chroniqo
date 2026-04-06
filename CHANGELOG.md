@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.11] - 2026-04-06
+
+### Fixed
+- update JAVA_OPTS in Dockerfile to remove G1NewCollectionHeuristicPercent setting
+
+
+### Maintenance
+- Merge pull request #71 from LuxFerre86/fix/dockerfile
+
 ## [2026.04.10] - 2026-04-06
 
 ### Fixed
