@@ -1,13 +1,21 @@
 package com.luxferre.chroniqo.model;
 
 /**
- * Classifies the reason for a user's absence on a given working day.
+ * Represents the supported absence categories for a working day entry.
+ * Used to distinguish leave reasons in time tracking and reporting.
  *
  * @author Luxferre86
  * @since 14.02.2026
  */
 public enum AbsenceType {
+
+    /**
+     * Planned leave approved in advance \(e.g., holiday\).
+     */
     VACATION,
-    SICK,
-    HOLIDAY
+
+    /**
+     * Unplanned leave caused by illness.
+     */
+    SICK
 }

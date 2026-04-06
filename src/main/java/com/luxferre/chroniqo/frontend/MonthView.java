@@ -1,7 +1,7 @@
 package com.luxferre.chroniqo.frontend;
 
+import com.luxferre.chroniqo.dto.AbsenceTypeDTO;
 import com.luxferre.chroniqo.dto.DaySummaryDTO;
-import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.service.SummaryService;
 import com.luxferre.chroniqo.util.IsWeekendQuery;
 import com.vaadin.flow.component.AttachEvent;
@@ -229,7 +229,7 @@ public class MonthView extends VerticalLayout {
         return dayCard;
     }
 
-    private String getBadgeClassName(AbsenceType type) {
+    private String getBadgeClassName(AbsenceTypeDTO type) {
         if (type == null) return "";
         return switch (type) {
             case HOLIDAY -> "badge-holiday";
