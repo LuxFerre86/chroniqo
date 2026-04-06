@@ -45,7 +45,7 @@ public class SecurityConfig {
             "/icons/**",
             "/*.css",
             "/dark",
-            "/actuator/**"
+            "/actuator/health/**"
     };
 
     private final RememberMeProperties rememberMeProperties;
