@@ -2,7 +2,10 @@ package com.luxferre.chroniqo.service.user;
 
 import com.luxferre.chroniqo.config.AppProperties;
 import com.luxferre.chroniqo.config.DefaultUserDetailsService;
+import com.luxferre.chroniqo.dto.UserRegistrationRequest;
 import com.luxferre.chroniqo.model.User;
+import com.luxferre.chroniqo.repository.AbsenceRepository;
+import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.service.EmailService;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
@@ -53,6 +56,10 @@ public class UserServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
+    private TimeEntryRepository timeEntryRepository;
+    @Mock
+    private AbsenceRepository absenceRepository;
+    @Mock
     private ApplicationEventPublisher eventPublisher;
     @Mock
     private AppProperties appProperties;
@@ -85,13 +92,14 @@ public class UserServiceTest {
                     .thenReturn(Optional.empty());
 
             User result = userService.register(
-                    "new@example.com", "password123", "John", "Doe",
-                    null, null);
+                    registrationRequest("new@example.com", "password123", "John", "Doe", 38,
+                            null, null));
 
             assertThat(result.getEmail()).isEqualTo("new@example.com");
             assertThat(result.getPasswordHash()).isEqualTo("hashed_password");
             assertThat(result.getFirstName()).isEqualTo("John");
             assertThat(result.getLastName()).isEqualTo("Doe");
+            assertThat(result.getWeeklyTargetHours()).isEqualTo(38);
             assertThat(result.isEnabled()).isFalse();
             assertThat(result.getVerificationToken()).isNotNull();
             assertThat(result.getVerificationTokenExpiryDate()).isAfter(LocalDateTime.now());
@@ -107,11 +115,38 @@ public class UserServiceTest {
                     .thenReturn(Optional.empty());
 
             User result = userService.register(
-                    "user@example.com", "password123", "John", "Doe",
-                    "DE", "DE-BY");
+                    registrationRequest("user@example.com", "password123", "John", "Doe", 40,
+                            "DE", "DE-BY"));
 
+            assertThat(result.getWeeklyTargetHours()).isEqualTo(40);
             assertThat(result.getCountryCode()).isEqualTo("DE");
             assertThat(result.getSubdivisionCode()).isEqualTo("DE-BY");
+        }
+
+        @Test
+        void register_withWeeklyTargetHours_persists() {
+            when(userRepository.findByEmail("hours@example.com"))
+                    .thenReturn(Optional.empty());
+
+            User result = userService.register(
+                    registrationRequest("hours@example.com", "password123", "Jane", "Doe", 32,
+                            null, null));
+
+            assertThat(result.getWeeklyTargetHours()).isEqualTo(32);
+        }
+
+        @Test
+        void register_invalidWeeklyTargetHours_throwsIllegalArgumentException() {
+            when(userRepository.findByEmail("hours@example.com"))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.register(
+                    registrationRequest("hours@example.com", "password123", "Jane", "Doe", 81,
+                            null, null)))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("weeklyTargetHours must be between 0 and 80");
+
+            verify(userRepository, never()).save(any());
         }
 
         @Test
@@ -120,7 +155,8 @@ public class UserServiceTest {
                     .thenReturn(Optional.of(new User()));
 
             assertThatThrownBy(() -> userService.register(
-                    "existing@example.com", "pw", "A", "B", null, null))
+                    registrationRequest("existing@example.com", "pw", "A", "B", 40,
+                            null, null)))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("already registered");
 
@@ -132,8 +168,8 @@ public class UserServiceTest {
         void register_passwordIsHashed_notStoredInPlaintext() {
             when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
-            userService.register("user@example.com", "myPlainPassword",
-                    "A", "B", null, null);
+            userService.register(registrationRequest("user@example.com", "myPlainPassword",
+                    "A", "B", 40, null, null));
 
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
             verify(userRepository).save(captor.capture());
@@ -374,6 +410,53 @@ public class UserServiceTest {
     }
 
     // =========================================================================
+    // deleteCurrentUserAccount
+    // =========================================================================
+
+    @Nested
+    class DeleteCurrentUserAccount {
+
+        @BeforeEach
+        void setUp() {
+            lenient().when(userDetailsService.getUsernameFromContext())
+                    .thenReturn(Optional.of("user@example.com"));
+        }
+
+        @Test
+        void deleteCurrentUserAccount_correctPassword_deletesUserAndRelatedData() {
+            User user = userWithPassword();
+            when(userRepository.findByEmail("user@example.com"))
+                    .thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("correctPassword", "old_hash"))
+                    .thenReturn(true);
+
+            userService.deleteCurrentUserAccount("correctPassword");
+
+            verify(timeEntryRepository).deleteByUser(user);
+            verify(absenceRepository).deleteByUser(user);
+            verify(userRepository).delete(user);
+            verify(userRepository).flush();
+        }
+
+        @Test
+        void deleteCurrentUserAccount_wrongPassword_throwsIllegalArgument() {
+            User user = userWithPassword();
+            when(userRepository.findByEmail("user@example.com"))
+                    .thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("wrongPassword", "old_hash"))
+                    .thenReturn(false);
+
+            assertThatThrownBy(() -> userService.deleteCurrentUserAccount("wrongPassword"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("incorrect");
+
+            verify(timeEntryRepository, never()).deleteByUser(any());
+            verify(absenceRepository, never()).deleteByUser(any());
+            verify(userRepository, never()).delete(any());
+        }
+    }
+
+    // =========================================================================
     // requestPasswordReset
     // =========================================================================
 
@@ -575,8 +658,8 @@ public class UserServiceTest {
         @Test
         void register_throwsRegistrationDisabledException() {
             assertThatThrownBy(() -> userService.register(
-                    "new@example.com", "password123", "First", "Last",
-                    null, null))
+                    registrationRequest("new@example.com", "password123", "First", "Last",
+                            40, null, null)))
                     .isInstanceOf(RegistrationDisabledException.class)
                     .hasMessageContaining("disabled");
         }
@@ -584,8 +667,8 @@ public class UserServiceTest {
         @Test
         void register_doesNotSaveUser() {
             try {
-                userService.register("new@example.com", "password123",
-                        "First", "Last", null, null);
+                userService.register(registrationRequest("new@example.com", "password123",
+                        "First", "Last", 40, null, null));
             } catch (RegistrationDisabledException ignored) {
             }
 
@@ -595,8 +678,8 @@ public class UserServiceTest {
         @Test
         void register_doesNotSendEmail() {
             try {
-                userService.register("new@example.com", "password123",
-                        "First", "Last", null, null);
+                userService.register(registrationRequest("new@example.com", "password123",
+                        "First", "Last", 40, null, null));
             } catch (RegistrationDisabledException ignored) {
             }
 
@@ -637,6 +720,17 @@ public class UserServiceTest {
         user.setEmail("user@example.com");
         user.setPasswordHash("old_hash");
         return user;
+    }
+
+    private UserRegistrationRequest registrationRequest(String email,
+                                                        String password,
+                                                        String firstName,
+                                                        String lastName,
+                                                        int weeklyTargetHours,
+                                                        String countryCode,
+                                                        String subdivisionCode) {
+        return new UserRegistrationRequest(email, password, firstName, lastName,
+                weeklyTargetHours, countryCode, subdivisionCode);
     }
 
     // =========================================================================

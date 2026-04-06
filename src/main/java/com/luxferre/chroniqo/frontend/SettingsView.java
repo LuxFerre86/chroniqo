@@ -1,15 +1,19 @@
 package com.luxferre.chroniqo.frontend;
 
+import com.luxferre.chroniqo.config.LastLoginTokenBasedRememberMeServices;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.service.CountrySubdivisionRegistry;
 import com.luxferre.chroniqo.service.user.UserService;
 import com.luxferre.chroniqo.util.PasswordValidator;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -24,9 +28,13 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.DayOfWeek;
 import java.time.format.TextStyle;
@@ -52,6 +60,11 @@ public class SettingsView extends VerticalLayout {
      * Service for user-related operations (fetching current user, updating profile, changing password).
      */
     private final UserService userService;
+
+    /**
+     * Remember-me service used to clear persistent login cookies after account deletion.
+     */
+    private final LastLoginTokenBasedRememberMeServices rememberMeServices;
 
     /**
      * Registry that provides mappings for countries and their subdivisions.
@@ -150,8 +163,10 @@ public class SettingsView extends VerticalLayout {
      * @throws IllegalStateException if there is no currently authenticated user
      */
     public SettingsView(UserService userService,
+                        LastLoginTokenBasedRememberMeServices rememberMeServices,
                         CountrySubdivisionRegistry countryRegistry) {
         this.userService = userService;
+        this.rememberMeServices = rememberMeServices;
         this.countryRegistry = countryRegistry;
 
         addClassName("settings-view");
@@ -177,7 +192,8 @@ public class SettingsView extends VerticalLayout {
         mainContainer.add(
                 createProfileSection(),
                 createPasswordSection(),
-                createAccountSection());
+                createAccountSection(),
+                createDangerZoneSection());
 
         add(pageTitle, mainContainer);
     }
@@ -352,6 +368,35 @@ public class SettingsView extends VerticalLayout {
     }
 
     /**
+     * Build and return the destructive account-management section.
+     *
+     * @return configured VerticalLayout for the delete-account flow
+     */
+    private VerticalLayout createDangerZoneSection() {
+        VerticalLayout section = sectionCard();
+        section.getStyle()
+                .set("border", "1px solid hsla(3, 70%, 55%, 0.28)")
+                .set("background", "linear-gradient(145deg, hsl(215, 22%, 12%) 0%, hsl(3, 24%, 10%) 100%)");
+
+        H3 sectionTitle = sectionHeading("Danger Zone");
+        sectionTitle.getStyle().set("color", "var(--lumo-error-text-color)");
+
+        Paragraph description = new Paragraph(
+                "Delete your account permanently. This removes your profile, time entries, absences, and saved settings."
+        );
+        description.getStyle()
+                .set("margin", "0")
+                .set("color", "var(--lumo-secondary-text-color)");
+
+        Button deleteAccountButton = new Button("Delete Account");
+        deleteAccountButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+        deleteAccountButton.addClickListener(e -> openDeleteAccountDialog());
+
+        section.add(sectionTitle, description, deleteAccountButton);
+        return section;
+    }
+
+    /**
      * Create a simple stat box used in the account section.
      *
      * @param label short label for the stat (e.g. "Member Since")
@@ -495,6 +540,108 @@ public class SettingsView extends VerticalLayout {
             Notification.show("Please fix the errors in the form",
                             3000, Notification.Position.MIDDLE)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
+    }
+
+    /**
+     * Opens a confirmation dialog for permanent account deletion.
+     */
+    private void openDeleteAccountDialog() {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Delete Account");
+        dialog.setCloseOnEsc(true);
+        dialog.setCloseOnOutsideClick(false);
+        dialog.setWidth("480px");
+
+        Paragraph warningText = new Paragraph(
+                "This action cannot be undone. Type DELETE and enter your current password to permanently remove your account."
+        );
+        warningText.getStyle()
+                .set("margin", "0")
+                .set("color", "var(--lumo-secondary-text-color)");
+
+        TextField confirmField = new TextField("Confirmation");
+        confirmField.setWidthFull();
+        confirmField.setPlaceholder("DELETE");
+        confirmField.setHelperText("Type DELETE in uppercase to confirm");
+
+        PasswordField deletePasswordField = new PasswordField("Current Password");
+        deletePasswordField.setWidthFull();
+        deletePasswordField.setRequired(true);
+
+        VerticalLayout content = new VerticalLayout(warningText, confirmField, deletePasswordField);
+        content.setPadding(false);
+        content.setSpacing(true);
+
+        Button cancelButton = new Button("Cancel", e -> dialog.close());
+        Button confirmDeleteButton = new Button("Delete Account", e ->
+                confirmDeleteAccount(dialog, confirmField, deletePasswordField));
+        confirmDeleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+
+        dialog.add(content);
+        dialog.getFooter().add(cancelButton, confirmDeleteButton);
+        dialog.open();
+    }
+
+    /**
+     * Validates the dialog inputs, deletes the account, and logs the user out.
+     */
+    private void confirmDeleteAccount(Dialog dialog,
+                                      TextField confirmField,
+                                      PasswordField deletePasswordField) {
+        if (!"DELETE".equals(confirmField.getValue() != null
+                ? confirmField.getValue().trim() : "")) {
+            Notification.show("Please type DELETE to confirm account removal.",
+                            4000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
+        if (deletePasswordField.isEmpty()) {
+            Notification.show("Please enter your current password.",
+                            4000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
+        try {
+            userService.deleteCurrentUserAccount(deletePasswordField.getValue());
+            dialog.close();
+            logoutAfterAccountDeletion();
+        } catch (IllegalArgumentException e) {
+            Notification.show(e.getMessage(), 5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        } catch (Exception e) {
+            log.error("Failed to delete account for user {}", currentUser.getEmail(), e);
+            Notification.show("Failed to delete account. Please try again.",
+                            5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
+    }
+
+    /**
+     * Clears the current session and remember-me cookie, then forces a reload to the login view.
+     */
+    private void logoutAfterAccountDeletion() {
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+        if (attributes != null) {
+            HttpServletRequest request = attributes.getRequest();
+            HttpServletResponse response = attributes.getResponse();
+
+            if (response != null) {
+                rememberMeServices.logout(request, response, null);
+            }
+
+            if (request.getSession(false) != null) {
+                request.getSession(false).invalidate();
+            }
+        }
+
+        UI currentUi = UI.getCurrent();
+        if (currentUi != null) {
+            currentUi.getPage().setLocation("/login?accountDeleted");
         }
     }
 

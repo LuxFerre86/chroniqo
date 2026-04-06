@@ -2,7 +2,10 @@ package com.luxferre.chroniqo.service.user;
 
 import com.luxferre.chroniqo.config.AppProperties;
 import com.luxferre.chroniqo.config.DefaultUserDetailsService;
+import com.luxferre.chroniqo.dto.UserRegistrationRequest;
 import com.luxferre.chroniqo.model.User;
+import com.luxferre.chroniqo.repository.AbsenceRepository;
+import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.service.EmailService;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
@@ -52,6 +55,8 @@ public class UserService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final TimeEntryRepository timeEntryRepository;
+    private final AbsenceRepository absenceRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final AppProperties appProperties;
 
@@ -76,39 +81,32 @@ public class UserService {
      * message. The account is only activated once the user clicks the
      * verification link.
      *
-     * @param email           the unique email address for the new account
-     * @param password        the plain-text password (will be hashed)
-     * @param firstName       the user's first name
-     * @param lastName        the user's last name
-     * @param countryCode     ISO 3166-1 alpha-2 country code for public holiday
-     *                        detection; {@code null} to disable
-     * @param subdivisionCode full ISO 3166-2 subdivision code (e.g.
-     *                        {@code "DE-BY"}); {@code null} for nationwide only
+     * @param request the registration request containing profile, password, and
+     *                optional holiday-configuration fields
      * @return the persisted, not-yet-enabled {@link User}
      * @throws RegistrationDisabledException if registration is globally disabled
      * @throws IllegalArgumentException      if the email address is already
      *                                       registered
      */
     @Transactional
-    public User register(String email, String password, String firstName,
-                         String lastName, String countryCode,
-                         String subdivisionCode) {
+    public User register(UserRegistrationRequest request) {
         if (!appProperties.getRegistrationProperties().isEnabled()) {
             throw new RegistrationDisabledException(
                     "Registration is currently disabled.");
         }
 
-        if (userRepository.findByEmail(email).isPresent()) {
+        if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalArgumentException("Email already registered");
         }
 
         User user = new User();
-        user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(password));
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        user.setCountryCode(countryCode);
-        user.setSubdivisionCode(subdivisionCode);
+        user.setEmail(request.email());
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setWeeklyTargetHours(request.weeklyTargetHours());
+        user.setCountryCode(request.countryCode());
+        user.setSubdivisionCode(request.subdivisionCode());
         user.setEnabled(false);
         user.setVerificationToken(UUID.randomUUID().toString());
         user.setVerificationTokenExpiryDate(LocalDateTime.now().plusHours(24));
@@ -251,6 +249,33 @@ public class UserService {
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    /**
+     * Permanently deletes the currently authenticated user's account.
+     *
+     * <p>The current password must be supplied again to prevent accidental or
+     * unauthorized self-deletion. Related time entries and absences are removed
+     * first so the user entity can be deleted safely across all supported
+     * database setups.
+     *
+     * @param currentPassword the user's current plain-text password
+     * @throws IllegalArgumentException if the password does not match the
+     *         authenticated user's stored password
+     * @throws UserNotFoundException if no authenticated user can be resolved
+     */
+    @Transactional
+    public void deleteCurrentUserAccount(String currentPassword) {
+        User user = getCurrentUser();
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        timeEntryRepository.deleteByUser(user);
+        absenceRepository.deleteByUser(user);
+        userRepository.delete(user);
+        userRepository.flush();
     }
 
     /**

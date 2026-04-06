@@ -3,7 +3,7 @@ package com.luxferre.chroniqo.service;
 import com.luxferre.chroniqo.service.user.UserService;
 
 /**
- * Thrown by {@link UserService#register}
+ * Thrown by {@link UserService#register(com.luxferre.chroniqo.dto.UserRegistrationRequest)}
  * when public registration has been disabled via the
  * {@code app.registration.enabled} configuration property.
  *

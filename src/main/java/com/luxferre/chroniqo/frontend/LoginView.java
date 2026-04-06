@@ -8,6 +8,8 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.LoginForm;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -17,6 +19,9 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Public login view ({@code /login}) based on Vaadin's
@@ -156,12 +161,16 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
      */
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        // Show error message if login failed
-        if (event.getLocation()
+        Map<String, List<String>> params = event.getLocation()
                 .getQueryParameters()
-                .getParameters()
-                .containsKey("error")) {
-            login.setError(true);
+                .getParameters();
+
+        login.setError(params.containsKey("error"));
+
+        if (params.containsKey("accountDeleted")) {
+            Notification.show("Your account was deleted successfully.",
+                            4000, Notification.Position.TOP_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         }
     }
 }

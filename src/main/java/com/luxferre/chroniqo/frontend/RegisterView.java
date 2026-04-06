@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.frontend;
 
+import com.luxferre.chroniqo.dto.UserRegistrationRequest;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.service.CountrySubdivisionRegistry;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
@@ -322,7 +323,7 @@ public class RegisterView extends VerticalLayout {
 
     /**
      * Handle the registration button click:
-     * - Validate the form and, if valid, call {@link UserService#register} to create the user.
+     * - Validate the form and, if valid, call {@link UserService#register(UserRegistrationRequest)} to create the user.
      * - Extract country and subdivision codes from the selected items.
      * - Show a notification on success and navigate to the login page.
      * - Handle and display errors such as disabled registration or invalid input.
@@ -337,13 +338,16 @@ public class RegisterView extends VerticalLayout {
                         subdivisionField.isVisible() && subdivisionField.getValue() != null
                                 ? subdivisionField.getValue().getKey() : null;
 
-                User ignored = userService.register(
+                UserRegistrationRequest request = new UserRegistrationRequest(
                         form.getEmail(),
                         form.getPassword(),
                         form.getFirstName(),
                         form.getLastName(),
+                        form.getWeeklyTargetHours(),
                         countryCode,
                         subdivisionCode);
+
+                User ignored = userService.register(request);
 
                 Notification.show(
                                 "Registration successful! Please check your email to verify your account.",
