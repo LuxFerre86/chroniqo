@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.8] - 2026-04-06
+
+### Added
+- implement user account deletion functionality and related repository methods
+
+
+### Maintenance
+- Merge pull request #68 from LuxFerre86/feat/user-account-deletion-via-settings
+
 ## [2026.04.7] - 2026-04-06
 
 ### Maintenance
