@@ -190,7 +190,7 @@ public class SummaryService {
         boolean isConfiguredWorkday = workingDays.contains(date.getDayOfWeek());
         boolean isWorkday = isConfiguredWorkday && absence == null && !isPublicHoliday;
 
-        int workedMinutes = (entry != null && absence == null && !isPublicHoliday)
+        int workedMinutes = entry != null
                 ? calculateWorkedMinutes(entry)
                 : 0;
 

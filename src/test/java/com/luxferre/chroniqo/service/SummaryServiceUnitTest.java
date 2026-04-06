@@ -225,7 +225,7 @@ public class SummaryServiceUnitTest {
 
         @ParameterizedTest
         @EnumSource(AbsenceType.class)
-        void weekday_withAbsence_workedMinutesIsZero_absenceTypeSet(AbsenceType type) {
+        void weekday_withAbsence_considerWorkedMinutes_absenceTypeSet(AbsenceType type) {
             TimeEntryDTO e = entry(WEEKDAY, LocalTime.of(9, 0), LocalTime.of(17, 0), 0);
             Absence a = absence(WEEKDAY, type);
 
@@ -233,9 +233,9 @@ public class SummaryServiceUnitTest {
                     WEEKDAY, List.of(e), List.of(a),
                     DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS);
 
-            assertThat(result.workedMinutes()).isZero();
+            assertThat(result.workedMinutes()).isEqualTo(480);
             assertThat(result.targetMinutes()).isZero();
-            assertThat(result.balanceMinutes()).isZero();
+            assertThat(result.balanceMinutes()).isEqualTo(480);
             assertThat(result.absenceType()).isEqualTo(type);
         }
 
@@ -350,8 +350,7 @@ public class SummaryServiceUnitTest {
         }
 
         @Test
-        void publicHoliday_workedOnThatDay_zeroWorkedMinutes_holidayBadge() {
-            // Entry present but public holiday suppresses it (no target, no worked time)
+        void publicHoliday_workedOnThatDay_considerWorkedMinutes_holidayBadge() {
             TimeEntryDTO e = entry(NEW_YEARS_DAY,
                     LocalTime.of(9, 0), LocalTime.of(13, 0), 0);
 
@@ -362,7 +361,7 @@ public class SummaryServiceUnitTest {
 
             assertThat(result.isWorkday()).isFalse();
             assertThat(result.targetMinutes()).isZero();
-            assertThat(result.workedMinutes()).isZero();
+            assertThat(result.workedMinutes()).isEqualTo(240);
             assertThat(result.absenceType()).isEqualTo(AbsenceType.HOLIDAY);
         }
 

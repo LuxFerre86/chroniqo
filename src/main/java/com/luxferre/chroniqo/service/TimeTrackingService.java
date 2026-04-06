@@ -76,7 +76,7 @@ public class TimeTrackingService {
     }
 
     /**
-     * Saves or updates a time entry and removes any absence on the same date.
+     * Saves or updates a time entry.
      *
      * @param timeEntryDTO the time entry data to persist
      * @throws TimeEntryValidationException if validation fails
@@ -84,7 +84,6 @@ public class TimeTrackingService {
     @Transactional
     public void saveEntry(TimeEntryDTO timeEntryDTO) {
         timeEntryService.saveEntry(timeEntryDTO);
-        absenceService.deleteAbsence(timeEntryDTO.getDate());
     }
 
     /**
@@ -98,15 +97,13 @@ public class TimeTrackingService {
     }
 
     /**
-     * Saves absence records for the requested date range and removes any time
-     * entries that overlap with that range.
+     * Saves absence records for the requested date range .
      *
      * @param absenceRequest the absence range and type to record
      */
     @Transactional
     public void saveAbsence(AbsenceRequest absenceRequest) {
         absenceService.saveAbsence(absenceRequest);
-        timeEntryService.deleteEntries(absenceRequest.startDate(), absenceRequest.endDate());
     }
 
     /**
