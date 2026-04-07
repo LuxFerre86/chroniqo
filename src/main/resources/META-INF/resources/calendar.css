@@ -2,6 +2,33 @@
    ChroniQo Calendar - Modern Dark mit warmen Akzenten
    ===================================================== */
 
+/* ===== Month Selector ===== */
+
+/* Remove any internal padding/gap that VerticalLayout adds by default */
+.month-selector {
+    padding: 0 !important;
+    row-gap: 0 !important;
+}
+
+/* Mobile (≤700px): stack vertically, Today button below nav row */
+@media (max-width: 700px) {
+    .month-selector {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 0.25rem !important;
+        width: auto !important;
+    }
+
+    /* Reset grid placement; Today sits naturally below the nav row */
+    .month-selector .today-btn {
+        grid-column: unset !important;
+        grid-row: unset !important;
+        justify-self: unset !important;
+        align-self: unset !important;
+    }
+}
+
 /* ===== Calendar Grid ===== */
 .calendar-grid {
     display: grid;
