@@ -79,7 +79,7 @@ public class MonthView extends VerticalLayout {
         calendarGrid.setWidthFull();
 
         add(monthSelector, monthStatisticsCard, calendarGrid);
-        setHorizontalComponentAlignment(Alignment.CENTER, monthSelector);
+        setHorizontalComponentAlignment(Alignment.STRETCH, monthSelector);
         setFlexGrow(1, calendarGrid);
     }
 

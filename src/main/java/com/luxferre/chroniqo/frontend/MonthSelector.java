@@ -6,6 +6,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -23,17 +24,20 @@ import java.util.stream.IntStream;
  *
  * <p>Renders previous/next chevron buttons flanking a clickable month label.
  * Clicking the label opens a modal picker with a year drop-down and a
- * 3-column month grid. Changes are notified to the owner via
+ * 3-column month grid. A "Today" shortcut button appears to the right of the
+ * navigation row on the same line whenever the displayed month is not the
+ * current calendar month. Changes are notified to the owner via
  * {@link MonthChangeListener}.
  *
  * @author Luxferre86
  * @since 14.02.2026
  */
-public class MonthSelector extends HorizontalLayout {
+public class MonthSelector extends VerticalLayout {
 
     @Getter
     private YearMonth selectedMonth;
     private final Span monthLabel;
+    private final Button todayButton;
     @Setter
     private MonthChangeListener changeListener;
 
@@ -41,7 +45,7 @@ public class MonthSelector extends HorizontalLayout {
         this.selectedMonth = YearMonth.now();
         addClassName("month-selector");
 
-        // Navigate to previous month
+        // ── Navigation row ────────────────────────────────────────────────
         Button previousButton = new Button(VaadinIcon.CHEVRON_LEFT.create());
         previousButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
         previousButton.addClickListener(e -> navigateToPreviousMonth());
@@ -90,25 +94,89 @@ public class MonthSelector extends HorizontalLayout {
                 .set("color", "var(--lumo-secondary-text-color)")
                 .set("border-radius", "8px");
 
-        // Configure layout
-        setAlignItems(Alignment.CENTER);
-        setSpacing(true);
-        getStyle()
-                .set("gap", "0.75rem");
+        HorizontalLayout navRow = new HorizontalLayout(previousButton, monthLabel, nextButton);
+        navRow.setAlignItems(FlexComponent.Alignment.CENTER);
+        navRow.setSpacing(true);
+        navRow.setPadding(false);
+        navRow.getStyle()
+                .set("gap", "0.75rem")
+                .set("grid-column", "2")
+                .set("grid-row", "1")
+                .set("justify-self", "center");
 
-        add(previousButton, monthLabel, nextButton);
+        // ── Today button (right on desktop, above nav on mobile) ──────────
+        // Styled as a warm-amber pill to match the app's dark warm theme
+        todayButton = new Button("Today");
+        todayButton.addClassName("today-btn");
+        todayButton.getStyle()
+                .set("background", "hsla(32, 60%, 50%, 0.08)")
+                .set("border", "1px solid hsla(32, 50%, 50%, 0.25)")
+                .set("color", "hsl(32, 85%, 65%)")
+                .set("border-radius", "8px")
+                .set("font-size", "12px")
+                .set("font-weight", "500")
+                .set("padding", "0.2rem 1rem")
+                .set("cursor", "pointer")
+                .set("transition", "background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease")
+                .set("box-shadow", "0 1px 3px rgba(0, 0, 0, 0.2)")
+                .set("grid-column", "3")
+                .set("grid-row", "1")
+                .set("justify-self", "start")   // left-aligned in right column → closest to nav
+                .set("align-self", "center");   // same vertical height as month label
+
+        todayButton.getElement().addEventListener("mouseenter", e -> todayButton.getStyle()
+                .set("background", "hsla(32, 60%, 50%, 0.15)")
+                .set("border-color", "hsla(32, 60%, 55%, 0.45)")
+                .set("box-shadow", "0 2px 6px rgba(0, 0, 0, 0.3)"));
+        todayButton.getElement().addEventListener("mouseleave", e -> todayButton.getStyle()
+                .set("background", "hsla(32, 60%, 50%, 0.08)")
+                .set("border-color", "hsla(32, 50%, 50%, 0.25)")
+                .set("box-shadow", "0 1px 3px rgba(0, 0, 0, 0.2)"));
+
+        todayButton.addClickListener(e -> navigateToCurrentMonth());
+        // Use CSS visibility (not setVisible) so the reserved space never collapses
+        todayButton.getStyle().set("visibility",
+                selectedMonth.equals(YearMonth.now()) ? "hidden" : "visible");
+
+        // ── Outer layout: 3-column grid on desktop, stacked on mobile ─────
+        setWidthFull();
+        setPadding(false);
+        setSpacing(false);
+        getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "1fr auto 1fr")
+                .set("align-items", "center")
+                .set("column-gap", "2rem");
+
+        add(navRow, todayButton);
     }
 
     private void navigateToPreviousMonth() {
         selectedMonth = selectedMonth.minusMonths(1);
         updateLabel();
+        updateTodayButtonVisibility();
         fireChangeEvent();
     }
 
     private void navigateToNextMonth() {
         selectedMonth = selectedMonth.plusMonths(1);
         updateLabel();
+        updateTodayButtonVisibility();
         fireChangeEvent();
+    }
+
+    /**
+     * Navigates to the current calendar month and fires the change listener.
+     */
+    void navigateToCurrentMonth() {
+        selectedMonth = YearMonth.now();
+        updateLabel();
+        updateTodayButtonVisibility();
+        fireChangeEvent();
+    }
+
+    private void updateTodayButtonVisibility() {
+        todayButton.getStyle().set("visibility", selectedMonth.equals(YearMonth.now()) ? "hidden" : "visible");
     }
 
     private void openMonthPickerDialog() {
@@ -218,14 +286,15 @@ public class MonthSelector extends HorizontalLayout {
     }
 
     /**
-     * Programmatically sets the selected month and updates the displayed label.
-     * Does not fire the {@link MonthChangeListener}.
+     * Programmatically sets the selected month and updates the displayed label
+     * and Today-button visibility. Does not fire the {@link MonthChangeListener}.
      *
      * @param yearMonth the month to select
      */
     public void setSelectedMonth(YearMonth yearMonth) {
         this.selectedMonth = yearMonth;
         updateLabel();
+        updateTodayButtonVisibility();
     }
 
     @FunctionalInterface
@@ -233,3 +302,8 @@ public class MonthSelector extends HorizontalLayout {
         void onMonthChanged(YearMonth newMonth);
     }
 }
+
+
+
+
+
