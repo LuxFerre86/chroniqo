@@ -72,7 +72,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should reject null date")
         void shouldRejectNullDate() {
-            TimeEntryDTO dto = new TimeEntryDTO(null, LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
+            TimeEntryDTO dto = new TimeEntryDTO(null, LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)
@@ -91,7 +91,7 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should reject future date")
         void shouldRejectFutureDate() {
             LocalDate futureDate = LocalDate.now().plusDays(1);
-            TimeEntryDTO dto = new TimeEntryDTO(futureDate, LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
+            TimeEntryDTO dto = new TimeEntryDTO(futureDate, LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)
@@ -110,7 +110,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should accept today's date and publish event")
         void shouldAcceptTodaysDate() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
@@ -123,7 +123,7 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should accept past date and publish event")
         void shouldAcceptPastDate() {
             TimeEntryDTO dto = new TimeEntryDTO(
-                    LocalDate.now().minusDays(5), LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
+                    LocalDate.now().minusDays(5), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
@@ -144,7 +144,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should reject negative break minutes")
         void shouldRejectNegativeBreakMinutes() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), -10);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), -10, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)
@@ -162,7 +162,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should reject break minutes exceeding maximum (480)")
         void shouldRejectExcessiveBreakMinutes() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 500);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 500, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)
@@ -181,7 +181,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should accept zero break minutes")
         void shouldAcceptZeroBreakMinutes() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 0);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 0, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
@@ -192,7 +192,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should accept maximum allowed break minutes (480)")
         void shouldAcceptMaximumBreakMinutes() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(22, 0), 480);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(22, 0), 480, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
@@ -203,7 +203,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should accept null break minutes")
         void shouldAcceptNullBreakMinutes() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), null);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), null, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
@@ -223,7 +223,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should reject end time before start time")
         void shouldRejectEndTimeBeforeStartTime() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(17, 0), LocalTime.of(9, 0), 30);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(17, 0), LocalTime.of(9, 0), 30, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)
@@ -241,7 +241,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should reject end time equal to start time")
         void shouldRejectEndTimeEqualToStartTime() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(9, 0), 30);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(9, 0), 30, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)
@@ -258,7 +258,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should accept valid time range")
         void shouldAcceptValidTimeRange() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
@@ -269,7 +269,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should accept one-minute time entry")
         void shouldAcceptOneMinuteEntry() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(9, 1), 0);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(9, 1), 0, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
@@ -289,7 +289,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should reject break longer than total time")
         void shouldRejectBreakLongerThanTotalTime() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(10, 0), 120);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(10, 0), 120, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)
@@ -307,7 +307,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should accept break equal to total time (edge case)")
         void shouldAcceptBreakEqualToTotalTime() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(10, 0), 60);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(10, 0), 60, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
@@ -318,12 +318,62 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Should accept break less than total time")
         void shouldAcceptBreakLessThanTotalTime() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 60);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 60, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
             verify(timeEntryRepository).save(any(TimeEntry.class));
+        }
+    }
+
+    // =========================================================================
+    // Notes Validation
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Notes Validation")
+    class NotesValidation {
+
+        @Test
+        @DisplayName("Should accept null notes")
+        void shouldAcceptNullNotes() {
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
+            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
+
+            timeEntryService.saveEntry(dto);
+
+            verify(timeEntryRepository).save(any(TimeEntry.class));
+        }
+
+        @Test
+        @DisplayName("Should accept notes with exactly 500 characters")
+        void shouldAcceptNotesAtMaxLength() {
+            String maxNotes = "a".repeat(TimeEntryService.MAX_NOTES_LENGTH);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, maxNotes);
+            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
+
+            timeEntryService.saveEntry(dto);
+
+            verify(timeEntryRepository).save(any(TimeEntry.class));
+        }
+
+        @Test
+        @DisplayName("Should reject notes exceeding 500 characters")
+        void shouldRejectNotesTooLong() {
+            String tooLongNotes = "a".repeat(TimeEntryService.MAX_NOTES_LENGTH + 1);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, tooLongNotes);
+
+            assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
+                    .isInstanceOf(TimeEntryValidationException.class)
+                    .satisfies(e -> {
+                        TimeEntryValidationException ex = (TimeEntryValidationException) e;
+                        assertThat(ex.getErrorType()).isEqualTo(ValidationErrorType.VALUE_TOO_LARGE);
+                        assertThat(ex.getField()).isEqualTo("Notes");
+                    });
+
+            verify(timeEntryRepository, never()).save(any());
+            verify(eventPublisher, never()).publishEvent(any());
         }
     }
 
@@ -338,7 +388,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("saveEntry publishes event after successful save")
         void saveEntry_publishesEventAfterSave() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
@@ -371,7 +421,7 @@ class TimeEntryServiceValidationTest {
         @DisplayName("saveEntry does not publish event on validation failure")
         void saveEntry_doesNotPublishOnValidationFailure() {
             TimeEntryDTO dto = new TimeEntryDTO(
-                    LocalDate.now().plusDays(1), LocalTime.of(9, 0), LocalTime.of(17, 0), 30);
+                    LocalDate.now().plusDays(1), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class);
@@ -391,7 +441,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("Typical office day: 9-17 with 1 hour lunch")
         void typicalOfficeDay() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 60);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 60, null);
             when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
@@ -404,7 +454,7 @@ class TimeEntryServiceValidationTest {
         @DisplayName("User tries to log tomorrow's hours — fails, no event")
         void cannotLogFutureHours() {
             TimeEntryDTO dto = new TimeEntryDTO(
-                    LocalDate.now().plusDays(1), LocalTime.of(9, 0), LocalTime.of(17, 0), 60);
+                    LocalDate.now().plusDays(1), LocalTime.of(9, 0), LocalTime.of(17, 0), 60, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)
@@ -417,7 +467,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("User enters end time before start time — fails, no event")
         void endTimeBeforeStartTime() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(17, 0), LocalTime.of(9, 0), 60);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(17, 0), LocalTime.of(9, 0), 60, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)
@@ -430,7 +480,7 @@ class TimeEntryServiceValidationTest {
         @Test
         @DisplayName("10-hour break for 8-hour shift — fails, no event")
         void breakExceedsTotalTime() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 600);
+            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 600, null);
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)

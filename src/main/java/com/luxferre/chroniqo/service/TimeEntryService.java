@@ -53,6 +53,7 @@ public class TimeEntryService {
     private static final int MIN_BREAK_MINUTES = 0;
     private static final int MAX_BREAK_MINUTES = 480; // 8 hours
     private static final int MAX_WORK_HOURS = 24;
+    static final int MAX_NOTES_LENGTH = 500;
 
     /**
      * Returns all time entries for the current user within the given date range.
@@ -117,6 +118,9 @@ public class TimeEntryService {
         // Set break
         entry.setBreakMinutes(timeEntryDTO.getBreakMinutes());
 
+        // Set notes
+        entry.setNotes(timeEntryDTO.getNotes());
+
         // Determine status
         if (entry.getStartTime() != null && entry.getEndTime() != null) {
             entry.setStatus(TimeEntryStatus.COMPLETED);
@@ -169,6 +173,7 @@ public class TimeEntryService {
      *   <li>End time is not equal to start time</li>
      *   <li>Break duration does not exceed total work span</li>
      *   <li>Total duration (with break) does not exceed 24 hours</li>
+     *   <li>Notes (if set) must not exceed 500 characters</li>
      * </ul>
      *
      * @param dto the time entry to validate
@@ -200,6 +205,13 @@ public class TimeEntryService {
                 throw TimeEntryValidationException.valueTooLarge(
                         "Break minutes", breakMinutes, MAX_BREAK_MINUTES + " minutes");
             }
+        }
+
+        // Validate notes length
+        String notes = dto.getNotes();
+        if (notes != null && notes.length() > MAX_NOTES_LENGTH) {
+            throw TimeEntryValidationException.valueTooLarge(
+                    "Notes", notes.length() + " characters", MAX_NOTES_LENGTH + " characters");
         }
 
         // Validate time range if both start and end times are present
@@ -254,6 +266,7 @@ public class TimeEntryService {
                 timeEntry.getDate(),
                 timeEntry.getStartTime(),
                 timeEntry.getEndTime(),
-                timeEntry.getBreakMinutes());
+                timeEntry.getBreakMinutes(),
+                timeEntry.getNotes());
     }
 }

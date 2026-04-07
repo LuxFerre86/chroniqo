@@ -23,6 +23,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -57,6 +58,7 @@ public class TimeEntryDialog extends Dialog {
     private final TimePicker start = new TimePicker("Start Time");
     private final TimePicker end = new TimePicker("End Time");
     private final IntegerField breakMinutes = new IntegerField("Break");
+    private final TextArea notes = new TextArea("Notes");
 
     private final Tabs tabs = new Tabs();
     private final Tab workingTimeTab = new Tab("Working Time");
@@ -108,7 +110,7 @@ public class TimeEntryDialog extends Dialog {
         // Dialog Styling
         addClassName("chroniqo-dialog");
         setWidth("500px");
-        setHeight("580px");
+        setHeight("720px");
         setCloseOnEsc(true);
         setCloseOnOutsideClick(false);
 
@@ -146,6 +148,13 @@ public class TimeEntryDialog extends Dialog {
         breakMinutes.setMax(480);
         breakMinutes.setHelperText("Minutes");
 
+        // Notes Field
+        notes.setMaxLength(500);
+        notes.setHelperText("Max. 500 characters");
+        notes.setWidthFull();
+        notes.setMinHeight("80px");
+        notes.setMaxHeight("160px");
+
         // Content Layout
         content.setAlignItems(FlexComponent.Alignment.STRETCH);
         content.setPadding(true);
@@ -154,7 +163,7 @@ public class TimeEntryDialog extends Dialog {
                 .set("gap", "1rem");
 
         // Add error message at the top of content
-        content.add(errorMessage, startDay, endDay, start, end, breakMinutes);
+        content.add(errorMessage, startDay, endDay, start, end, breakMinutes, notes);
 
         // Buttons
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -190,6 +199,7 @@ public class TimeEntryDialog extends Dialog {
         start.setVisible(true);
         end.setVisible(true);
         breakMinutes.setVisible(true);
+        notes.setVisible(true);
 
         // Update button styling
         saveButton.setText("Save");
@@ -208,6 +218,7 @@ public class TimeEntryDialog extends Dialog {
         start.setVisible(false);
         end.setVisible(false);
         breakMinutes.setVisible(false);
+        notes.setVisible(false);
 
         // Update button styling
         saveButton.setText("Mark as Sick");
@@ -226,6 +237,7 @@ public class TimeEntryDialog extends Dialog {
         start.setVisible(false);
         end.setVisible(false);
         breakMinutes.setVisible(false);
+        notes.setVisible(false);
 
         // Update button styling
         saveButton.setText("Book Vacation");
@@ -250,6 +262,7 @@ public class TimeEntryDialog extends Dialog {
             start.setValue(entry.getStartTime());
             end.setValue(entry.getEndTime());
             breakMinutes.setValue(Optional.of(entry).map(TimeEntryDTO::getBreakMinutes).orElse(null));
+            notes.setValue(entry.getNotes() != null ? entry.getNotes() : "");
             deleteButton.setVisible(true);
         } else {
             Absence absence = timeTrackingService.getAbsence(startDay.getValue());
@@ -275,6 +288,7 @@ public class TimeEntryDialog extends Dialog {
         start.setValue(null);
         end.setValue(null);
         breakMinutes.setValue(null);
+        notes.setValue("");
         deleteButton.setVisible(false);
     }
 
@@ -360,6 +374,8 @@ public class TimeEntryDialog extends Dialog {
         timeEntryDto.setStartTime(start.getValue());
         timeEntryDto.setEndTime(end.getValue());
         timeEntryDto.setBreakMinutes(Optional.of(breakMinutes).map(IntegerField::getValue).orElse(null));
+        String notesValue = notes.getValue();
+        timeEntryDto.setNotes(notesValue != null && !notesValue.isBlank() ? notesValue.trim() : null);
         return timeEntryDto;
     }
 
@@ -415,6 +431,9 @@ public class TimeEntryDialog extends Dialog {
             case VALUE_TOO_LARGE -> {
                 if ("Break minutes".equals(e.getField())) {
                     yield "Break time cannot exceed 8 hours (480 minutes).";
+                }
+                if ("Notes".equals(e.getField())) {
+                    yield "Notes cannot exceed 500 characters.";
                 }
                 yield "The value you entered is too large.";
             }

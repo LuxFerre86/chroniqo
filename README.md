@@ -11,7 +11,7 @@ Track your working hours, manage absences, and monitor your work-time balance �
 
 ## ✨ Features
 
-- **Time Tracking** – Log daily work entries with start time, end time, and break duration
+- **Time Tracking** – Log daily work entries with start time, end time, break duration, and an optional note
 - **Dashboard** – See today's summary, weekly progress chart, and your current balance at a glance
 - **Month View** – Calendar-style overview of all days, worked hours, and daily balance
 - **Absence Management** – Record vacation, sick leave, and public holidays

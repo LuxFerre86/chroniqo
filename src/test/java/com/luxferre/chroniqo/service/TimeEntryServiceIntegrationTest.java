@@ -77,7 +77,7 @@ public class TimeEntryServiceIntegrationTest {
 
     @Test
     public void saveEntry() {
-        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), LocalTime.of(17, 45), 70);
+        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), LocalTime.of(17, 45), 70, null);
 
         timeEntryService.saveEntry(timeEntryDTO);
 
@@ -91,12 +91,49 @@ public class TimeEntryServiceIntegrationTest {
         assertThat(timeEntry.getStatus()).isEqualTo(TimeEntryStatus.COMPLETED);
         assertThat(timeEntry.getCreatedAt()).isNotNull();
         assertThat(timeEntry.getCompletedAt()).isNotNull();
+        assertThat(timeEntry.getNotes()).isNull();
+    }
+
+    @Test
+    public void saveEntry_withNotes() {
+        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), LocalTime.of(17, 45), 70, "Client meeting in the afternoon");
+
+        timeEntryService.saveEntry(timeEntryDTO);
+
+        TimeEntry timeEntry = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
+
+        assertThat(timeEntry).isNotNull();
+        assertThat(timeEntry.getNotes()).isEqualTo("Client meeting in the afternoon");
+    }
+
+    @Test
+    public void saveEntry_update_notesAreUpdated() {
+        entityManager.persist(createTimeEntry(LocalDate.now()));
+        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), LocalTime.of(18, 50), 70, "Updated note");
+
+        timeEntryService.saveEntry(timeEntryDTO);
+
+        TimeEntry timeEntry = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
+        assertThat(timeEntry.getNotes()).isEqualTo("Updated note");
+    }
+
+    @Test
+    public void saveEntry_update_notesAreClearedWhenNull() {
+        TimeEntry existing = createTimeEntry(LocalDate.now());
+        existing.setNotes("Old note");
+        entityManager.persist(existing);
+        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), LocalTime.of(18, 50), 70, null);
+
+        timeEntryService.saveEntry(timeEntryDTO);
+
+        TimeEntry timeEntry = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
+        assertThat(timeEntry.getNotes()).isNull();
     }
 
     @Test
     public void saveEntry_update() {
         entityManager.persist(createTimeEntry(LocalDate.now()));
-        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), LocalTime.of(18, 50), 70);
+        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), LocalTime.of(18, 50), 70, null);
 
         timeEntryService.saveEntry(timeEntryDTO);
 
@@ -114,7 +151,7 @@ public class TimeEntryServiceIntegrationTest {
 
     @Test
     public void saveEntry_statusStated() {
-        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), null, 70);
+        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), null, 70, null);
 
         timeEntryService.saveEntry(timeEntryDTO);
 
@@ -133,7 +170,7 @@ public class TimeEntryServiceIntegrationTest {
     @Test
     public void deleteEntry() {
         TimeEntry timeEntry = createTimeEntry(LocalDate.now());
-        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(timeEntry.getDate(), null, null, null);
+        TimeEntryDTO timeEntryDTO = new TimeEntryDTO(timeEntry.getDate(), null, null, null, null);
         entityManager.persist(timeEntry);
 
         timeEntryService.deleteEntry(timeEntryDTO);
@@ -141,6 +178,17 @@ public class TimeEntryServiceIntegrationTest {
         TimeEntry timeEntryAfter = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
 
         assertThat(timeEntryAfter).isNull();
+    }
+
+    @Test
+    public void getTimeEntry_notesAreMappedToDTO() {
+        TimeEntry timeEntry = createTimeEntry(LocalDate.now());
+        timeEntry.setNotes("Important day");
+        entityManager.persist(timeEntry);
+
+        TimeEntryDTO dto = timeEntryService.getTimeEntry(LocalDate.now());
+
+        assertThat(dto.getNotes()).isEqualTo("Important day");
     }
 
     private void assertTimeEntryDTO(TimeEntryDTO timeEntryDTO, LocalDate date) {

@@ -10,9 +10,10 @@ import java.time.LocalTime;
 /**
  * Data transfer object representing a single time entry.
  *
- * <p>Carries the four mutable fields that the user can edit: date, start time,
- * end time, and break duration in minutes. {@code endTime} may be {@code null}
- * for an entry that has been started but not yet completed.
+ * <p>Carries the mutable fields that the user can edit: date, start time,
+ * end time, break duration in minutes, and an optional free-text note.
+ * {@code endTime} may be {@code null} for an entry that has been started
+ * but not yet completed.
  *
  * @author Luxferre86
  * @since 14.02.2026
@@ -25,4 +26,5 @@ public final class TimeEntryDTO {
     private LocalTime startTime;
     private LocalTime endTime;
     private Integer breakMinutes;
+    private String notes;
 }
