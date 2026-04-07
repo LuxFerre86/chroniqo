@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.13] - 2026-04-07
+
+### Added
+- add "Today" button to month view for quick navigation
+
+
+### Maintenance
+- Merge pull request #73 from LuxFerre86/feat/added-quick-nav-today-button-to-month-view
+
 ## [2026.04.12] - 2026-04-07
 
 ### Added
