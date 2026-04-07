@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.04.12] - 2026-04-07
+
+### Added
+- add optional notes field to time entries with validation for maximum length
+
+
+### Maintenance
+- Merge pull request #72 from LuxFerre86/feat/add-optional-notes-field-to-time-entries
+
 ## [2026.04.11] - 2026-04-06
 
 ### Fixed
