@@ -41,6 +41,12 @@ public class TimeEntry {
     private Integer breakMinutes;
 
     /**
+     * Optional free-text note for this time entry (max 500 characters).
+     */
+    @Column(length = 500)
+    private String notes;
+
+    /**
      * Status of this time entry
      * STARTED = Only start time set
      * COMPLETED = Start + End time set
