@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.05.0] - 2026-05-01
+
+### Maintenance
+- Merge pull request #74 from LuxFerre86/chore/dependency-update
+- chore: update dependencies
+
 ## [2026.04.13] - 2026-04-07
 
 ### Added
