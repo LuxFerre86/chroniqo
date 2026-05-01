@@ -137,7 +137,7 @@ public class PasswordResetConfirmView extends VerticalLayout implements HasUrlPa
                     3000,
                     Notification.Position.MIDDLE
             ).addThemeVariants(NotificationVariant.LUMO_ERROR);
-            UI.getCurrent().navigate("login");
+            event.forwardTo("login");
         }
     }
 
@@ -173,7 +173,7 @@ public class PasswordResetConfirmView extends VerticalLayout implements HasUrlPa
                 Notification.show(
                         "Reset link is invalid or expired. Please request a new one.",
                         5000,
-                        Notification.Position.MIDDLE
+                        Notification.Position.TOP_CENTER
                 ).addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         }

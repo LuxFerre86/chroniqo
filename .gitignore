@@ -67,3 +67,4 @@ docker-compose.local.yaml
 .env.prod
 /mvnw.cmd
 /backlog.md
+/.claude/
