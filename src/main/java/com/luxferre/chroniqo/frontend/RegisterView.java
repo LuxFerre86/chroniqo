@@ -189,7 +189,6 @@ public class RegisterView extends VerticalLayout {
 
         emailField.setRequired(true);
         emailField.setWidthFull();
-        emailField.setErrorMessage("Please enter a valid email address");
 
         passwordField.setRequired(true);
         passwordField.setWidthFull();
