@@ -5,6 +5,7 @@ import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
+import com.luxferre.chroniqo.service.user.UserService;
 import com.vaadin.flow.component.UI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jpa.test.autoconfigure.AutoConfigureTestEntityManager;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -24,20 +25,21 @@ import java.util.Locale;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @Transactional
 @AutoConfigureTestEntityManager
-@WithMockUser("test@gmail.com")
 public class AbsenceServiceIntegrationTest {
 
     @Autowired
     private AbsenceService absenceService;
     @Autowired
     private AbsenceRepository absenceRepository;
-
     @Autowired
     private TestEntityManager entityManager;
+    @MockitoBean
+    private UserService userService;
 
     private User testUser;
 
@@ -47,6 +49,7 @@ public class AbsenceServiceIntegrationTest {
         UI ui = new UI();
         ui.setLocale(Locale.GERMANY);
         UI.setCurrent(ui);
+        when(userService.getCurrentUser()).thenReturn(testUser);
     }
 
     @ParameterizedTest

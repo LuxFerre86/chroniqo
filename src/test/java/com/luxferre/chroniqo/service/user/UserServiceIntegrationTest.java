@@ -1,25 +1,25 @@
 package com.luxferre.chroniqo.service.user;
 
-import com.luxferre.chroniqo.model.Absence;
-import com.luxferre.chroniqo.model.AbsenceType;
-import com.luxferre.chroniqo.model.TimeEntry;
-import com.luxferre.chroniqo.model.TimeEntryStatus;
-import com.luxferre.chroniqo.model.User;
+import com.luxferre.chroniqo.model.*;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jpa.test.autoconfigure.AutoConfigureTestEntityManager;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -27,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @Transactional
 @AutoConfigureTestEntityManager
-@WithMockUser("test@gmail.com")
 class UserServiceIntegrationTest {
 
     private static final String TEST_USER_ID = "a0000000-0000-0000-0000-000000000001";
@@ -52,6 +51,12 @@ class UserServiceIntegrationTest {
         testUser = entityManager.find(User.class, TEST_USER_ID);
         testUser.setPasswordHash(passwordEncoder.encode("DeleteMe123!"));
         entityManager.flush();
+
+        SecurityContextHolder.clearContext();
+        Authentication auth = new UsernamePasswordAuthenticationToken(new org.springframework.security.core.userdetails.User(testUser.getEmail(),testUser.getPasswordHash(),List.of()), "password", List.of());
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
     }
 
     @Test

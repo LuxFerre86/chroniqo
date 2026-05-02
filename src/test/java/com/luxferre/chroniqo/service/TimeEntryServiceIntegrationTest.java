@@ -5,6 +5,7 @@ import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.TimeEntryStatus;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
+import com.luxferre.chroniqo.service.user.UserService;
 import com.vaadin.flow.component.UI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jpa.test.autoconfigure.AutoConfigureTestEntityManager;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -22,20 +23,21 @@ import java.util.Locale;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @Transactional
 @AutoConfigureTestEntityManager
-@WithMockUser("test@gmail.com")
 public class TimeEntryServiceIntegrationTest {
 
     @Autowired
     private TimeEntryService timeEntryService;
     @Autowired
     private TimeEntryRepository timeEntryRepository;
-
     @Autowired
     private TestEntityManager entityManager;
+    @MockitoBean
+    private UserService userService;
 
     private User testUser;
 
@@ -45,6 +47,7 @@ public class TimeEntryServiceIntegrationTest {
         UI ui = new UI();
         ui.setLocale(Locale.GERMANY);
         UI.setCurrent(ui);
+        when(userService.getCurrentUser()).thenReturn(testUser);
     }
 
     @Test
