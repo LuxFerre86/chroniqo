@@ -32,6 +32,7 @@ public class AuthenticationEventListener {
     @EventListener
     public void onSuccess(AuthenticationSuccessEvent event) {
         String email = event.getAuthentication().getName();
+        log.info("User authenticated successfully");
         loginAttemptService.recordSuccess(email);
     }
 
@@ -47,6 +48,5 @@ public class AuthenticationEventListener {
     public void onFailure(AbstractAuthenticationFailureEvent event) {
         String email = event.getAuthentication().getName();
         loginAttemptService.recordFailure(email);
-        log.debug("Failed login attempt recorded for: [email hidden]");
     }
 }

@@ -8,6 +8,7 @@ import com.luxferre.chroniqo.service.event.AbsenceChangedEvent;
 import com.luxferre.chroniqo.service.user.UserService;
 import com.luxferre.chroniqo.util.IsWeekendQuery;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import java.util.List;
  * @since 14.02.2026
  */
 @RequiredArgsConstructor
+@Slf4j
 @Service
 public class AbsenceService {
 
@@ -56,6 +58,8 @@ public class AbsenceService {
             return absence;
         }).toList());
 
+        log.info("Absence saved between {} and {}", absenceRequest.startDate(), absenceRequest.endDate());
+
         eventPublisher.publishEvent(new AbsenceChangedEvent(user, getClass()));
     }
 
@@ -66,7 +70,13 @@ public class AbsenceService {
      */
     @Transactional
     public void deleteAbsence(LocalDate date) {
-        deleteAbsences(date, date);
+        User user = userService.getCurrentUser();
+        Absence absence = repository.findByUserAndDate(user, date);
+        if (absence != null) {
+            repository.delete(absence);
+            log.info("Absence deleted for date: {}", date);
+            eventPublisher.publishEvent(new AbsenceChangedEvent(user, getClass()));
+        }
     }
 
     /**
@@ -82,6 +92,7 @@ public class AbsenceService {
         List<Absence> absenceList = repository.findByUserAndDateBetween(user, startDate, endDate);
         if (!absenceList.isEmpty()) {
             repository.deleteAll(absenceList);
+            log.info("Absences deleted between {} and {}", startDate, endDate);
             eventPublisher.publishEvent(new AbsenceChangedEvent(user, getClass()));
         }
     }

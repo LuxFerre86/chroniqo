@@ -72,6 +72,7 @@ abstract class Broadcaster<E extends EntityChangedEvent> {
     void broadcast(E event) {
         Set<BroadcastListener> listeners = userToListeners.getOrDefault(
                 event.getUser().getEmail(), Set.of());
+        log.info("Broadcasting event to {} listeners", listeners.size());
         listeners.forEach(listener ->
                 executor.execute(() -> listener.onBroadcastEvent(event)));
     }

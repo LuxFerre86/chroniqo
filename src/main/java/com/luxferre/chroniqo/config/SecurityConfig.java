@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.util.StringUtils;
 
 /**
@@ -60,10 +61,11 @@ public class SecurityConfig {
      * @param http                         the security builder
      * @param authenticationSuccessHandler the Vaadin-aware success handler
      * @param rememberMeServices           the remember-me services bean
+     * @param loggingFilter                the logging filter
      * @return the configured {@link org.springframework.security.web.SecurityFilterChain}
      */
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, VaadinSavedRequestAwareAuthenticationSuccessHandler authenticationSuccessHandler, LastLoginTokenBasedRememberMeServices rememberMeServices) {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, VaadinSavedRequestAwareAuthenticationSuccessHandler authenticationSuccessHandler, LastLoginTokenBasedRememberMeServices rememberMeServices, LoggingFilter loggingFilter) {
         // register custom authenticationSuccessHandler as shared object
         http.setSharedObject(VaadinSavedRequestAwareAuthenticationSuccessHandler.class, authenticationSuccessHandler);
         // Configure your static resources with public access
@@ -73,6 +75,8 @@ public class SecurityConfig {
         http.with(VaadinSecurityConfigurer.vaadin(), configurer -> configurer.loginView(LoginView.class));
         // Remember Me Configuration
         http.rememberMe(remember -> remember.rememberMeServices(rememberMeServices));
+        // Add logging filter to include user in MDC
+        http.addFilterBefore(loggingFilter, SecurityContextHolderFilter.class);
 
         return http.build();
     }
@@ -128,5 +132,16 @@ public class SecurityConfig {
     @Bean
     public DefaultAuthenticationEventPublisher authenticationEventPublisher() {
         return new DefaultAuthenticationEventPublisher();
+    }
+
+    /**
+     * Creates the logging filter bean to add user context to MDC.
+     *
+     * @param userService the user service for retrieving current user
+     * @return the configured LoggingFilter
+     */
+    @Bean
+    public LoggingFilter loggingFilter(UserService userService) {
+        return new LoggingFilter(userService);
     }
 }

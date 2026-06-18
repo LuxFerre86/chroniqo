@@ -8,6 +8,7 @@ import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.service.event.TimeEntryChangedEvent;
 import com.luxferre.chroniqo.service.user.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,7 @@ import java.util.List;
  * @author Luxferre86
  * @since 12.03.2026
  */
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class TimeEntryService {
@@ -64,6 +66,7 @@ public class TimeEntryService {
      */
     public List<TimeEntryDTO> getTimeEntries(LocalDate startDate, LocalDate endDate) {
         User user = userService.getCurrentUser();
+        log.info("Retrieving time entries between {} and {}", startDate, endDate);
         return timeEntryRepository.findByUserAndDateBetween(user, startDate, endDate)
                 .stream()
                 .map(this::createTimeEntryDTO)
@@ -79,6 +82,7 @@ public class TimeEntryService {
      * {@code null}
      */
     public TimeEntryDTO getTimeEntry(LocalDate date) {
+        log.info("Retrieving time entry for date {}", date);
         return getTimeEntries(date, date).stream().findFirst().orElse(null);
     }
 
@@ -97,6 +101,8 @@ public class TimeEntryService {
 
         User user = userService.getCurrentUser();
         LocalDate date = timeEntryDTO.getDate();
+
+        log.info("Saving time entry for date {}", date);
 
         TimeEntry entry = timeEntryRepository.findByUserAndDate(user, date);
         if (entry == null) {
@@ -131,6 +137,8 @@ public class TimeEntryService {
 
         timeEntryRepository.save(entry);
 
+        log.info("Time entry saved for date {} with status {}", date, entry.getStatus());
+
         eventPublisher.publishEvent(new TimeEntryChangedEvent(user, getClass()));
     }
 
@@ -141,7 +149,9 @@ public class TimeEntryService {
      */
     @Transactional
     public void deleteEntry(TimeEntryDTO timeEntryDTO) {
-        deleteEntries(timeEntryDTO.getDate(), timeEntryDTO.getDate());
+        LocalDate date = timeEntryDTO.getDate();
+        log.info("Deleting time entry for date {}", date);
+        deleteEntries(date, date);
     }
 
 
@@ -154,9 +164,11 @@ public class TimeEntryService {
     @Transactional
     public void deleteEntries(LocalDate startDate, LocalDate endDate) {
         User user = userService.getCurrentUser();
+        log.info("Deleting time entries between {} and {}", startDate, endDate);
         List<TimeEntry> timeEntryList = timeEntryRepository.findByUserAndDateBetween(user, startDate, endDate);
         if (!timeEntryList.isEmpty()) {
             timeEntryRepository.deleteAll(timeEntryList);
+            log.info("Deleted {} time entries", timeEntryList.size());
             eventPublisher.publishEvent(new TimeEntryChangedEvent(user, getClass()));
         }
     }
@@ -181,17 +193,20 @@ public class TimeEntryService {
      */
     private void validateTimeEntry(TimeEntryDTO dto) {
         if (dto == null) {
+            log.warn("Time entry validation failed: Time entry cannot be null");
             throw TimeEntryValidationException.nullValue("timeEntry",
                     "Time entry cannot be null");
         }
 
         if (dto.getDate() == null) {
+            log.warn("Time entry validation failed: Date cannot be null");
             throw TimeEntryValidationException.nullValue("date",
                     "Date cannot be null");
         }
 
         // Validate date is not in the future
         if (dto.getDate().isAfter(LocalDate.now())) {
+            log.warn("Time entry validation failed: Date {} is in the future", dto.getDate());
             throw TimeEntryValidationException.futureDate(dto.getDate());
         }
 
@@ -199,9 +214,11 @@ public class TimeEntryService {
         Integer breakMinutes = dto.getBreakMinutes();
         if (breakMinutes != null) {
             if (breakMinutes < MIN_BREAK_MINUTES) {
+                log.warn("Time entry validation failed: Break minutes {} is negative", breakMinutes);
                 throw TimeEntryValidationException.negativeValue("Break minutes", breakMinutes);
             }
             if (breakMinutes > MAX_BREAK_MINUTES) {
+                log.warn("Time entry validation failed: Break minutes {} exceeds maximum {} minutes", breakMinutes, MAX_BREAK_MINUTES);
                 throw TimeEntryValidationException.valueTooLarge(
                         "Break minutes", breakMinutes, MAX_BREAK_MINUTES + " minutes");
             }
@@ -210,6 +227,7 @@ public class TimeEntryService {
         // Validate notes length
         String notes = dto.getNotes();
         if (notes != null && notes.length() > MAX_NOTES_LENGTH) {
+            log.warn("Time entry validation failed: Notes length {} exceeds maximum {} characters", notes.length(), MAX_NOTES_LENGTH);
             throw TimeEntryValidationException.valueTooLarge(
                     "Notes", notes.length() + " characters", MAX_NOTES_LENGTH + " characters");
         }
@@ -221,6 +239,7 @@ public class TimeEntryService {
         if (startTime != null && endTime != null) {
             // Check if end time is after start time
             if (endTime.isBefore(startTime)) {
+                log.warn("Time entry validation failed: End time {} is before start time {}", endTime, startTime);
                 throw TimeEntryValidationException.invalidRange(
                         String.format("End time (%s) must be after start time (%s)", endTime, startTime),
                         startTime, endTime
@@ -229,6 +248,7 @@ public class TimeEntryService {
 
             // Check if end time equals start time
             if (endTime.equals(startTime)) {
+                log.warn("Time entry validation failed: End time equals start time {}", startTime);
                 throw TimeEntryValidationException.invalidRange(
                         "End time cannot be equal to start time",
                         startTime, endTime
@@ -241,6 +261,7 @@ public class TimeEntryService {
             long workMinutes = totalMinutes - effectiveBreakMinutes;
 
             if (workMinutes < 0) {
+                log.warn("Time entry validation failed: Break duration {} exceeds total time {}", effectiveBreakMinutes, totalMinutes);
                 throw TimeEntryValidationException.inconsistentData(
                         String.format("Break duration (%d minutes) exceeds total time (%d minutes)",
                                 effectiveBreakMinutes, totalMinutes)
@@ -249,6 +270,7 @@ public class TimeEntryService {
 
             // Check for unrealistic work hours (more than 24 hours)
             if (totalMinutes > MAX_WORK_HOURS * 60) {
+                log.warn("Time entry validation failed: Total time {} minutes exceeds {} hours", totalMinutes, MAX_WORK_HOURS);
                 throw TimeEntryValidationException.valueTooLarge(
                         "Total time", totalMinutes + " minutes", MAX_WORK_HOURS + " hours");
             }

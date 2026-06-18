@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 
 import java.io.IOException;
@@ -23,6 +24,7 @@ import java.io.IOException;
  * @since 27.02.2026
  */
 @RequiredArgsConstructor
+@Slf4j
 public class LoginSuccessHandler extends VaadinSavedRequestAwareAuthenticationSuccessHandler {
 
     private final UserService userService;
@@ -41,5 +43,6 @@ public class LoginSuccessHandler extends VaadinSavedRequestAwareAuthenticationSu
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         super.onAuthenticationSuccess(request, response, authentication);
         userService.updateLastLogin(authentication.getName());
+        log.info("User login successful");
     }
 }

@@ -4,6 +4,7 @@ import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.UserRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -30,6 +31,7 @@ import java.util.Optional;
  * @since 22.02.2026
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class DefaultUserDetailsService implements UserDetailsService {
 
@@ -51,7 +53,10 @@ public class DefaultUserDetailsService implements UserDetailsService {
     @Override
     public @NonNull UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Bad credentials"));
+                .orElseThrow(() -> {
+                    log.warn("User authentication failed: invalid credentials for email: {}", email);
+                    return new UsernameNotFoundException("Bad credentials");
+                });
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())

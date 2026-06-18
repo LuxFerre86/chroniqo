@@ -13,6 +13,7 @@ import com.luxferre.chroniqo.service.event.UserChangedEvent;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
@@ -48,6 +49,7 @@ import java.util.UUID;
  * @since 22.02.2026
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserService {
 
@@ -91,13 +93,17 @@ public class UserService {
     @Transactional
     public User register(UserRegistrationRequest request) {
         if (!appProperties.getRegistrationProperties().isEnabled()) {
+            log.warn("User registration rejected: registration disabled");
             throw new RegistrationDisabledException(
                     "Registration is currently disabled.");
         }
 
         if (userRepository.findByEmail(request.email()).isPresent()) {
+            log.warn("User registration rejected: email already registered: {}", request.email());
             throw new IllegalArgumentException("Email already registered");
         }
+
+        log.info("User registration initiated for email: {}", request.email());
 
         User user = new User();
         user.setEmail(request.email());
@@ -113,6 +119,7 @@ public class UserService {
 
         user = userRepository.save(user);
         emailService.sendVerificationEmail(user);
+        log.info("User registration completed for email: {}", request.email());
         return user;
     }
 
@@ -127,10 +134,14 @@ public class UserService {
     @Transactional
     public boolean resetPassword(String token, String newPassword) {
         Optional<User> userOpt = userRepository.findByResetToken(token);
-        if (userOpt.isEmpty()) return false;
+        if (userOpt.isEmpty()) {
+            log.warn("Password reset failed: invalid token");
+            return false;
+        }
 
         User user = userOpt.get();
         if (user.getResetTokenExpiryDate().isBefore(LocalDateTime.now())) {
+            log.warn("Password reset failed: expired token");
             return false;
         }
 
@@ -138,6 +149,7 @@ public class UserService {
         user.setResetToken(null);
         user.setResetTokenExpiryDate(null);
         userRepository.save(user);
+        log.info("Password reset successful");
         return true;
     }
 
@@ -154,10 +166,14 @@ public class UserService {
     @Transactional
     public EmailVerificationResult verifyEmail(String token) {
         Optional<User> userOpt = userRepository.findByVerificationToken(token);
-        if (userOpt.isEmpty()) return EmailVerificationResult.INVALID;
+        if (userOpt.isEmpty()) {
+            log.warn("Email verification failed: invalid token");
+            return EmailVerificationResult.INVALID;
+        }
 
         User user = userOpt.get();
         if (user.getVerificationTokenExpiryDate().isBefore(LocalDateTime.now())) {
+            log.warn("Email verification failed: expired token");
             return EmailVerificationResult.INVALID;
         }
 
@@ -167,6 +183,7 @@ public class UserService {
         userRepository.save(user);
 
         boolean sessionEstablished = autoLogin(user);
+        log.info("Email verification successful");
         return sessionEstablished
                 ? EmailVerificationResult.VERIFIED_LOGGED_IN
                 : EmailVerificationResult.VERIFIED_LOGIN_REQUIRED;
@@ -190,6 +207,7 @@ public class UserService {
         user.setResetTokenExpiryDate(LocalDateTime.now().plusHours(1));
         userRepository.save(user);
         emailService.sendPasswordResetEmail(user);
+        log.info("Password reset requested for email: {}", email);
     }
 
     /**
@@ -226,6 +244,7 @@ public class UserService {
         userRepository.save(user);
 
         eventPublisher.publishEvent(new UserChangedEvent(user, getClass()));
+        log.info("User profile updated");
     }
 
     /**
@@ -249,6 +268,7 @@ public class UserService {
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        log.info("User password changed");
     }
 
     /**
@@ -276,6 +296,7 @@ public class UserService {
         absenceRepository.deleteByUser(user);
         userRepository.delete(user);
         userRepository.flush();
+        log.info("User account deleted");
     }
 
     /**
@@ -290,6 +311,7 @@ public class UserService {
             user.setLastLoginAt(LocalDateTime.now());
             userRepository.save(user);
         });
+        log.info("User last login updated for email: {}", email);
     }
 
     /**

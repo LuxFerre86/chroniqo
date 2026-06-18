@@ -4,6 +4,7 @@ import com.luxferre.chroniqo.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
@@ -20,6 +21,7 @@ import org.springframework.security.web.authentication.rememberme.TokenBasedReme
  * @author Luxferre86
  * @since 28.02.2026
  */
+@Slf4j
 public class LastLoginTokenBasedRememberMeServices extends TokenBasedRememberMeServices {
 
     private final UserService userService;
@@ -42,5 +44,6 @@ public class LastLoginTokenBasedRememberMeServices extends TokenBasedRememberMeS
     public void onLoginSuccess(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Authentication successfulAuthentication) {
         super.onLoginSuccess(request, response, successfulAuthentication);
         userService.updateLastLogin(successfulAuthentication.getName());
+        log.info("Remember-me authentication successful");
     }
 }

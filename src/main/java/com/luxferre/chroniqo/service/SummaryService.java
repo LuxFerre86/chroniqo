@@ -14,6 +14,7 @@ import com.luxferre.chroniqo.service.user.UserService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.shared.Registration;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -39,6 +40,7 @@ import java.util.*;
  * @author Luxferre86
  * @since 28.02.2026
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SummaryService {
@@ -154,6 +156,7 @@ public class SummaryService {
      * percentage, and a flag indicating whether a target is configured
      */
     public WeeklyProgressDTO getWeeklyProgress() {
+        log.info("Retrieving weekly progress");
         List<DaySummaryDTO> currentWeek = getCurrentWeek();
         int workedMinutes = currentWeek.stream().mapToInt(DaySummaryDTO::workedMinutes).sum();
         int targetMinutes = currentWeek.stream().mapToInt(DaySummaryDTO::targetMinutes).sum();

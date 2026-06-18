@@ -10,6 +10,8 @@ import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.service.EmailService;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
 import com.luxferre.chroniqo.service.event.EntityChangedEvent;
+import com.luxferre.chroniqo.util.LoggingTestUtils;
+import ch.qos.logback.classic.Level;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.AfterEach;
@@ -68,6 +70,18 @@ public class UserServiceTest {
     @Mock
     private UserDetails userDetails;
 
+    private LoggingTestUtils logs;
+
+    @BeforeEach
+    void setUpLogs() {
+        logs = LoggingTestUtils.captureLogsFor(UserService.class);
+    }
+
+    @AfterEach
+    void tearDownLogs() {
+        logs.stop();
+    }
+
     // =========================================================================
     // register
     // =========================================================================
@@ -107,6 +121,8 @@ public class UserServiceTest {
             verify(userRepository).save(any(User.class));
             verify(emailService).sendVerificationEmail(any(User.class));
             verify(eventPublisher, never()).publishEvent(any());
+
+            logs.assertContains(Level.INFO, "User registration completed");
         }
 
         @Test
@@ -162,6 +178,8 @@ public class UserServiceTest {
 
             verify(userRepository, never()).save(any());
             verify(emailService, never()).sendVerificationEmail(any());
+
+            logs.assertContains(Level.WARN, "registration rejected");
         }
 
         @Test
@@ -779,3 +797,4 @@ public class UserServiceTest {
         }
     }
 }
+

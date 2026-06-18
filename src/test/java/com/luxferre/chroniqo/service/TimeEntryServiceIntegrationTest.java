@@ -5,7 +5,10 @@ import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.TimeEntryStatus;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
+import com.luxferre.chroniqo.util.LoggingTestUtils;
+import ch.qos.logback.classic.Level;
 import com.vaadin.flow.component.UI;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +41,7 @@ public class TimeEntryServiceIntegrationTest {
     private TestEntityManager entityManager;
 
     private User testUser;
+    private LoggingTestUtils logs;
 
     @BeforeEach
     public void setup() {
@@ -45,6 +49,12 @@ public class TimeEntryServiceIntegrationTest {
         UI ui = new UI();
         ui.setLocale(Locale.GERMANY);
         UI.setCurrent(ui);
+        logs = LoggingTestUtils.captureLogsFor(TimeEntryService.class);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        logs.stop();
     }
 
     @Test
@@ -54,6 +64,7 @@ public class TimeEntryServiceIntegrationTest {
         TimeEntryDTO timeEntryDTO = timeEntryService.getTimeEntry(LocalDate.now());
 
         assertTimeEntryDTO(timeEntryDTO, LocalDate.now());
+        logs.assertContains(Level.INFO, "Retrieving time entry");
     }
 
     @Test
@@ -92,6 +103,8 @@ public class TimeEntryServiceIntegrationTest {
         assertThat(timeEntry.getCreatedAt()).isNotNull();
         assertThat(timeEntry.getCompletedAt()).isNotNull();
         assertThat(timeEntry.getNotes()).isNull();
+
+        logs.assertContains(Level.INFO, "Time entry saved");
     }
 
     @Test
@@ -178,6 +191,7 @@ public class TimeEntryServiceIntegrationTest {
         TimeEntry timeEntryAfter = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
 
         assertThat(timeEntryAfter).isNull();
+        logs.assertContains(Level.INFO, "Deleting time entry");
     }
 
     @Test
