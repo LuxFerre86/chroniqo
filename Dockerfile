@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:21-jre-noble
 
 ARG APP_VERSION=dev
 ARG JAR_FILE=target/*.jar
@@ -15,7 +15,7 @@ ENV APP_VERSION=${APP_VERSION} \
     JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=85.0 -XX:MinRAMPercentage=50.0 -XX:+UnlockExperimentalVMOptions -XX:G1ReservePercent=5 -XX:InitiatingHeapOccupancyPercent=35"
 
 # Install curl for healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
