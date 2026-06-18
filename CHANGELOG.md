@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.06.1] - 2026-06-18
+
+### Added
+- enhance logging throughout the application for better traceability
+
+
+### Maintenance
+- Merge pull request #75 from LuxFerre86/feature/extended-logging
+
 ## [2026.06.0] - 2026-06-18
 
 ### Maintenance
