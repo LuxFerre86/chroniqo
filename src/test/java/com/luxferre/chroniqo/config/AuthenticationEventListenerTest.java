@@ -1,6 +1,10 @@
 package com.luxferre.chroniqo.config;
 
 import com.luxferre.chroniqo.service.user.LoginAttemptService;
+import com.luxferre.chroniqo.util.LoggingTestUtils;
+import ch.qos.logback.classic.Level;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,10 +30,21 @@ class AuthenticationEventListenerTest {
     @Mock
     private LoginAttemptService loginAttemptService;
 
+    private LoggingTestUtils logs;
     private static final String EMAIL = "user@example.com";
 
     private UsernamePasswordAuthenticationToken token() {
         return new UsernamePasswordAuthenticationToken(EMAIL, "password");
+    }
+
+    @BeforeEach
+    void setUp() {
+        logs = LoggingTestUtils.captureLogsFor(AuthenticationEventListener.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        logs.stop();
     }
 
     @Test
@@ -80,5 +95,12 @@ class AuthenticationEventListenerTest {
                 token(), new BadCredentialsException("bad credentials")));
 
         verify(loginAttemptService, never()).recordSuccess(any());
+    }
+
+    @Test
+    void onSuccess_logsSuccessfulAuthentication() {
+        listener.onSuccess(new AuthenticationSuccessEvent(token()));
+
+        logs.assertContains(Level.INFO, "User authenticated successfully");
     }
 }

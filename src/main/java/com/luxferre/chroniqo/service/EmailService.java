@@ -16,8 +16,8 @@ import org.springframework.stereotype.Service;
  * <p>All outbound mail is sent via the configured JavaMailSender (Gmail SMTP).
  * Delivery failures are caught and logged; they do not propagate to callers so
  * that a temporary mail-server issue cannot break registration or password-reset
- * flows entirely. Email addresses are anonymized in log output via
- * {@link #anonymize(String)}.
+ * flows entirely. Sensitive data like email addresses are automatically masked
+ * in log output via Logback configuration.
  *
  * @author Luxferre86
  * @since 22.02.2026
@@ -93,24 +93,10 @@ public class EmailService {
             message.setText(text);
 
             mailSender.send(message);
-            log.info("Email sent successfully to: {}", anonymize(to));
+            log.info("Email sent successfully to: {}", to);
         } catch (Exception e) {
-            log.error("Failed to send email to: {}", anonymize(to), e);
+            log.error("Failed to send email to: {}", to, e);
             // In production: maybe queue for retry
         }
-    }
-
-    /**
-     * Anonymizes an email address for safe logging.
-     * Example: {@code john.doe@example.com} → {@code joh***@example.com}
-     */
-    public String anonymize(String email) {
-        if (email == null) return "[null]";
-        int atIndex = email.indexOf('@');
-        if (atIndex <= 0) return "[invalid]";
-        String local = email.substring(0, atIndex);
-        String domain = email.substring(atIndex); // includes '@'
-        int visibleChars = Math.min(3, local.length());
-        return local.substring(0, visibleChars) + "***" + domain;
     }
 }

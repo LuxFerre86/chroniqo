@@ -4,6 +4,7 @@ import com.luxferre.chroniqo.dto.AbsenceRequest;
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.model.Absence;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.List;
  * @author Luxferre86
  * @since 01.03.2026
  */
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class TimeTrackingService {
@@ -71,6 +73,7 @@ public class TimeTrackingService {
      * @return list of {@link com.luxferre.chroniqo.model.Absence} records
      */
     public List<Absence> getAbsences(LocalDate start, LocalDate end) {
+        log.info("Retrieving absences between {} and {}", start, end);
         return absenceService.getAbsences(start, end);
     }
 

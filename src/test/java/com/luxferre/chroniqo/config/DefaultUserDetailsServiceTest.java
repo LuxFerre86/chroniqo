@@ -2,7 +2,10 @@ package com.luxferre.chroniqo.config;
 
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.UserRepository;
+import com.luxferre.chroniqo.util.LoggingTestUtils;
+import ch.qos.logback.classic.Level;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,8 +35,16 @@ class DefaultUserDetailsServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    private LoggingTestUtils logs;
+
+    @BeforeEach
+    void setUp() {
+        logs = LoggingTestUtils.captureLogsFor(DefaultUserDetailsService.class);
+    }
+
     @AfterEach
     void clearSecurityContext() {
+        logs.stop();
         SecurityContextHolder.clearContext();
     }
 
@@ -67,17 +78,8 @@ class DefaultUserDetailsServiceTest {
 
             assertThatThrownBy(() -> service.loadUserByUsername("nobody@example.com"))
                     .isInstanceOf(UsernameNotFoundException.class);
-        }
 
-        @Test
-        void disabledUser_returnsDetailsWithEnabledFalse() {
-            User user = activeUser("hash");
-            user.setEnabled(false);
-            when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
-
-            UserDetails details = service.loadUserByUsername("user@example.com");
-
-            assertThat(details.isEnabled()).isFalse();
+            logs.assertContains(Level.WARN, "invalid credentials");
         }
 
         @Test

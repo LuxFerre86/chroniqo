@@ -21,6 +21,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "100m"
+        max-file: "5"
 
   chroniqo:
     image: ghcr.io/luxferre86/chroniqo:latest
@@ -54,6 +59,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
+    logging:
+      driver: local
+      options:
+        max-size: "100m"
+        max-file: "5"
     volumes:
       # Optional: Mount logs directory for persistent logs
       - ./logs:/app/logs

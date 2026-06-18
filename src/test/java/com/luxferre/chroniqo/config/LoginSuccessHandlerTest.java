@@ -1,9 +1,12 @@
 package com.luxferre.chroniqo.config;
 
 import com.luxferre.chroniqo.service.user.UserService;
+import com.luxferre.chroniqo.util.LoggingTestUtils;
+import ch.qos.logback.classic.Level;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,10 +34,17 @@ class LoginSuccessHandlerTest {
     private Authentication authentication;
 
     private LoginSuccessHandler handler;
+    private LoggingTestUtils logs;
 
     @BeforeEach
     void setUp() {
         handler = new LoginSuccessHandler(userService);
+        logs = LoggingTestUtils.captureLogsFor(LoginSuccessHandler.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        logs.stop();
     }
 
     @Test
@@ -55,4 +65,14 @@ class LoginSuccessHandlerTest {
         verify(userService).updateLastLogin("other@example.com");
         verify(userService, never()).updateLastLogin("user@example.com");
     }
+
+    @Test
+    void onAuthenticationSuccess_logsSuccessfulAuthentication() throws IOException, ServletException {
+        when(authentication.getName()).thenReturn("test@example.com");
+
+        handler.onAuthenticationSuccess(request, response, authentication);
+
+        logs.assertContains(Level.INFO, "User login successful");
+    }
 }
+
