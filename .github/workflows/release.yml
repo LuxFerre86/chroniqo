@@ -39,6 +39,14 @@ jobs:
           cache: maven
 
       # -------------------
+      # Setup Node.js
+      # -------------------
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # -------------------
       # Calculate CalVer Version
       # -------------------
       - name: Calculate Version
