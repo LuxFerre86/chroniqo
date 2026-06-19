@@ -46,6 +46,8 @@ class TimeEntryServiceValidationTest {
         testUser.setId("test-user-id");
         testUser.setEmail("test@example.com");
         lenient().when(userService.getCurrentUser()).thenReturn(testUser);
+        lenient().when(timeEntryRepository.findByUserAndDateOrderByStartTimeAsc(any(), any()))
+                .thenReturn(List.of());
     }
 
     // =========================================================================
@@ -111,7 +113,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should accept today's date and publish event")
         void shouldAcceptTodaysDate() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -124,7 +125,6 @@ class TimeEntryServiceValidationTest {
         void shouldAcceptPastDate() {
             TimeEntryDTO dto = new TimeEntryDTO(
                     LocalDate.now().minusDays(5), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -182,7 +182,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should accept zero break minutes")
         void shouldAcceptZeroBreakMinutes() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 0, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -193,7 +192,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should accept maximum allowed break minutes (480)")
         void shouldAcceptMaximumBreakMinutes() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(22, 0), 480, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -204,7 +202,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should accept null break minutes")
         void shouldAcceptNullBreakMinutes() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), null, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -259,7 +256,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should accept valid time range")
         void shouldAcceptValidTimeRange() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -270,7 +266,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should accept one-minute time entry")
         void shouldAcceptOneMinuteEntry() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(9, 1), 0, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -308,7 +303,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should accept break equal to total time (edge case)")
         void shouldAcceptBreakEqualToTotalTime() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(10, 0), 60, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -319,7 +313,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should accept break less than total time")
         void shouldAcceptBreakLessThanTotalTime() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 60, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -339,7 +332,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Should accept null notes")
         void shouldAcceptNullNotes() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -351,7 +343,6 @@ class TimeEntryServiceValidationTest {
         void shouldAcceptNotesAtMaxLength() {
             String maxNotes = "a".repeat(TimeEntryService.MAX_NOTES_LENGTH);
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, maxNotes);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -378,6 +369,56 @@ class TimeEntryServiceValidationTest {
     }
 
     // =========================================================================
+    // Overlap Validation
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Overlap Validation")
+    class OverlapValidation {
+
+        @Test
+        @DisplayName("Should reject overlapping intervals on same day")
+        void shouldRejectOverlappingIntervals() {
+            LocalDate today = LocalDate.now();
+            TimeEntry existing = new TimeEntry();
+            existing.setId("existing");
+            existing.setDate(today);
+            existing.setStartTime(LocalTime.of(9, 0));
+            existing.setEndTime(LocalTime.of(12, 0));
+
+            when(timeEntryRepository.findByUserAndDateOrderByStartTimeAsc(any(), eq(today)))
+                    .thenReturn(List.of(existing));
+
+            TimeEntryDTO dto = new TimeEntryDTO(today, LocalTime.of(11, 0), LocalTime.of(13, 0), 0, null);
+
+            assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
+                    .isInstanceOf(TimeEntryValidationException.class)
+                    .satisfies(e -> assertThat(((TimeEntryValidationException) e).getErrorType())
+                            .isEqualTo(ValidationErrorType.INVALID_RANGE));
+        }
+
+        @Test
+        @DisplayName("Should allow adjacent intervals on same day")
+        void shouldAllowAdjacentIntervals() {
+            LocalDate today = LocalDate.now();
+            TimeEntry existing = new TimeEntry();
+            existing.setId("existing");
+            existing.setDate(today);
+            existing.setStartTime(LocalTime.of(9, 0));
+            existing.setEndTime(LocalTime.of(12, 0));
+
+            when(timeEntryRepository.findByUserAndDateOrderByStartTimeAsc(any(), eq(today)))
+                    .thenReturn(List.of(existing));
+
+            TimeEntryDTO dto = new TimeEntryDTO(today, LocalTime.of(12, 0), LocalTime.of(15, 0), 0, null);
+
+            timeEntryService.saveEntry(dto);
+
+            verify(timeEntryRepository).save(any(TimeEntry.class));
+        }
+    }
+
+    // =========================================================================
     // Event Publishing
     // =========================================================================
 
@@ -389,7 +430,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("saveEntry publishes event after successful save")
         void saveEntry_publishesEventAfterSave() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 
@@ -442,7 +482,6 @@ class TimeEntryServiceValidationTest {
         @DisplayName("Typical office day: 9-17 with 1 hour lunch")
         void typicalOfficeDay() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 60, null);
-            when(timeEntryRepository.findByUserAndDate(any(), any())).thenReturn(null);
 
             timeEntryService.saveEntry(dto);
 

@@ -29,17 +29,14 @@ public class TimeTrackingService {
     private final TimeEntryService timeEntryService;
     private final AbsenceService absenceService;
 
-
     /**
-     * Returns the time entry for the current user on the given date,
-     * or {@code null} if none exists.
+     * Returns all time entries for the current user on a specific date.
      *
      * @param date the date to query
-     * @return the matching {@link TimeEntryDTO}, or
-     * {@code null}
+     * @return list of entries for the date
      */
-    public TimeEntryDTO getTimeEntry(LocalDate date) {
-        return timeEntryService.getTimeEntry(date);
+    public List<TimeEntryDTO> getTimeEntries(LocalDate date) {
+        return timeEntryService.getTimeEntries(date);
     }
 
     /**

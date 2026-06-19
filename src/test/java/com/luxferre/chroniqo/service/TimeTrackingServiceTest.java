@@ -30,14 +30,15 @@ public class TimeTrackingServiceTest {
     private TimeEntryService timeEntryService;
 
     @Test
-    public void getTimeEntry_shouldForwardToTimeEntryService() {
+    public void getTimeEntries_singleDay_shouldForwardToTimeEntryService() {
+        LocalDate today = LocalDate.now();
         TimeEntryDTO timeEntryDTO = new TimeEntryDTO();
-        when(timeEntryService.getTimeEntry(any())).thenReturn(timeEntryDTO);
+        when(timeEntryService.getTimeEntries(today)).thenReturn(Collections.singletonList(timeEntryDTO));
 
-        TimeEntryDTO result = timeTrackingService.getTimeEntry(LocalDate.now());
+        List<TimeEntryDTO> result = timeTrackingService.getTimeEntries(today);
 
-        assertThat(result).isEqualTo(timeEntryDTO);
-        verify(timeEntryService).getTimeEntry(LocalDate.now());
+        assertThat(result).isNotNull().hasSize(1).containsExactly(timeEntryDTO);
+        verify(timeEntryService).getTimeEntries(today);
     }
 
     @Test

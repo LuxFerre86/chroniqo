@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Service for managing time tracking entries with comprehensive validation.
@@ -67,23 +68,21 @@ public class TimeEntryService {
     public List<TimeEntryDTO> getTimeEntries(LocalDate startDate, LocalDate endDate) {
         User user = userService.getCurrentUser();
         log.info("Retrieving time entries between {} and {}", startDate, endDate);
-        return timeEntryRepository.findByUserAndDateBetween(user, startDate, endDate)
+        return timeEntryRepository
+                .findByUserAndDateBetweenOrderByDateAscStartTimeAsc(user, startDate, endDate)
                 .stream()
                 .map(this::createTimeEntryDTO)
                 .toList();
     }
 
     /**
-     * Returns the time entry for the current user on the given date,
-     * or {@code null} if none exists.
+     * Returns all time entries for the current user on a specific date.
      *
      * @param date the date to query
-     * @return the matching {@link TimeEntryDTO}, or
-     * {@code null}
+     * @return list of entries sorted by start time
      */
-    public TimeEntryDTO getTimeEntry(LocalDate date) {
-        log.info("Retrieving time entry for date {}", date);
-        return getTimeEntries(date, date).stream().findFirst().orElse(null);
+    public List<TimeEntryDTO> getTimeEntries(LocalDate date) {
+        return getTimeEntries(date, date);
     }
 
     /**
@@ -104,22 +103,16 @@ public class TimeEntryService {
 
         log.info("Saving time entry for date {}", date);
 
-        TimeEntry entry = timeEntryRepository.findByUserAndDate(user, date);
-        if (entry == null) {
-            entry = new TimeEntry();
-            entry.setUser(user);
-            entry.setDate(date);
-        }
+        TimeEntry entry = resolveEntryForSave(user, timeEntryDTO);
+        validateNoOverlap(user, timeEntryDTO);
+
+        entry.setDate(date);
 
         // Set start time
-        if (timeEntryDTO.getStartTime() != null) {
-            entry.setStartTime(timeEntryDTO.getStartTime());
-        }
+        entry.setStartTime(timeEntryDTO.getStartTime());
 
         // Set end time
-        if (timeEntryDTO.getEndTime() != null) {
-            entry.setEndTime(timeEntryDTO.getEndTime());
-        }
+        entry.setEndTime(timeEntryDTO.getEndTime());
 
         // Set break
         entry.setBreakMinutes(timeEntryDTO.getBreakMinutes());
@@ -133,6 +126,7 @@ public class TimeEntryService {
             entry.setCompletedAt(LocalDateTime.now());
         } else if (entry.getStartTime() != null) {
             entry.setStatus(TimeEntryStatus.STARTED);
+            entry.setCompletedAt(null);
         }
 
         timeEntryRepository.save(entry);
@@ -149,8 +143,18 @@ public class TimeEntryService {
      */
     @Transactional
     public void deleteEntry(TimeEntryDTO timeEntryDTO) {
+        User user = userService.getCurrentUser();
+        if (timeEntryDTO.getId() != null) {
+            timeEntryRepository.findByIdAndUser(timeEntryDTO.getId(), user).ifPresent(entry -> {
+                log.info("Deleting time entry {} for date {}", entry.getId(), entry.getDate());
+                timeEntryRepository.delete(entry);
+                eventPublisher.publishEvent(new TimeEntryChangedEvent(user, getClass()));
+            });
+            return;
+        }
+
         LocalDate date = timeEntryDTO.getDate();
-        log.info("Deleting time entry for date {}", date);
+        log.info("Deleting all time entries for date {} (legacy call path)", date);
         deleteEntries(date, date);
     }
 
@@ -202,6 +206,12 @@ public class TimeEntryService {
             log.warn("Time entry validation failed: Date cannot be null");
             throw TimeEntryValidationException.nullValue("date",
                     "Date cannot be null");
+        }
+
+        if (dto.getStartTime() == null) {
+            log.warn("Time entry validation failed: Start time cannot be null");
+            throw TimeEntryValidationException.nullValue("startTime",
+                    "Start time cannot be null");
         }
 
         // Validate date is not in the future
@@ -285,10 +295,68 @@ public class TimeEntryService {
      */
     TimeEntryDTO createTimeEntryDTO(TimeEntry timeEntry) {
         return new TimeEntryDTO(
+                timeEntry.getId(),
                 timeEntry.getDate(),
                 timeEntry.getStartTime(),
                 timeEntry.getEndTime(),
                 timeEntry.getBreakMinutes(),
                 timeEntry.getNotes());
+    }
+
+    private TimeEntry resolveEntryForSave(User user, TimeEntryDTO dto) {
+        if (dto.getId() == null || dto.getId().isBlank()) {
+            TimeEntry entry = new TimeEntry();
+            entry.setUser(user);
+            return entry;
+        }
+
+        return timeEntryRepository.findByIdAndUser(dto.getId(), user)
+                .orElseThrow(() -> TimeEntryValidationException.inconsistentData(
+                        "Time entry to update does not exist"));
+    }
+
+    private void validateNoOverlap(User user, TimeEntryDTO dto) {
+        if (dto.getStartTime() == null) {
+            return;
+        }
+
+        LocalTime candidateStart = dto.getStartTime();
+        LocalTime candidateEnd = normalizeEnd(dto.getEndTime());
+
+        List<TimeEntry> sameDayEntries = timeEntryRepository
+                .findByUserAndDateOrderByStartTimeAsc(user, dto.getDate());
+
+        for (TimeEntry existing : sameDayEntries) {
+            if (Objects.equals(existing.getId(), dto.getId())) {
+                continue;
+            }
+
+            if (existing.getStartTime() == null) {
+                continue;
+            }
+
+            LocalTime existingStart = existing.getStartTime();
+            LocalTime existingEnd = normalizeEnd(existing.getEndTime());
+            if (overlaps(candidateStart, candidateEnd, existingStart, existingEnd)) {
+                throw TimeEntryValidationException.invalidRange(
+                        String.format("Time range overlaps with existing entry (%s - %s)",
+                                existingStart,
+                                existing.getEndTime() != null ? existing.getEndTime() : "OPEN"),
+                        dto.getStartTime(),
+                        dto.getEndTime() != null ? dto.getEndTime() : "OPEN");
+            }
+        }
+    }
+
+    private boolean overlaps(LocalTime candidateStart,
+                             LocalTime candidateEnd,
+                             LocalTime existingStart,
+                             LocalTime existingEnd) {
+        // Adjacency is allowed: [09:00-12:00] and [12:00-14:00] do not overlap.
+        return candidateStart.isBefore(existingEnd) && candidateEnd.isAfter(existingStart);
+    }
+
+    private LocalTime normalizeEnd(LocalTime end) {
+        return end != null ? end : LocalTime.MAX;
     }
 }

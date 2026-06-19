@@ -13,6 +13,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
@@ -32,6 +33,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -53,6 +57,8 @@ import java.util.Optional;
 @Component
 public class TimeEntryDialog extends Dialog {
 
+    private static final int NOTES_PREVIEW_LENGTH = 40;
+
     private final DatePicker startDay = new DatePicker(LocalDate.now());
     private final DatePicker endDay = new DatePicker(LocalDate.now());
     private final TimePicker start = new TimePicker("Start Time");
@@ -65,6 +71,8 @@ public class TimeEntryDialog extends Dialog {
     private final Tab sickTab = new Tab("Sick");
     private final Tab vacationTab = new Tab("Vacation");
     private final VerticalLayout content = new VerticalLayout();
+    private final VerticalLayout workingTimeList = new VerticalLayout();
+    private final Button addBookingButton = new Button("Add booking");
 
     // Error message display
     private final Div errorMessage = new Div();
@@ -75,6 +83,8 @@ public class TimeEntryDialog extends Dialog {
     private final TimeTrackingService timeTrackingService;
 
     private final Binder<TimePicker> timePickerBinder = new Binder<>();
+
+    private String selectedEntryId;
 
 
     public TimeEntryDialog(TimeTrackingService timeTrackingService) {
@@ -155,6 +165,20 @@ public class TimeEntryDialog extends Dialog {
         notes.setMinHeight("80px");
         notes.setMaxHeight("160px");
 
+        workingTimeList.setPadding(false);
+        workingTimeList.setSpacing(false);
+        workingTimeList.setWidthFull();
+        workingTimeList.getStyle().set("gap", "0.4rem");
+
+        addBookingButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+        addBookingButton.addClickListener(e -> switchToNewBookingMode());
+
+        startDay.addValueChangeListener(event -> {
+            if (workingTimeTab.isSelected() && event.getValue() != null) {
+                switchToNewBookingMode();
+            }
+        });
+
         // Content Layout
         content.setAlignItems(FlexComponent.Alignment.STRETCH);
         content.setPadding(true);
@@ -163,7 +187,7 @@ public class TimeEntryDialog extends Dialog {
                 .set("gap", "1rem");
 
         // Add error message at the top of content
-        content.add(errorMessage, startDay, endDay, start, end, breakMinutes, notes);
+        content.add(errorMessage, startDay, workingTimeList, addBookingButton, endDay, start, end, breakMinutes, notes);
 
         // Buttons
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -200,6 +224,8 @@ public class TimeEntryDialog extends Dialog {
         end.setVisible(true);
         breakMinutes.setVisible(true);
         notes.setVisible(true);
+        workingTimeList.setVisible(true);
+        addBookingButton.setVisible(true);
 
         // Update button styling
         saveButton.setText("Save");
@@ -219,6 +245,8 @@ public class TimeEntryDialog extends Dialog {
         end.setVisible(false);
         breakMinutes.setVisible(false);
         notes.setVisible(false);
+        workingTimeList.setVisible(false);
+        addBookingButton.setVisible(false);
 
         // Update button styling
         saveButton.setText("Mark as Sick");
@@ -238,6 +266,8 @@ public class TimeEntryDialog extends Dialog {
         end.setVisible(false);
         breakMinutes.setVisible(false);
         notes.setVisible(false);
+        workingTimeList.setVisible(false);
+        addBookingButton.setVisible(false);
 
         // Update button styling
         saveButton.setText("Book Vacation");
@@ -255,15 +285,14 @@ public class TimeEntryDialog extends Dialog {
         clearErrorMessage();
         startDay.setValue(date);
         endDay.setValue(date);
-        TimeEntryDTO entry = timeTrackingService.getTimeEntry(date);
+        List<TimeEntryDTO> entries = timeTrackingService.getTimeEntries(date);
         tabs.setSelectedTab(workingTimeTab);
 
-        if (null != entry) {
-            start.setValue(entry.getStartTime());
-            end.setValue(entry.getEndTime());
-            breakMinutes.setValue(Optional.of(entry).map(TimeEntryDTO::getBreakMinutes).orElse(null));
-            notes.setValue(entry.getNotes() != null ? entry.getNotes() : "");
-            deleteButton.setVisible(true);
+        if (!entries.isEmpty()) {
+            refreshWorkingTimeEntries();
+            applyEntryToForm(entries.stream()
+                    .min(Comparator.comparing(TimeEntryDTO::getStartTime, Comparator.nullsLast(LocalTime::compareTo)))
+                    .orElse(entries.getFirst()));
         } else {
             Absence absence = timeTrackingService.getAbsence(startDay.getValue());
             if (null != absence) {
@@ -275,8 +304,7 @@ public class TimeEntryDialog extends Dialog {
                     deleteButton.setVisible(true);
                 }
             } else {
-                breakMinutes.setValue(30);
-                deleteButton.setVisible(false);
+                switchToNewBookingMode();
             }
         }
         open();
@@ -290,6 +318,8 @@ public class TimeEntryDialog extends Dialog {
         breakMinutes.setValue(null);
         notes.setValue("");
         deleteButton.setVisible(false);
+        selectedEntryId = null;
+        workingTimeList.removeAll();
     }
 
     private void save(ClickEvent<Button> event) {
@@ -299,7 +329,7 @@ public class TimeEntryDialog extends Dialog {
             if (workingTimeTab.isSelected()) {
                 saveWorkingTime();
                 showSuccessNotification("Time entry saved successfully");
-                close();
+                switchToNewBookingMode();
             } else if (sickTab.isSelected()) {
                 saveSick();
                 showSuccessNotification("Sick leave recorded");
@@ -325,9 +355,13 @@ public class TimeEntryDialog extends Dialog {
 
         try {
             if (workingTimeTab.isSelected()) {
+                if (selectedEntryId == null) {
+                    showErrorMessage("Select a booking to delete first.");
+                    return;
+                }
                 deleteWorkingTime();
                 showSuccessNotification("Time entry deleted");
-                close();
+                switchToNewBookingMode();
             } else if (sickTab.isSelected()) {
                 deleteSick();
                 showSuccessNotification("Sick leave removed");
@@ -344,7 +378,9 @@ public class TimeEntryDialog extends Dialog {
     }
 
     private void saveWorkingTime() {
-        timePickerBinder.validate();
+        if (!timePickerBinder.validate().isOk()) {
+            throw TimeEntryValidationException.nullValue("startTime", "Start time is mandatory");
+        }
         timeTrackingService.saveEntry(inputsToTimeEntryDto());
     }
 
@@ -370,6 +406,7 @@ public class TimeEntryDialog extends Dialog {
 
     private TimeEntryDTO inputsToTimeEntryDto() {
         TimeEntryDTO timeEntryDto = new TimeEntryDTO();
+        timeEntryDto.setId(selectedEntryId);
         timeEntryDto.setDate(startDay.getValue());
         timeEntryDto.setStartTime(start.getValue());
         timeEntryDto.setEndTime(end.getValue());
@@ -377,6 +414,90 @@ public class TimeEntryDialog extends Dialog {
         String notesValue = notes.getValue();
         timeEntryDto.setNotes(notesValue != null && !notesValue.isBlank() ? notesValue.trim() : null);
         return timeEntryDto;
+    }
+
+    private void refreshWorkingTimeEntries() {
+        workingTimeList.removeAll();
+        LocalDate day = startDay.getValue();
+        if (day == null) {
+            return;
+        }
+
+        List<TimeEntryDTO> entries = timeTrackingService.getTimeEntries(day);
+        if (entries.isEmpty()) {
+            Span empty = new Span("No bookings yet for this day.");
+            empty.getStyle().set("color", "var(--lumo-secondary-text-color)");
+            workingTimeList.add(empty);
+            return;
+        }
+
+        entries.stream()
+                .sorted(Comparator.comparing(TimeEntryDTO::getStartTime, Comparator.nullsLast(LocalTime::compareTo)))
+                .forEach(this::addEntryRow);
+    }
+
+    private void addEntryRow(TimeEntryDTO entry) {
+        Button editButton = new Button(formatEntryLabel(entry), e -> applyEntryToForm(entry));
+        editButton.setWidthFull();
+        editButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        editButton.getElement().setProperty("title", formatEntryTooltip(entry));
+
+        if (Objects.equals(selectedEntryId, entry.getId())) {
+            editButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            editButton.setText("Editing: " + formatEntryLabel(entry));
+            editButton.getStyle().set("font-weight", "600");
+        }
+
+        workingTimeList.add(editButton);
+    }
+
+    private String formatEntryLabel(TimeEntryDTO entry) {
+        String startText = entry.getStartTime() != null ? entry.getStartTime().toString() : "--:--";
+        String endText = entry.getEndTime() != null ? entry.getEndTime().toString() : "OPEN";
+        Integer pause = entry.getBreakMinutes();
+        String pauseText = pause != null ? " | Break " + pause + "m" : "";
+        String notesText = entry.getNotes() != null && !entry.getNotes().isBlank()
+                ? " | " + abbreviate(entry.getNotes())
+                : "";
+        return startText + " - " + endText + pauseText + notesText;
+    }
+
+    private String formatEntryTooltip(TimeEntryDTO entry) {
+        String startText = entry.getStartTime() != null ? entry.getStartTime().toString() : "--:--";
+        String endText = entry.getEndTime() != null ? entry.getEndTime().toString() : "OPEN";
+        Integer pause = entry.getBreakMinutes();
+        String pauseText = pause != null ? " | Break " + pause + "m" : "";
+        String notesText = entry.getNotes() != null && !entry.getNotes().isBlank()
+                ? " | " + entry.getNotes()
+                : "";
+        return startText + " - " + endText + pauseText + notesText;
+    }
+
+    private String abbreviate(String value) {
+        if (value == null || value.length() <= NOTES_PREVIEW_LENGTH) {
+            return value;
+        }
+        return value.substring(0, NOTES_PREVIEW_LENGTH - 1) + "...";
+    }
+
+    private void applyEntryToForm(TimeEntryDTO entry) {
+        selectedEntryId = entry.getId();
+        start.setValue(entry.getStartTime());
+        end.setValue(entry.getEndTime());
+        breakMinutes.setValue(Optional.of(entry).map(TimeEntryDTO::getBreakMinutes).orElse(null));
+        notes.setValue(entry.getNotes() != null ? entry.getNotes() : "");
+        deleteButton.setVisible(true);
+        refreshWorkingTimeEntries();
+    }
+
+    private void switchToNewBookingMode() {
+        selectedEntryId = null;
+        start.setValue(null);
+        end.setValue(null);
+        breakMinutes.setValue(30);
+        notes.setValue("");
+        deleteButton.setVisible(false);
+        refreshWorkingTimeEntries();
     }
 
     /**
@@ -425,7 +546,12 @@ public class TimeEntryDialog extends Dialog {
      */
     private String getUserFriendlyMessage(TimeEntryValidationException e) {
         return switch (e.getErrorType()) {
-            case NULL_VALUE -> "Please fill in all required fields.";
+            case NULL_VALUE -> {
+                if ("startTime".equals(e.getField())) {
+                    yield "Please enter a start time.";
+                }
+                yield "Please fill in all required fields.";
+            }
             case FUTURE_DATE -> "You cannot log time for future dates.";
             case NEGATIVE_VALUE -> "Break time cannot be negative.";
             case VALUE_TOO_LARGE -> {
@@ -443,6 +569,8 @@ public class TimeEntryDialog extends Dialog {
                     yield "End time must be after start time.";
                 } else if (msg.contains("cannot be equal")) {
                     yield "End time cannot be the same as start time.";
+                } else if (msg.contains("overlaps")) {
+                    yield "This time range overlaps with an existing booking.";
                 }
                 yield "The time range you entered is invalid.";
             }

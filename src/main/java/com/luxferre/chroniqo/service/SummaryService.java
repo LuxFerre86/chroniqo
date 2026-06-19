@@ -22,6 +22,7 @@ import java.time.*;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Computes aggregated time-tracking summaries for the dashboard and monthly
@@ -117,10 +118,8 @@ public class SummaryService {
 
         List<TimeEntryDTO> entries = timeTrackingService.getTimeEntries(startDate, endDate);
         List<Absence> absences = timeTrackingService.getAbsences(startDate, endDate);
-        Map<LocalDate, TimeEntryDTO> entriesByDate = new HashMap<>();
-        for (TimeEntryDTO entry : entries) {
-            entriesByDate.put(entry.getDate(), entry);
-        }
+        Map<LocalDate, List<TimeEntryDTO>> entriesByDate = entries.stream()
+                .collect(Collectors.groupingBy(TimeEntryDTO::getDate));
         Map<LocalDate, Absence> absencesByDate = new HashMap<>();
         for (Absence absence : absences) {
             absencesByDate.put(absence.getDate(), absence);
@@ -138,7 +137,7 @@ public class SummaryService {
         return startDate.datesUntil(endDate.plusDays(1L))
                 .map(date -> createDaySummaryDTO(
                         date,
-                        entriesByDate.get(date),
+                        entriesByDate.getOrDefault(date, List.of()),
                         absencesByDate.get(date),
                         dailyTargetMinutes,
                         workingDays,
@@ -181,25 +180,8 @@ public class SummaryService {
     }
 
     /**
-     * Builds a {@link DaySummaryDTO} for a single date.
-     *
-     * <p>Priority order for a given date:
-     * <ol>
-     *   <li>Manually recorded absence (vacation, sick) — always wins</li>
-     *   <li>Automatically detected public holiday (from country/subdivision)</li>
-     *   <li>Non-working day per the user's working-days configuration</li>
-     *   <li>Normal working day with target and balance calculation</li>
-     * </ol>
-     *
-     * @param date               the calendar date to summarize
-     * @param entry              optional time entry for {@code date}
-     * @param absence            optional absence for {@code date}
-     * @param dailyTargetMinutes the user's daily working-time target in minutes
-     * @param workingDays        the user's configured set of working days
-     * @param holidays           public holiday dates for the relevant year(s)
-     * @param countryCode        user's country code used for holiday naming
-     * @param subdivisionCode    user's subdivision code used for holiday naming
-     * @return the computed day summary
+     * Compatibility overload for tests and existing call sites that still pass
+     * a single entry instead of a list.
      */
     DaySummaryDTO createDaySummaryDTO(LocalDate date,
                                       TimeEntryDTO entry,
@@ -209,6 +191,26 @@ public class SummaryService {
                                       Set<LocalDate> holidays,
                                       String countryCode,
                                       String subdivisionCode) {
+        List<TimeEntryDTO> entries = entry != null ? List.of(entry) : List.of();
+        return createDaySummaryDTO(
+                date,
+                entries,
+                absence,
+                dailyTargetMinutes,
+                workingDays,
+                holidays,
+                countryCode,
+                subdivisionCode);
+    }
+
+    private DaySummaryDTO createDaySummaryDTO(LocalDate date,
+                                              List<TimeEntryDTO> entries,
+                                              Absence absence,
+                                              int dailyTargetMinutes,
+                                              Set<DayOfWeek> workingDays,
+                                              Set<LocalDate> holidays,
+                                              String countryCode,
+                                              String subdivisionCode) {
 
         // Public holiday only applies when no manual absence is recorded
         boolean isPublicHoliday = absence == null && holidays.contains(date);
@@ -216,9 +218,9 @@ public class SummaryService {
         boolean isConfiguredWorkday = workingDays.contains(date.getDayOfWeek());
         boolean isWorkday = isConfiguredWorkday && absence == null && !isPublicHoliday;
 
-        int workedMinutes = entry != null
-                ? calculateWorkedMinutes(entry)
-                : 0;
+        int workedMinutes = entries.stream()
+                .mapToInt(this::calculateWorkedMinutes)
+                .sum();
 
         int targetMinutes = isWorkday ? dailyTargetMinutes : 0;
         // On non-configured workdays or public holidays, any time worked is surplus

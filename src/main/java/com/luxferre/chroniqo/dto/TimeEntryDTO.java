@@ -1,6 +1,5 @@
 package com.luxferre.chroniqo.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -20,11 +19,33 @@ import java.time.LocalTime;
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public final class TimeEntryDTO {
+    private String id;
     private LocalDate date;
     private LocalTime startTime;
     private LocalTime endTime;
     private Integer breakMinutes;
     private String notes;
+
+    public TimeEntryDTO(LocalDate date,
+                        LocalTime startTime,
+                        LocalTime endTime,
+                        Integer breakMinutes,
+                        String notes) {
+        this(null, date, startTime, endTime, breakMinutes, notes);
+    }
+
+    public TimeEntryDTO(String id,
+                        LocalDate date,
+                        LocalTime startTime,
+                        LocalTime endTime,
+                        Integer breakMinutes,
+                        String notes) {
+        this.id = id;
+        this.date = date;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.breakMinutes = breakMinutes;
+        this.notes = notes;
+    }
 }

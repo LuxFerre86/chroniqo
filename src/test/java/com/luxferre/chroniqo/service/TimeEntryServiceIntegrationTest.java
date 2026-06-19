@@ -25,6 +25,7 @@ import java.util.Locale;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Transactional
@@ -61,17 +62,18 @@ public class TimeEntryServiceIntegrationTest {
     public void getTimeEntries_today() {
         entityManager.persist(createTimeEntry(LocalDate.now()));
 
-        TimeEntryDTO timeEntryDTO = timeEntryService.getTimeEntry(LocalDate.now());
+        List<TimeEntryDTO> timeEntryDTOs = timeEntryService.getTimeEntries(LocalDate.now());
 
-        assertTimeEntryDTO(timeEntryDTO, LocalDate.now());
-        logs.assertContains(Level.INFO, "Retrieving time entry");
+        assertThat(timeEntryDTOs).hasSize(1);
+        assertTimeEntryDTO(timeEntryDTOs.get(0), LocalDate.now());
+        logs.assertContains(Level.INFO, "Retrieving time entries between");
     }
 
     @Test
     public void getTimeEntries_withTimeEntryNotPresent() {
-        TimeEntryDTO timeEntryDTO = timeEntryService.getTimeEntry(LocalDate.now());
+        List<TimeEntryDTO> timeEntryDTOs = timeEntryService.getTimeEntries(LocalDate.now());
 
-        assertThat(timeEntryDTO).isNull();
+        assertThat(timeEntryDTOs).isEmpty();
     }
 
     @Test
@@ -92,7 +94,7 @@ public class TimeEntryServiceIntegrationTest {
 
         timeEntryService.saveEntry(timeEntryDTO);
 
-        TimeEntry timeEntry = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
+        TimeEntry timeEntry = getSingleEntryForDate(LocalDate.now());
 
         assertThat(timeEntry).isNotNull();
         assertThat(timeEntry.getDate()).isEqualTo(LocalDate.now());
@@ -113,7 +115,7 @@ public class TimeEntryServiceIntegrationTest {
 
         timeEntryService.saveEntry(timeEntryDTO);
 
-        TimeEntry timeEntry = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
+        TimeEntry timeEntry = getSingleEntryForDate(LocalDate.now());
 
         assertThat(timeEntry).isNotNull();
         assertThat(timeEntry.getNotes()).isEqualTo("Client meeting in the afternoon");
@@ -121,12 +123,14 @@ public class TimeEntryServiceIntegrationTest {
 
     @Test
     public void saveEntry_update_notesAreUpdated() {
-        entityManager.persist(createTimeEntry(LocalDate.now()));
+        TimeEntry existing = createTimeEntry(LocalDate.now());
+        entityManager.persist(existing);
         TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), LocalTime.of(18, 50), 70, "Updated note");
+        timeEntryDTO.setId(existing.getId());
 
         timeEntryService.saveEntry(timeEntryDTO);
 
-        TimeEntry timeEntry = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
+        TimeEntry timeEntry = getSingleEntryForDate(LocalDate.now());
         assertThat(timeEntry.getNotes()).isEqualTo("Updated note");
     }
 
@@ -136,21 +140,24 @@ public class TimeEntryServiceIntegrationTest {
         existing.setNotes("Old note");
         entityManager.persist(existing);
         TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), LocalTime.of(18, 50), 70, null);
+        timeEntryDTO.setId(existing.getId());
 
         timeEntryService.saveEntry(timeEntryDTO);
 
-        TimeEntry timeEntry = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
+        TimeEntry timeEntry = getSingleEntryForDate(LocalDate.now());
         assertThat(timeEntry.getNotes()).isNull();
     }
 
     @Test
     public void saveEntry_update() {
-        entityManager.persist(createTimeEntry(LocalDate.now()));
+        TimeEntry existing = createTimeEntry(LocalDate.now());
+        entityManager.persist(existing);
         TimeEntryDTO timeEntryDTO = new TimeEntryDTO(LocalDate.now(), LocalTime.of(7, 15), LocalTime.of(18, 50), 70, null);
+        timeEntryDTO.setId(existing.getId());
 
         timeEntryService.saveEntry(timeEntryDTO);
 
-        TimeEntry timeEntry = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
+        TimeEntry timeEntry = getSingleEntryForDate(LocalDate.now());
 
         assertThat(timeEntry).isNotNull();
         assertThat(timeEntry.getDate()).isEqualTo(LocalDate.now());
@@ -168,7 +175,7 @@ public class TimeEntryServiceIntegrationTest {
 
         timeEntryService.saveEntry(timeEntryDTO);
 
-        TimeEntry timeEntry = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
+        TimeEntry timeEntry = getSingleEntryForDate(LocalDate.now());
 
         assertThat(timeEntry).isNotNull();
         assertThat(timeEntry.getDate()).isEqualTo(LocalDate.now());
@@ -185,13 +192,42 @@ public class TimeEntryServiceIntegrationTest {
         TimeEntry timeEntry = createTimeEntry(LocalDate.now());
         TimeEntryDTO timeEntryDTO = new TimeEntryDTO(timeEntry.getDate(), null, null, null, null);
         entityManager.persist(timeEntry);
+        timeEntryDTO.setId(timeEntry.getId());
 
         timeEntryService.deleteEntry(timeEntryDTO);
 
-        TimeEntry timeEntryAfter = timeEntryRepository.findByUserAndDate(testUser, LocalDate.now());
+        List<TimeEntry> timeEntryAfter = getEntriesForDate(LocalDate.now());
 
-        assertThat(timeEntryAfter).isNull();
+        assertThat(timeEntryAfter).isEmpty();
         logs.assertContains(Level.INFO, "Deleting time entry");
+    }
+
+    @Test
+    public void saveEntry_multipleEntriesPerDay_arePersisted() {
+        LocalDate date = LocalDate.now().minusDays(1);
+        TimeEntryDTO morning = new TimeEntryDTO(date, LocalTime.of(8, 0), LocalTime.of(12, 0), 15, "Morning");
+        TimeEntryDTO afternoon = new TimeEntryDTO(date, LocalTime.of(12, 0), LocalTime.of(16, 30), 30, "Afternoon");
+
+        timeEntryService.saveEntry(morning);
+        timeEntryService.saveEntry(afternoon);
+
+        List<TimeEntry> entries = getEntriesForDate(date);
+        assertThat(entries).hasSize(2);
+        assertThat(entries.get(0).getStartTime()).isEqualTo(LocalTime.of(8, 0));
+        assertThat(entries.get(1).getStartTime()).isEqualTo(LocalTime.of(12, 0));
+    }
+
+    @Test
+    public void saveEntry_overlappingEntries_areRejected() {
+        LocalDate date = LocalDate.now().minusDays(2);
+        TimeEntryDTO existing = new TimeEntryDTO(date, LocalTime.of(9, 0), LocalTime.of(12, 0), 15, null);
+        TimeEntryDTO overlapping = new TimeEntryDTO(date, LocalTime.of(11, 30), LocalTime.of(13, 0), 15, null);
+
+        timeEntryService.saveEntry(existing);
+
+        assertThatThrownBy(() -> timeEntryService.saveEntry(overlapping))
+                .isInstanceOf(TimeEntryValidationException.class)
+                .hasMessageContaining("overlaps");
     }
 
     @Test
@@ -200,7 +236,7 @@ public class TimeEntryServiceIntegrationTest {
         timeEntry.setNotes("Important day");
         entityManager.persist(timeEntry);
 
-        TimeEntryDTO dto = timeEntryService.getTimeEntry(LocalDate.now());
+        TimeEntryDTO dto = timeEntryService.getTimeEntries(LocalDate.now()).get(0);
 
         assertThat(dto.getNotes()).isEqualTo("Important day");
     }
@@ -224,5 +260,13 @@ public class TimeEntryServiceIntegrationTest {
         timeEntry.setCreatedAt(date.atTime(LocalTime.of(18, 0)));
         timeEntry.setCompletedAt(date.atTime(LocalTime.of(18, 0)));
         return timeEntry;
+    }
+
+    private TimeEntry getSingleEntryForDate(LocalDate date) {
+        return getEntriesForDate(date).stream().findFirst().orElse(null);
+    }
+
+    private List<TimeEntry> getEntriesForDate(LocalDate date) {
+        return timeEntryRepository.findByUserAndDateOrderByStartTimeAsc(testUser, date);
     }
 }
