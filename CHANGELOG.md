@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026.06.2] - 2026-06-19
+
+### Added
+- enhance time entry dialog with improved layout and functionality for absence management
+- allow multiple time entries per day with updated data handling and validation
+
+
+### Maintenance
+- Merge pull request #77 from LuxFerre86/feature/multiple-day-bookings
+
 ## [2026.06.1] - 2026-06-18
 
 ### Added
