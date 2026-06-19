@@ -201,17 +201,113 @@ vaadin-dialog-overlay::part(footer) {
     color: var(--lumo-body-text-color);
 }
 
+/* ===== Editor Panel Title/Hint Stability ===== */
+.time-entry-editor-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.time-entry-editor-panel > span:nth-child(1) {
+    /* editorTitle */
+    display: block;
+    min-height: 1.5rem;
+    line-height: 1.5rem;
+}
+
+.time-entry-editor-panel > span:nth-child(2) {
+    /* editorHint */
+    display: block;
+    min-height: 2.4rem;
+    line-height: 1.2;
+    white-space: normal;
+}
+
+/* ===== Stable Input Fields in Editor ===== */
+.time-entry-editor-panel vaadin-time-picker,
+.time-entry-editor-panel vaadin-integer-field,
+.time-entry-editor-panel vaadin-text-area {
+    width: 100%;
+    height: auto;
+    flex-shrink: 0;
+}
+
+.time-entry-editor-panel vaadin-time-picker::part(label),
+.time-entry-editor-panel vaadin-integer-field::part(label),
+.time-entry-editor-panel vaadin-text-area::part(label) {
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--lumo-secondary-text-color);
+}
+
+/* Prevent field height changes on focus */
+.time-entry-editor-panel vaadin-time-picker:focus-within,
+.time-entry-editor-panel vaadin-integer-field:focus-within {
+    height: auto;
+}
+
 /* ===== Responsive Dialog ===== */
+@media (max-width: 960px) {
+    .chroniqo-dialog .time-entry-working-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .chroniqo-dialog .time-entry-working-list-panel,
+    .chroniqo-dialog .time-entry-editor-panel {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
 @media (max-width: 700px) {
+    .chroniqo-dialog vaadin-dialog-overlay::part(overlay),
     vaadin-dialog-overlay::part(overlay) {
-        max-width: 95vw;
-        margin: 1rem;
+        width: calc(100vw - 0.75rem);
+        max-width: calc(100vw - 0.75rem);
+        max-height: calc(100vh - 0.75rem);
+        border-radius: 12px;
+        margin: 0.375rem;
     }
 
     vaadin-dialog-overlay::part(header),
     vaadin-dialog-overlay::part(content),
     vaadin-dialog-overlay::part(footer) {
         padding: 1rem;
+    }
+
+    .chroniqo-dialog .time-entry-mode-switch {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.4rem;
+    }
+
+    .chroniqo-dialog .time-entry-mode-switch vaadin-button {
+        width: 100%;
+        min-height: 2.5rem;
+        padding: 0.45rem 0.55rem;
+        font-size: var(--lumo-font-size-s);
+    }
+
+    .chroniqo-dialog .time-entry-absence-dates {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .chroniqo-dialog .time-entry-absence-dates vaadin-date-picker {
+        width: 100% !important;
+    }
+
+    .chroniqo-dialog .time-entry-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .chroniqo-dialog .time-entry-actions vaadin-button {
+        width: 100%;
     }
 
     .chroniqo-dialog vaadin-button {

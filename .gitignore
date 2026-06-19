@@ -68,3 +68,4 @@ docker-compose.local.yaml
 /mvnw.cmd
 /backlog.md
 /.github/skills/
+/.github/agents/ai-team-vaadin.agent.md

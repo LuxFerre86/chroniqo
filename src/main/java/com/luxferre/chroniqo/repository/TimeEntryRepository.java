@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Spring Data JPA repository for
@@ -17,13 +18,22 @@ import java.util.List;
 public interface TimeEntryRepository extends JpaRepository<TimeEntry, String> {
 
     /**
-     * Finds a time entry by user and date.
+     * Finds all time entries for a user on a specific date sorted by start time.
      *
      * @param user the user to search for
      * @param date the date to search for
-     * @return the time entry matching the user and date, or null if not found
+     * @return all matching entries sorted ascending by start time
      */
-    TimeEntry findByUserAndDate(User user, LocalDate date);
+    List<TimeEntry> findByUserAndDateOrderByStartTimeAsc(User user, LocalDate date);
+
+    /**
+     * Finds a single time entry by id and user ownership.
+     *
+     * @param id   entry id
+     * @param user current user
+     * @return optional entry
+     */
+    Optional<TimeEntry> findByIdAndUser(String id, User user);
 
     /**
      * Deletes all time entries for a specific user.
@@ -41,6 +51,16 @@ public interface TimeEntryRepository extends JpaRepository<TimeEntry, String> {
      * @return a list of time entries within the specified date range
      */
     List<TimeEntry> findByUserAndDateBetween(
+            User user,
+            LocalDate startDate,
+            LocalDate endDate
+    );
+
+    /**
+     * Finds all time entries for a user within a date range ordered by day and
+     * start time.
+     */
+    List<TimeEntry> findByUserAndDateBetweenOrderByDateAscStartTimeAsc(
             User user,
             LocalDate startDate,
             LocalDate endDate
