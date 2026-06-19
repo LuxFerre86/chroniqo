@@ -65,7 +65,7 @@ public class TimeEntryServiceIntegrationTest {
         List<TimeEntryDTO> timeEntryDTOs = timeEntryService.getTimeEntries(LocalDate.now());
 
         assertThat(timeEntryDTOs).hasSize(1);
-        assertTimeEntryDTO(timeEntryDTOs.get(0), LocalDate.now());
+        assertTimeEntryDTO(timeEntryDTOs.getFirst(), LocalDate.now());
         logs.assertContains(Level.INFO, "Retrieving time entries between");
     }
 
@@ -236,7 +236,7 @@ public class TimeEntryServiceIntegrationTest {
         timeEntry.setNotes("Important day");
         entityManager.persist(timeEntry);
 
-        TimeEntryDTO dto = timeEntryService.getTimeEntries(LocalDate.now()).get(0);
+        TimeEntryDTO dto = timeEntryService.getTimeEntries(LocalDate.now()).getFirst();
 
         assertThat(dto.getNotes()).isEqualTo("Important day");
     }
