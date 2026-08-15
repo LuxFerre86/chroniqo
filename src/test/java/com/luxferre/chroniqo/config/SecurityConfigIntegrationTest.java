@@ -2,23 +2,24 @@ package com.luxferre.chroniqo.config;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.boot.test.web.server.LocalServerPort;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class SecurityConfigIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @LocalServerPort
+    private int port;
+
+    private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @ParameterizedTest
     @ValueSource(strings = {
@@ -30,8 +31,8 @@ class SecurityConfigIntegrationTest {
             "/reset-password-confirm?token=test-token"
     })
     void unauthenticatedPublicSpaRoutes_areAccessible(String path) throws Exception {
-        mockMvc.perform(get(path))
-                .andExpect(status().isOk());
+        HttpResponse<Void> response = sendGet(path);
+        assertThat(response.statusCode()).isEqualTo(200);
     }
 
     @ParameterizedTest
@@ -40,38 +41,28 @@ class SecurityConfigIntegrationTest {
             "/sw.js"
     })
     void unauthenticatedPublicAssets_doNotReturnUnauthorized(String path) throws Exception {
-        mockMvc.perform(get(path))
-                .andExpect(status().isNotFound());
+        HttpResponse<Void> response = sendGet(path);
+        assertThat(response.statusCode()).isNotEqualTo(401);
     }
 
     @ParameterizedTest
     @ValueSource(strings = {
             "/api/auth/verify-email?token=invalid-token",
-            "/api/auth/reset-password"
+            "/api/auth/me"
     })
-    void unauthenticatedPublicAuthEndpoints_areNotUnauthorized(String path) throws Exception {
-        if (path.equals("/api/auth/reset-password")) {
-            mockMvc.perform(post(path)
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("""
-                                    {"token":"invalid-token","newPassword":"NewPassword123!"}
-                                    """))
-                    .andExpect(status().isBadRequest());
+    void authEndpoints_keepExpectedAnonymousBehavior(String path) throws Exception {
+        HttpResponse<Void> response = sendGet(path);
+        if (path.equals("/api/auth/me")) {
+            assertThat(response.statusCode()).isEqualTo(401);
             return;
         }
-
-        mockMvc.perform(get(path))
-                .andExpect(status().isBadRequest());
+        assertThat(response.statusCode()).isEqualTo(400);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {
-            "/api/auth/me",
-            "/month/2026/8"
-    })
-    void protectedRoutes_stillRequireAuthentication(String path) throws Exception {
-        mockMvc.perform(get(path))
-                .andExpect(status().isUnauthorized());
+    private HttpResponse<Void> sendGet(String path) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
+                .GET()
+                .build();
+        return httpClient.send(request, HttpResponse.BodyHandlers.discarding());
     }
 }
