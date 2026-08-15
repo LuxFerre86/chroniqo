@@ -32,7 +32,18 @@ export interface ResetPasswordPayload {
 }
 
 export async function login(payload: LoginPayload): Promise<AuthUser> {
-  const { data } = await client.post<AuthUser>('/auth/login', payload)
+  const params = new URLSearchParams()
+  params.set('email', payload.email)
+  params.set('password', payload.password)
+  if (payload.rememberMe) {
+    params.set('remember-me', 'on')
+  }
+
+  const { data } = await client.post<AuthUser>('/auth/login', params, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  })
   return data
 }
 
