@@ -1,7 +1,7 @@
 package com.luxferre.chroniqo.util;
 
-import com.vaadin.flow.data.binder.ValidationResult;
-import com.vaadin.flow.data.binder.ValueContext;
+import com.luxferre.chroniqo.util.ValidationResult;
+import com.luxferre.chroniqo.util.ValueContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

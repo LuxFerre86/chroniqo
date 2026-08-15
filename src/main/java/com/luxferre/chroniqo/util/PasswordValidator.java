@@ -1,9 +1,5 @@
 package com.luxferre.chroniqo.util;
 
-import com.vaadin.flow.data.binder.ValidationResult;
-import com.vaadin.flow.data.binder.ValueContext;
-import com.vaadin.flow.data.validator.AbstractValidator;
-
 /**
  * Validates that a password meets the application's security policy:
  * <ul>
@@ -21,7 +17,7 @@ import com.vaadin.flow.data.validator.AbstractValidator;
  * @author Luxferre86
  * @since 15.03.2026
  */
-public class PasswordValidator extends AbstractValidator<String> {
+public class PasswordValidator {
 
     public static final int MIN_LENGTH = 12;
     public static final int MAX_LENGTH = 128;
@@ -31,19 +27,14 @@ public class PasswordValidator extends AbstractValidator<String> {
             "At least " + MIN_LENGTH + " characters, including uppercase, lowercase, a digit and a special character ("
                     + SPECIAL_CHARS + ")";
 
-    public PasswordValidator() {
-        super("Invalid password");
-    }
-
     /**
      * Validates a password against the application's security policy.
      *
      * @param value   the password string to validate (may be {@code null})
-     * @param context the binding context (unused)
+     * @param context the validation context (unused)
      * @return {@link ValidationResult#ok()} when the password satisfies all
      * rules; a descriptive error result otherwise
      */
-    @Override
     public ValidationResult apply(String value, ValueContext context) {
         if (value == null || value.isBlank()) {
             return ValidationResult.error("Password is required");

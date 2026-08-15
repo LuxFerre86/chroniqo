@@ -1,9 +1,6 @@
 package com.luxferre.chroniqo.config;
 
-import com.luxferre.chroniqo.frontend.LoginView;
 import com.luxferre.chroniqo.service.user.UserService;
-import com.vaadin.flow.spring.security.VaadinSavedRequestAwareAuthenticationSuccessHandler;
-import com.vaadin.flow.spring.security.VaadinSecurityConfigurer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,19 +11,20 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.util.StringUtils;
 
 /**
  * Central Spring Security configuration for Chroniqo.
  *
- * <p>Defines the {@link SecurityFilterChain},
- * remember-me services, login success handler, password encoder, and
- * authentication event publisher. Public paths (login, registration, email
- * verification, static resources) are explicitly permitted; all other routes
- * require an authenticated session. Vaadin-specific security integration is
- * applied via {@link VaadinSecurityConfigurer}.
+ * <p>Configures session-based form login that returns JSON responses instead
+ * of HTML redirects, making it compatible with the Vue SPA frontend. CSRF
+ * protection is handled via the {@code XSRF-TOKEN} cookie so that the Vue
+ * Axios client can read and forward the token automatically.
  *
  * @author Luxferre86
  * @since 22.02.2026
@@ -36,110 +34,118 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_PATHS = {"/public/**",
-            "/login",
-            "/register",
-            "/reset-password",
-            "/verify-email",
-            "/images/**",
-            "/styles/**",
+    private static final String[] PUBLIC_PATHS = {
+            "/api/public/**",
+            "/api/auth/register",
+            "/api/auth/verify-email",
+            "/api/auth/request-password-reset",
+            "/api/auth/reset-password",
+            "/assets/**",
             "/icons/**",
-            "/*.css",
-            "/dark",
+            "/favicon.png",
+            "/index.html",
+            "/",
             "/actuator/health/**"
     };
 
     private final RememberMeProperties rememberMeProperties;
 
-    /**
-     * Configures the main security filter chain.
-     *
-     * <p>Public paths are permitted without authentication; all other requests
-     * are handled by Vaadin's security integration. Remember-me services and
-     * the custom login success handler are wired in here.
-     *
-     * @param http                         the security builder
-     * @param authenticationSuccessHandler the Vaadin-aware success handler
-     * @param rememberMeServices           the remember-me services bean
-     * @param loggingFilter                the logging filter
-     * @return the configured {@link org.springframework.security.web.SecurityFilterChain}
-     */
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, VaadinSavedRequestAwareAuthenticationSuccessHandler authenticationSuccessHandler, LastLoginTokenBasedRememberMeServices rememberMeServices, LoggingFilter loggingFilter) {
-        // register custom authenticationSuccessHandler as shared object
-        http.setSharedObject(VaadinSavedRequestAwareAuthenticationSuccessHandler.class, authenticationSuccessHandler);
-        // Configure your static resources with public access
-        http.authorizeHttpRequests(auth -> auth.requestMatchers(PUBLIC_PATHS)
-                .permitAll());
-        // Vaadin Security
-        http.with(VaadinSecurityConfigurer.vaadin(), configurer -> configurer.loginView(LoginView.class));
-        // Remember Me Configuration
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                            LoginSuccessHandler successHandler,
+                                            LastLoginTokenBasedRememberMeServices rememberMeServices,
+                                            LoggingFilter loggingFilter) throws Exception {
+        // CSRF – cookie-based so the Vue SPA can read and submit the token
+        CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
+        http.csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(csrfHandler)
+                .ignoringRequestMatchers("/api/auth/login", "/api/auth/logout")
+        );
+
+        // Public paths
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(PUBLIC_PATHS).permitAll()
+                .anyRequest().authenticated()
+        );
+
+        // Form login – returns JSON, not a redirect
+        http.formLogin(form -> form
+                .loginProcessingUrl("/api/auth/login")
+                .usernameParameter("email")
+                .passwordParameter("password")
+                .successHandler(successHandler)
+                .failureHandler(jsonFailureHandler())
+                .permitAll()
+        );
+
+        // Logout – returns JSON
+        http.logout(logout -> logout
+                .logoutUrl("/api/auth/logout")
+                .logoutSuccessHandler((req, res, auth) -> {
+                    res.setStatus(200);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"message\":\"Logged out.\"}");
+                })
+        );
+
+        // Remember-me
         http.rememberMe(remember -> remember.rememberMeServices(rememberMeServices));
-        // Add logging filter to include user in MDC
+
+        // Session management – return 401 JSON on unauthenticated access
+        http.exceptionHandling(ex -> ex
+                .authenticationEntryPoint((req, res, authException) -> {
+                    res.setStatus(401);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"error\":\"Unauthorized\"}");
+                })
+        );
+
+        // Logging filter
         http.addFilterBefore(loggingFilter, SecurityContextHolderFilter.class);
 
         return http.build();
     }
 
-    /**
-     * Creates the remember-me services bean configured from
-     * {@link RememberMeProperties}. The cookie domain is only set when the
-     * property is non-blank, so local development works without the variable.
-     *
-     * @param userDetailsService the user-details service for token validation
-     * @param userService        used to record last-login on cookie renewal
-     * @return configured {@link LastLoginTokenBasedRememberMeServices}
-     */
+    private AuthenticationFailureHandler jsonFailureHandler() {
+        return (request, response, exception) -> {
+            response.setStatus(401);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Invalid credentials\"}");
+        };
+    }
+
     @Bean
-    public LastLoginTokenBasedRememberMeServices lastLoginTokenBasedRememberMeServices(UserDetailsService userDetailsService, UserService userService) {
-        LastLoginTokenBasedRememberMeServices rememberMeServices = new LastLoginTokenBasedRememberMeServices(rememberMeProperties.getKey(), userDetailsService, userService, TokenBasedRememberMeServices.RememberMeTokenAlgorithm.SHA256);
+    public LastLoginTokenBasedRememberMeServices lastLoginTokenBasedRememberMeServices(
+            UserDetailsService userDetailsService, UserService userService) {
+        LastLoginTokenBasedRememberMeServices rememberMeServices =
+                new LastLoginTokenBasedRememberMeServices(
+                        rememberMeProperties.getKey(), userDetailsService, userService,
+                        TokenBasedRememberMeServices.RememberMeTokenAlgorithm.SHA256);
         rememberMeServices.setUseSecureCookie(rememberMeProperties.isUseSecureCookie());
         if (StringUtils.hasText(rememberMeProperties.getCookieDomain())) {
             rememberMeServices.setCookieDomain(rememberMeProperties.getCookieDomain());
         }
-        rememberMeServices.setTokenValiditySeconds(Math.toIntExact(rememberMeProperties.getValidity().getSeconds()));
+        rememberMeServices.setTokenValiditySeconds(
+                Math.toIntExact(rememberMeProperties.getValidity().getSeconds()));
         return rememberMeServices;
     }
 
-    /**
-     * Creates the login success handler that records the last-login timestamp
-     * after each successful form login.
-     *
-     * @param userService used to persist the last-login timestamp
-     * @return a {@link LoginSuccessHandler} instance
-     */
     @Bean
-    public VaadinSavedRequestAwareAuthenticationSuccessHandler loginSuccessHandler(UserService userService) {
+    public LoginSuccessHandler loginSuccessHandler(UserService userService) {
         return new LoginSuccessHandler(userService);
     }
 
-
-    /**
-     * Password encoder using BCrypt with a work factor of 12.
-     *
-     * @return a {@link org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder}
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
 
-    /**
-     * Enables publishing of Spring Security authentication events
-     * (success and failure), which are required for brute-force protection
-     * via {@link AuthenticationEventListener}.
-     */
     @Bean
     public DefaultAuthenticationEventPublisher authenticationEventPublisher() {
         return new DefaultAuthenticationEventPublisher();
     }
 
-    /**
-     * Creates the logging filter bean to add user context to MDC.
-     *
-     * @param userService the user service for retrieving current user
-     * @return the configured LoggingFilter
-     */
     @Bean
     public LoggingFilter loggingFilter(UserService userService) {
         return new LoggingFilter(userService);

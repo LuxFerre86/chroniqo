@@ -1,48 +1,40 @@
 package com.luxferre.chroniqo.config;
 
 import com.luxferre.chroniqo.service.user.UserService;
-import com.vaadin.flow.spring.security.VaadinSavedRequestAwareAuthenticationSuccessHandler;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 
 import java.io.IOException;
 
 /**
- * Post-login success handler that records the current timestamp as the
- * user's last-login time immediately after a successful form-based login.
- *
- * <p>Extends Vaadin's
- * {@link VaadinSavedRequestAwareAuthenticationSuccessHandler}
- * so that Vaadin's saved-request redirect logic is preserved, and only the
- * last-login update is added on top.
+ * Post-login success handler that writes a JSON response with the authenticated
+ * user's profile and records the last-login timestamp.
  *
  * @author Luxferre86
  * @since 27.02.2026
  */
 @RequiredArgsConstructor
 @Slf4j
-public class LoginSuccessHandler extends VaadinSavedRequestAwareAuthenticationSuccessHandler {
+public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final UserService userService;
 
-    /**
-     * Invoked after a successful form login. Delegates the Vaadin redirect
-     * to the parent class, then records the last-login timestamp.
-     *
-     * @param request        the current HTTP request
-     * @param response       the current HTTP response
-     * @param authentication the established authentication
-     * @throws java.io.IOException              if the redirect fails
-     * @throws jakarta.servlet.ServletException if an error occurs
-     */
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        super.onAuthenticationSuccess(request, response, authentication);
+    public void onAuthenticationSuccess(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        Authentication authentication)
+            throws IOException, ServletException {
         userService.updateLastLogin(authentication.getName());
         log.info("User login successful");
+        clearAuthenticationAttributes(request);
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write("{\"status\":\"ok\"}");
     }
 }

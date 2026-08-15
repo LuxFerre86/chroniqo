@@ -8,11 +8,10 @@ import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.service.event.AbsenceBroadcaster;
 import com.luxferre.chroniqo.service.event.BroadcastListener;
+import com.luxferre.chroniqo.service.event.Registration;
 import com.luxferre.chroniqo.service.event.TimeEntryBroadcaster;
 import com.luxferre.chroniqo.service.event.UserBroadcaster;
 import com.luxferre.chroniqo.service.user.UserService;
-import com.vaadin.flow.component.UI;
-import com.vaadin.flow.shared.Registration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -73,7 +72,7 @@ public class SummaryService {
      */
     public List<DaySummaryDTO> getCurrentWeek() {
         LocalDate today = LocalDate.now(clock);
-        WeekFields weekFields = WeekFields.of(UI.getCurrent().getLocale());
+        WeekFields weekFields = WeekFields.ISO;
         LocalDate weekStart = today.with(weekFields.dayOfWeek(), 1);
         LocalDate weekEnd = today.with(weekFields.dayOfWeek(), 7);
         return getSummary(weekStart, weekEnd);

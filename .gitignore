@@ -69,3 +69,8 @@ docker-compose.local.yaml
 /backlog.md
 /.github/skills/
 /.github/agents/ai-team-vaadin.agent.md
+
+# Vue frontend build artifacts
+frontend/node/
+frontend/node_modules/
+src/main/resources/static/

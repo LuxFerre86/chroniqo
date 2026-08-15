@@ -15,6 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import static org.mockito.Mockito.*;
 
@@ -37,9 +39,10 @@ class LoginSuccessHandlerTest {
     private LoggingTestUtils logs;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         handler = new LoginSuccessHandler(userService);
         logs = LoggingTestUtils.captureLogsFor(LoginSuccessHandler.class);
+        when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
     }
 
     @AfterEach
