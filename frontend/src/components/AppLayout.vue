@@ -15,6 +15,13 @@ const monthLink = computed(() => {
   return `/month/${now.getFullYear()}/${now.getMonth() + 1}`
 })
 
+const userLabel = computed(() => {
+  if (authStore.fullName) {
+    return authStore.fullName
+  }
+  return authStore.currentUser?.email ?? 'Signed in'
+})
+
 async function handleLogout() {
   await authStore.logout()
   await router.push('/login')
@@ -32,7 +39,7 @@ async function handleLogout() {
           <RouterLink class="nav-link" to="/settings">Settings</RouterLink>
         </nav>
         <div class="topbar__actions">
-          <span class="topbar__user">{{ authStore.fullName }}</span>
+          <span class="topbar__user">{{ userLabel }}</span>
           <button class="btn btn-secondary" type="button" @click="handleLogout">Logout</button>
         </div>
       </div>

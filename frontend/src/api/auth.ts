@@ -31,7 +31,7 @@ export interface ResetPasswordPayload {
   newPassword: string
 }
 
-export async function login(payload: LoginPayload): Promise<AuthUser> {
+export async function login(payload: LoginPayload): Promise<void> {
   const params = new URLSearchParams()
   params.set('email', payload.email)
   params.set('password', payload.password)
@@ -39,12 +39,11 @@ export async function login(payload: LoginPayload): Promise<AuthUser> {
     params.set('remember-me', 'on')
   }
 
-  const { data } = await client.post<AuthUser>('/auth/login', params, {
+  await client.post('/auth/login', params, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
   })
-  return data
 }
 
 export async function logout(): Promise<void> {

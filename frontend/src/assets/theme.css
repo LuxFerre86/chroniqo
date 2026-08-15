@@ -15,6 +15,7 @@
   --shadow-m: 0 5px 16px -3px rgba(0, 0, 0, 0.7);
   --radius: 8px;
   --radius-lg: 12px;
+  --content-max-width: 1200px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,6 +56,7 @@ textarea {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-s);
   padding: 1.25rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .btn {
@@ -64,7 +66,7 @@ textarea {
   font-size: 0.9rem;
   font-weight: 600;
   padding: 0.6rem 1.2rem;
-  transition: all 0.2s;
+  transition: transform 0.2s ease, filter 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .btn:disabled {
@@ -80,6 +82,8 @@ textarea {
 
 .btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, hsl(38,92%,65%) 0%, hsl(35,92%,60%) 100%);
+  transform: translateY(-1px);
+  filter: saturate(1.05);
 }
 
 .btn-secondary {
@@ -117,6 +121,15 @@ textarea {
   box-shadow: 0 0 0 3px hsla(38,92%,58%,0.15);
 }
 
+.btn:focus-visible,
+.input:focus-visible,
+.nav-link:focus-visible,
+.entry-row:focus-visible,
+.day-card:focus-visible {
+  outline: 2px solid hsla(38, 92%, 65%, 0.85);
+  outline-offset: 2px;
+}
+
 .input::placeholder {
   color: var(--color-text-muted);
 }
@@ -140,7 +153,7 @@ select.input option {
 
 .page-shell {
   margin: 0 auto;
-  max-width: 1200px;
+  max-width: var(--content-max-width);
   padding: 1.5rem;
 }
 
@@ -155,7 +168,7 @@ select.input option {
 
 .topbar__inner {
   margin: 0 auto;
-  max-width: 1200px;
+  max-width: var(--content-max-width);
   padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
@@ -178,6 +191,7 @@ select.input option {
 .nav-links {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .nav-link {
@@ -200,6 +214,10 @@ select.input option {
 
 .topbar__user {
   color: var(--color-text-secondary);
+  max-width: 20rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .auth-page {
@@ -363,10 +381,13 @@ select.input option {
   border-radius: var(--radius);
   color: inherit;
   cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .entry-row:hover {
   background: hsla(38,30%,90%,0.08);
+  border-color: hsla(38, 50%, 60%, 0.28);
+  transform: translateY(-1px);
 }
 
 .entry-row__time,
@@ -503,6 +524,7 @@ select.input option {
   cursor: pointer;
   text-align: left;
   color: inherit;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .day-card:hover {
@@ -679,10 +701,22 @@ select.input option {
     flex-wrap: wrap;
   }
 
+  .topbar__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .nav-links {
     order: 3;
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+  }
+
+  .topbar__user {
+    max-width: 70vw;
   }
 
   .dashboard-grid,

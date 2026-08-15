@@ -28,7 +28,8 @@ export const useAuthStore = defineStore('auth', {
       this.loading = true
       this.error = null
       try {
-        const user = await loginApi(payload)
+        await loginApi(payload)
+        const user = await fetchCurrentUser()
         this.currentUser = user
         this.initialized = true
         return user
