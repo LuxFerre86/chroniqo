@@ -16,7 +16,7 @@ const router = createRouter({
     { path: '/register', name: 'register', component: RegisterView },
     { path: '/verify-email', name: 'verify-email', component: EmailVerificationView },
     { path: '/request-password-reset', name: 'request-password-reset', component: PasswordResetRequestView },
-    { path: '/reset-password', name: 'reset-password', component: PasswordResetConfirmView },
+    { path: '/reset-password', alias: '/reset-password-confirm', name: 'reset-password', component: PasswordResetConfirmView },
     { path: '/', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/month/:year/:month', name: 'month', component: MonthView, meta: { requiresAuth: true } },
     { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } }

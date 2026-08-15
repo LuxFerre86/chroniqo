@@ -60,7 +60,7 @@ public class EmailService {
      * Send password reset email
      */
     public void sendPasswordResetEmail(User user) {
-        String resetLink = appProperties.getBaseUrl() + "/reset-password-confirm?token=" + user.getResetToken();
+        String resetLink = appProperties.getBaseUrl() + "/reset-password?token=" + user.getResetToken();
 
         String subject = "chroniqo - Password Reset";
         String message = String.format("""
