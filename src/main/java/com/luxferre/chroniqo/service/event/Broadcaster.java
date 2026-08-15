@@ -1,7 +1,6 @@
 package com.luxferre.chroniqo.service.event;
 
 import com.luxferre.chroniqo.model.User;
-import com.vaadin.flow.shared.Registration;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.event.TransactionalEventListener;

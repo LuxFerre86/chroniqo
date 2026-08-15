@@ -606,9 +606,6 @@ public class SummaryServiceUnitTest {
             when(mockPhs.getHolidays(any(), any(), any(Year.class)))
                     .thenReturn(Set.of());
 
-            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
-            ui.setLocale(java.util.Locale.GERMANY);
-            com.vaadin.flow.component.UI.setCurrent(ui);
         }
 
         @Test
@@ -690,9 +687,6 @@ public class SummaryServiceUnitTest {
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
             when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
 
-            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
-            ui.setLocale(java.util.Locale.GERMANY);
-            com.vaadin.flow.component.UI.setCurrent(ui);
         }
 
         @Test
@@ -817,9 +811,6 @@ public class SummaryServiceUnitTest {
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
             when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
 
-            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
-            ui.setLocale(java.util.Locale.GERMANY);
-            com.vaadin.flow.component.UI.setCurrent(ui);
         }
 
         @Test
@@ -875,9 +866,6 @@ public class SummaryServiceUnitTest {
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
             when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
 
-            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
-            ui.setLocale(java.util.Locale.GERMANY);
-            com.vaadin.flow.component.UI.setCurrent(ui);
         }
 
         @Test

@@ -1,7 +1,7 @@
 package com.luxferre.chroniqo.service.event;
 
 import com.luxferre.chroniqo.model.User;
-import com.vaadin.flow.shared.Registration;
+import com.luxferre.chroniqo.service.event.Registration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

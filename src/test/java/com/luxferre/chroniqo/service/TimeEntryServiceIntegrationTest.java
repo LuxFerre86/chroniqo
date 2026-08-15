@@ -7,7 +7,6 @@ import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.util.LoggingTestUtils;
 import ch.qos.logback.classic.Level;
-import com.vaadin.flow.component.UI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,9 +45,6 @@ public class TimeEntryServiceIntegrationTest {
     @BeforeEach
     public void setup() {
         testUser = entityManager.find(User.class, "a0000000-0000-0000-0000-000000000001");
-        UI ui = new UI();
-        ui.setLocale(Locale.GERMANY);
-        UI.setCurrent(ui);
         logs = LoggingTestUtils.captureLogsFor(TimeEntryService.class);
     }
 

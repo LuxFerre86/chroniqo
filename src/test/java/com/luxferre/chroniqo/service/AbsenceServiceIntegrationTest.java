@@ -5,7 +5,6 @@ import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
-import com.vaadin.flow.component.UI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,9 +43,6 @@ public class AbsenceServiceIntegrationTest {
     @BeforeEach
     public void setup() {
         testUser = entityManager.find(User.class, "a0000000-0000-0000-0000-000000000001");
-        UI ui = new UI();
-        ui.setLocale(Locale.GERMANY);
-        UI.setCurrent(ui);
     }
 
     @ParameterizedTest
