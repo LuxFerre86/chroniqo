@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -28,15 +28,17 @@
     </issueManagement>
 
     <properties>
-        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <commons-lang3.version>3.21.0</commons-lang3.version>
         <icu4j.version>78.3</icu4j.version>
-        <jackson-core.version>3.2.0</jackson-core.version>
+        <jackson-2-bom.version>2.21.7</jackson-2-bom.version>
+        <jackson-bom.version>3.1.7</jackson-bom.version>
         <jacoco.version>0.8.15</jacoco.version>
         <java.version>21</java.version>
-        <jollyday.version>2.11.0</jollyday.version>
-        <lombok.version>1.18.46</lombok.version>
-        <spring-boot.version>4.1.0</spring-boot.version> <!-- needed implicitly for plugin section / do NOT remove -->
-        <vaadin.version>25.1.8</vaadin.version>
+        <jollyday.version>2.21.0</jollyday.version>
+        <lombok.version>1.18.48</lombok.version>
+        <spring-boot.version>4.1.1</spring-boot.version> <!-- needed implicitly for plugin section / do NOT remove -->
+        <tomcat.version>11.0.26</tomcat.version>
+        <vaadin.version>25.3.0</vaadin.version>
     </properties>
 
     <dependencyManagement>
@@ -92,13 +94,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-flyway</artifactId>
-        </dependency>
-
-        <!-- 3.1.1 instead of 3.0.4 fixing CVE-2026-29062 -->
-        <dependency>
-            <groupId>tools.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson-core.version}</version>
         </dependency>
 
         <dependency>
