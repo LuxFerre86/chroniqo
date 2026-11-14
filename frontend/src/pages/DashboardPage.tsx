@@ -157,6 +157,24 @@ function WeekChart({ week, todayDate }: { week: DaySummary[]; todayDate: string 
     </section>
   );
 }
+function DashboardSkeleton() {
+  return (
+    <div className="dash" role="status" aria-label="Loading dashboard">
+      <div className="dash-hero">
+        <div className="dash-hero__main">
+          <div className="card skeleton dash-skeleton__today" />
+          <div className="skeleton dash-skeleton__action" />
+        </div>
+        <div className="dash-hero__side">
+          <div className="card skeleton dash-skeleton__stat" />
+          <div className="card skeleton dash-skeleton__stat" />
+        </div>
+      </div>
+      <div className="card skeleton dash-skeleton__week" />
+    </div>
+  );
+}
+
 export function DashboardPage() {
   const navigate = useNavigate();
   const [dialogDate, setDialogDate] = useState<string | null>(null);
@@ -190,10 +208,7 @@ export function DashboardPage() {
       </div>
 
       {isPending ? (
-        <div className="centered-state" role="status">
-          <span className="spinner" aria-hidden="true" />
-          Loading…
-        </div>
+        <DashboardSkeleton />
       ) : isError || !data ? (
         <div className="dash">
           <div className="notice notice--error" role="alert">
