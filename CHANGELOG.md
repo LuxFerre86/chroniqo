@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.11.2] - 2026-11-14
+
+### Maintenance
+- Merge pull request #82 from LuxFerre86/chore/update-dependencies-2026-11
+- chore: update dependencies and reduce CVE findings
+
 ## [2026.11.1] - 2026-11-14
 
 ### Maintenance
