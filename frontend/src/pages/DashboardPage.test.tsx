@@ -93,6 +93,21 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('img', { name: 'Sat 0h' })).toBeInTheDocument();
   });
 
+  it('shows the daily target legend when time was logged', async () => {
+    vi.mocked(api.getDashboard).mockResolvedValue(dashboard());
+    renderPage();
+
+    expect(await screen.findByText('Daily target')).toBeInTheDocument();
+    expect(screen.queryByText(/Nothing logged this week yet/)).not.toBeInTheDocument();
+  });
+
+  it('shows an empty state when nothing was logged this week', async () => {
+    vi.mocked(api.getDashboard).mockResolvedValue(dashboard({ week: [day('2026-11-09', 0), day('2026-11-10', 0)] }));
+    renderPage();
+
+    expect(await screen.findByText(/Nothing logged this week yet/)).toBeInTheDocument();
+  });
+
   it('shows negative values and a missing target', async () => {
     vi.mocked(api.getDashboard).mockResolvedValue(
       dashboard({

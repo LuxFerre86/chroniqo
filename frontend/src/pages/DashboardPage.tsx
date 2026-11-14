@@ -113,37 +113,50 @@ function WeeklyProgressCard({ progress }: { progress: Dashboard['weeklyProgress'
 }
 
 function WeekChart({ week, todayDate }: { week: DaySummary[]; todayDate: string }) {
-  const maxMinutes = Math.max(MIN_CHART_SCALE_MINUTES, ...week.map((d) => d.workedMinutes));
+  const maxMinutes = Math.max(MIN_CHART_SCALE_MINUTES, ...week.map((d) => Math.max(d.workedMinutes, d.targetMinutes)));
+  const nothingLogged = week.every((d) => d.workedMinutes === 0);
   return (
     <section className="card" aria-label="Current week">
       <h3 className="week__title">Current Week</h3>
       <div className="week__chart">
         {week.map((day) => {
           const label = weekdayShort(parseIsoDate(day.date));
+          const isToday = day.date === todayDate;
+          const hasTarget = day.targetMinutes > 0;
           return (
             <div
               key={day.date}
-              className="week__col"
+              className={`week__col${isToday ? ' week__col--today' : ''}`}
               role="img"
               aria-label={`${label} ${formatHours(day.workedMinutes)}`}
+              title={`${label}: ${formatHours(day.workedMinutes)}${hasTarget ? ` of ${formatHours(day.targetMinutes)}` : ''}`}
             >
               <div className="week__bar-area">
+                {hasTarget && (
+                  <div className="week__target" style={{ bottom: `${(day.targetMinutes / maxMinutes) * 100}%` }} />
+                )}
                 {day.workedMinutes > 0 ? (
                   <div className="week__bar" style={{ height: `${(day.workedMinutes / maxMinutes) * 100}%` }} />
                 ) : (
                   <div className="week__bar week__bar--empty" />
                 )}
               </div>
-              <span className={`week__day${day.date === todayDate ? ' week__day--today' : ''}`}>{label}</span>
+              <span className={`week__day${isToday ? ' week__day--today' : ''}`}>{label}</span>
               <span className="week__hours">{formatHours(day.workedMinutes)}</span>
             </div>
           );
         })}
       </div>
+      <p className="week__legend">
+        {nothingLogged ? 'Nothing logged this week yet – use Log Time to add your first booking.' : (
+          <>
+            <span className="week__legend-line" aria-hidden="true" /> Daily target
+          </>
+        )}
+      </p>
     </section>
   );
 }
-
 export function DashboardPage() {
   const navigate = useNavigate();
   const [dialogDate, setDialogDate] = useState<string | null>(null);

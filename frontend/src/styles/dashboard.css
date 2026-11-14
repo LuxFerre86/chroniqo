@@ -235,9 +235,12 @@
   align-items: center;
   gap: 0.35rem;
   min-width: 0;
+  padding: 0.4rem 0 0.2rem;
+  border-radius: var(--radius-m);
 }
 
 .week__bar-area {
+  position: relative;
   display: flex;
   align-items: flex-end;
   width: 100%;
@@ -255,6 +258,34 @@
   height: 2px;
   border-radius: 0;
   background: hsla(38, 20%, 50%, 0.2);
+}
+
+.week__col--today {
+  background: hsla(38, 92%, 55%, 0.07);
+}
+
+.week__target {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  border-top: 2px dashed hsla(0, 0%, 100%, 0.4);
+  pointer-events: none;
+}
+
+.week__legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 12px;
+  color: var(--tertiary-text-color);
+}
+
+.week__legend-line {
+  width: 18px;
+  border-top: 2px dashed hsla(0, 0%, 100%, 0.4);
 }
 
 .week__day {
