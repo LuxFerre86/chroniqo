@@ -83,14 +83,19 @@
 
 /* ===== Quick actions ===== */
 .dash-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  align-items: center;
   gap: 0.75rem;
 }
 
-.dash-actions .btn {
+.dash-actions .btn--primary {
+  flex: 1;
+  min-height: 52px;
+  font-size: 16px;
+}
+
+.dash-actions .btn--tertiary {
   min-height: 48px;
-  font-size: 15px;
 }
 
 /* ===== Stats ===== */

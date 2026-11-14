@@ -175,7 +175,7 @@ export function DashboardPage() {
               <Icon name="clock" />
               Log Time
             </Button>
-            <Button onClick={() => navigate('/month')}>
+            <Button variant="tertiary" onClick={() => navigate('/month')}>
               <Icon name="calendar" />
               View Month
             </Button>
