@@ -85,7 +85,7 @@ describe('DashboardPage', () => {
     expect(await screen.findByTestId('today-worked')).toHaveTextContent('7:48');
     expect(screen.getByText('Saturday, November 14, 2026')).toBeInTheDocument();
     expect(screen.getByTestId('today-balance')).toHaveTextContent('+0:00');
-    expect(screen.getByTestId('current-balance')).toHaveTextContent('+17:21');
+    expect(screen.getByTestId('current-balance')).toHaveTextContent('+17 h 21 min');
     expect(screen.getByTestId('weekly-percentage')).toHaveTextContent('101%');
     expect(screen.getByText('39:25h / 39h')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Mon 8:10h' })).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('DashboardPage', () => {
     renderPage();
 
     expect(await screen.findByTestId('today-balance')).toHaveTextContent('-0:58');
-    expect(screen.getByTestId('current-balance')).toHaveTextContent('-2:18');
+    expect(screen.getByTestId('current-balance')).toHaveTextContent('\u22122 h 18 min');
     expect(screen.getByTestId('weekly-percentage')).toHaveTextContent('–');
     expect(screen.getByText('No target this week')).toBeInTheDocument();
   });

@@ -61,29 +61,19 @@ function badgeClass(type: DaySummary['absenceType']): string {
 function StatSection({
   kind,
   label,
-  month,
-  year,
+  value,
   tone,
 }: {
   kind: 'target' | 'worked' | 'balance';
   label: string;
-  month: string;
-  year: string;
-  tone?: 'positive' | 'negative' | { month: 'positive' | 'negative'; year: 'positive' | 'negative' };
+  value: string;
+  tone?: 'positive' | 'negative';
 }) {
-  const monthTone = typeof tone === 'object' ? tone.month : tone;
-  const yearTone = typeof tone === 'object' ? tone.year : tone;
   return (
     <div className={`month-stat month-stat--${kind}`}>
       <div className="month-stat__label">{label}</div>
       <div className="month-stat__value">
-        <span className={`month-stat__month${monthTone ? ` is-${monthTone}` : ''}`}>{month}</span>
-        <span className={`month-stat__year${yearTone ? ` is-${yearTone}` : ''}`}>
-          <span className="month-stat__sep" aria-hidden="true">
-            /
-          </span>
-          {year}
-        </span>
+        <span className={`month-stat__month${tone ? ` is-${tone}` : ''}`}>{value}</span>
       </div>
     </div>
   );
@@ -305,24 +295,13 @@ export function MonthPage() {
       ) : (
         <>
           <section className="card month-stats" aria-label="Statistics">
-            <StatSection
-              kind="target"
-              label="Target hours"
-              month={formatMinutes(monthTotals.target)}
-              year={formatMinutes(yearTotals.target)}
-            />
-            <StatSection
-              kind="worked"
-              label="Worked hours"
-              month={formatMinutes(monthTotals.worked)}
-              year={formatMinutes(yearTotals.worked)}
-            />
+            <StatSection kind="target" label="Target hours" value={formatMinutes(monthTotals.target)} />
+            <StatSection kind="worked" label="Worked hours" value={formatMinutes(monthTotals.worked)} />
             <StatSection
               kind="balance"
-              label="Balance"
-              month={formatBalance(monthTotals.balance)}
-              year={formatBalance(yearTotals.balance)}
-              tone={{ month: tone(monthTotals.balance), year: tone(yearTotals.balance) }}
+              label={`Balance (${ym.year})`}
+              value={formatBalance(yearTotals.balance)}
+              tone={tone(yearTotals.balance)}
             />
           </section>
 

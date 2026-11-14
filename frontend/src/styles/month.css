@@ -86,26 +86,11 @@
   line-height: 1.2;
 }
 
-.month-stat__year {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.month-stat__sep {
-  margin-right: 0.3rem;
-  color: var(--tertiary-text-color);
-}
-
 .month-stat--target .month-stat__month {
   color: var(--header-text-color);
 }
 
-.month-stat--target .month-stat__year {
-  color: var(--secondary-text-color);
-}
-
-.month-stat--worked .month-stat__month,
-.month-stat--worked .month-stat__year {
+.month-stat--worked .month-stat__month {
   color: var(--primary-text-color);
 }
 
@@ -339,10 +324,6 @@
 
   .month-stat__month {
     font-size: 19px;
-  }
-
-  .month-stat__year {
-    font-size: 12px;
   }
 
   .cal {
