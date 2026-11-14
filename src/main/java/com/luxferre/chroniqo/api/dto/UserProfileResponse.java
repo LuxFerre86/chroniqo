@@ -1,6 +1,7 @@
 package com.luxferre.chroniqo.api.dto;
 
 import com.luxferre.chroniqo.model.User;
+import com.luxferre.chroniqo.util.WeekStart;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ public record UserProfileResponse(String email,
                                   String lastName,
                                   int weeklyTargetHours,
                                   List<DayOfWeek> workingDays,
+                                  DayOfWeek firstDayOfWeek,
                                   String countryCode,
                                   String subdivisionCode,
                                   LocalDateTime createdAt,
@@ -32,6 +34,7 @@ public record UserProfileResponse(String email,
                 user.getLastName(),
                 user.getWeeklyTargetHours(),
                 List.copyOf(user.getWorkingDaysOrDefault()),
+                WeekStart.forCountry(user.getCountryCode()),
                 user.getCountryCode(),
                 user.getSubdivisionCode(),
                 user.getCreatedAt(),

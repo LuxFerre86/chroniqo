@@ -36,6 +36,7 @@ const profile: UserProfile = {
   lastName: 'Lovelace',
   weeklyTargetHours: 38,
   workingDays: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+  firstDayOfWeek: 'MONDAY',
   countryCode: 'DE',
   subdivisionCode: 'HH',
   createdAt: '2025-03-04T10:15:30Z',

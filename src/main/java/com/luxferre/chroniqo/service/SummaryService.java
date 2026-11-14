@@ -7,15 +7,14 @@ import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.service.user.UserService;
+import com.luxferre.chroniqo.util.WeekStart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.*;
 import java.time.temporal.TemporalAdjusters;
-import java.time.temporal.WeekFields;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -59,17 +58,17 @@ public class SummaryService {
 
     /**
      * Returns summaries for every day of the current week. The first day of the
-     * week depends on the locale of the current request (see
-     * {@link LocaleContextHolder}), e.g. Monday for most of Europe and Sunday
-     * for {@code en-US}.
+     * week depends on the country of the current user (see {@link WeekStart}),
+     * e.g. Monday for most of Europe and Sunday for the US. Users without a
+     * country start the week on Monday.
      *
      * @return list of {@link DaySummaryDTO}, one per day
      */
     public List<DaySummaryDTO> getCurrentWeek() {
         LocalDate today = LocalDate.now(clock);
-        WeekFields weekFields = WeekFields.of(LocaleContextHolder.getLocale());
-        LocalDate weekStart = today.with(weekFields.dayOfWeek(), 1);
-        LocalDate weekEnd = today.with(weekFields.dayOfWeek(), 7);
+        DayOfWeek firstDay = WeekStart.forCountry(userService.getCurrentUser().getCountryCode());
+        LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(firstDay));
+        LocalDate weekEnd = weekStart.plusDays(6);
         return getSummary(weekStart, weekEnd);
     }
 

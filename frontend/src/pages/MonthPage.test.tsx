@@ -4,9 +4,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from '../api/endpoints';
-import type { DaySummary } from '../api/types';
+import type { DayOfWeekName, DaySummary } from '../api/types';
 import { ToastProvider } from '../components/Toast';
 import { MonthPage } from './MonthPage';
+
+const auth = vi.hoisted(() => ({ firstDayOfWeek: 'MONDAY' as DayOfWeekName }));
+
+vi.mock('../auth/AuthContext', () => ({
+  useAuth: () => ({ user: { firstDayOfWeek: auth.firstDayOfWeek } }),
+}));
 
 vi.mock('../api/endpoints', () => ({
   api: {
@@ -72,6 +78,30 @@ describe('MonthPage', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    auth.firstDayOfWeek = 'MONDAY';
+  });
+
+  const headerLabels = () =>
+    Array.from(document.querySelectorAll('.cal__head')).map((el) => el.textContent);
+
+  it('starts the calendar on Monday by default', async () => {
+    renderPage();
+
+    await screen.findByRole('button', { name: /^02\.11\.2026/ });
+    expect(headerLabels()).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+    // 1 Nov 2026 is a Sunday: six empty cells precede it
+    expect(document.querySelectorAll('.cal__pad')).toHaveLength(6);
+  });
+
+  it("starts the calendar on the user's first day of the week", async () => {
+    auth.firstDayOfWeek = 'SUNDAY';
+    renderPage();
+
+    await screen.findByRole('button', { name: /^02\.11\.2026/ });
+    expect(headerLabels()).toEqual(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+    expect(document.querySelectorAll('.cal__pad')).toHaveLength(0);
+    const weekend = Array.from(document.querySelectorAll('.cal__head--weekend')).map((el) => el.textContent);
+    expect(weekend).toEqual(['Sun', 'Sat']);
   });
 
   it('computes month and year statistics from the days up to today', async () => {

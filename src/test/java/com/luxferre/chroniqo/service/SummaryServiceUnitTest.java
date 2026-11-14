@@ -26,7 +26,6 @@ import java.time.LocalTime;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
-import java.time.temporal.WeekFields;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -786,6 +785,7 @@ public class SummaryServiceUnitTest {
     class GetCurrentWeek {
 
         private SummaryService spySummaryService;
+        private User user;
 
         @BeforeEach
         void setUp() {
@@ -797,19 +797,12 @@ public class SummaryServiceUnitTest {
                     mockTts, mockUs, mockPhs,
                     Clock.systemDefaultZone());
 
-            User user = new User();
+            user = new User();
             user.setWeeklyTargetHours(39);
             when(mockUs.getCurrentUser()).thenReturn(user);
             when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
             when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
-
-            LocaleContextHolder.setLocale(Locale.GERMANY);
-        }
-
-        @AfterEach
-        void tearDown() {
-            LocaleContextHolder.resetLocaleContext();
         }
 
         @Test
@@ -820,18 +813,31 @@ public class SummaryServiceUnitTest {
         }
 
         @Test
-        void getCurrentWeek_allDatesAreInCurrentWeek() {
-            LocalDate today = LocalDate.now();
-            WeekFields weekFields = WeekFields.of(java.util.Locale.GERMANY);
-            LocalDate weekStart = today.with(weekFields.dayOfWeek(), 1);
-            LocalDate weekEnd = today.with(weekFields.dayOfWeek(), 7);
+        void getCurrentWeek_startsOnMondayWithoutCountry() {
+            List<DaySummaryDTO> result = spySummaryService.getCurrentWeek();
+
+            assertThat(result.getFirst().date().getDayOfWeek()).isEqualTo(DayOfWeek.MONDAY);
+            assertThat(result.getLast().date().getDayOfWeek()).isEqualTo(DayOfWeek.SUNDAY);
+        }
+
+        @Test
+        void getCurrentWeek_startsOnSundayForUsUsers() {
+            user.setCountryCode("US");
 
             List<DaySummaryDTO> result = spySummaryService.getCurrentWeek();
 
-            for (DaySummaryDTO summary : result) {
-                assertThat(summary.date()).isAfterOrEqualTo(weekStart);
-                assertThat(summary.date()).isBeforeOrEqualTo(weekEnd);
-            }
+            assertThat(result).hasSize(7);
+            assertThat(result.getFirst().date().getDayOfWeek()).isEqualTo(DayOfWeek.SUNDAY);
+            assertThat(result.getLast().date().getDayOfWeek()).isEqualTo(DayOfWeek.SATURDAY);
+        }
+
+        @Test
+        void getCurrentWeek_containsToday() {
+            LocalDate today = LocalDate.now();
+
+            List<DaySummaryDTO> result = spySummaryService.getCurrentWeek();
+
+            assertThat(result).extracting(DaySummaryDTO::date).contains(today);
         }
     }
 
