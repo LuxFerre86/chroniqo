@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026.11.7] - 2026-11-14
+
+### Maintenance
+- Merge pull request #87 from LuxFerre86/feature/scoped-month-and-year-balance
+- Show month balance with year balance as secondary value
+- Scope month stats to the month and label the year balance
+
 ## [2026.11.6] - 2026-11-14
 
 ### Maintenance
