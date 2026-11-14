@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.11.5] - 2026-11-14
+
+### Maintenance
+- Merge pull request #85 from LuxFerre86/feature/locale-first-day-of-week
+- Start calendars on the first day of the week of the user's country
+
 ## [2026.11.4] - 2026-11-14
 
 ### Fixed
