@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026.11.3] - 2026-11-14
+
+### Fixed
+- declare Lombok annotation processor explicitly for JDK 23+
+
+
+### Maintenance
+- Merge pull request #83 from LuxFerre86/chore/upgrade-to-java-25
+- chore: upgrade project to Java 25
+
 ## [2026.11.2] - 2026-11-14
 
 ### Maintenance
