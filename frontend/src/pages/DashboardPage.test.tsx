@@ -84,6 +84,7 @@ describe('DashboardPage', () => {
 
     expect(await screen.findByTestId('today-worked')).toHaveTextContent('7:48');
     expect(screen.getByText('Saturday, November 14, 2026')).toBeInTheDocument();
+    expect(screen.getByText('of 7:48 h target')).toBeInTheDocument();
     expect(screen.getByTestId('today-balance')).toHaveTextContent('+0:00');
     expect(screen.getByTestId('current-balance')).toHaveTextContent('+17 h 21 min');
     expect(screen.getByTestId('weekly-percentage')).toHaveTextContent('101%');

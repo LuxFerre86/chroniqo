@@ -19,16 +19,41 @@ function progressTone(percentage: number): 'green' | 'amber' | 'red' {
   return 'red';
 }
 
+const RING_RADIUS = 84;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
 function TodayCard({ today }: { today: DaySummary | null }) {
   const workedMinutes = today?.workedMinutes ?? 0;
+  const targetMinutes = today?.targetMinutes ?? 0;
   const balance = today?.balanceMinutes ?? 0;
+  const hasTarget = targetMinutes > 0;
+  const ratio = hasTarget ? Math.min(1, workedMinutes / targetMinutes) : 0;
   return (
     <section className="card dash-today" aria-label="Today">
       <div className="dash-today__label">Today</div>
-      <div className="dash-today__value" data-testid="today-worked">
-        {formatClock(workedMinutes)}
+      <div className="dash-ring">
+        <svg className="dash-ring__svg" viewBox="0 0 200 200" aria-hidden="true">
+          <circle className="dash-ring__track" cx="100" cy="100" r={RING_RADIUS} />
+          {ratio > 0 && (
+            <circle
+              className={`dash-ring__arc${ratio >= 1 ? ' dash-ring__arc--done' : ''}`}
+              cx="100"
+              cy="100"
+              r={RING_RADIUS}
+              strokeDasharray={RING_CIRCUMFERENCE}
+              strokeDashoffset={RING_CIRCUMFERENCE * (1 - ratio)}
+            />
+          )}
+        </svg>
+        <div className="dash-ring__center">
+          <div className="dash-today__value" data-testid="today-worked">
+            {formatClock(workedMinutes)}
+          </div>
+          <div className="dash-today__caption">
+            {hasTarget ? `of ${formatClock(targetMinutes)} h target` : 'hours worked'}
+          </div>
+        </div>
       </div>
-      <div className="dash-today__caption">hours worked</div>
       <div
         className={`dash-today__balance dash-today__balance--${balance >= 0 ? 'positive' : 'negative'}`}
         data-testid="today-balance"
@@ -38,7 +63,6 @@ function TodayCard({ today }: { today: DaySummary | null }) {
     </section>
   );
 }
-
 function BalanceCard({ minutes, year }: { minutes: number; year: string }) {
   return (
     <section className="card dash-stat" aria-label="Current balance">
@@ -168,24 +192,27 @@ export function DashboardPage() {
         </div>
       ) : (
         <div className="dash">
-          <TodayCard today={data.today} />
+          <div className="dash-hero">
+            <div className="dash-hero__main">
+              <TodayCard today={data.today} />
 
-          <div className="dash-actions">
-            <Button variant="primary" onClick={() => setDialogDate(today)}>
-              <Icon name="clock" />
-              Log Time
-            </Button>
-            <Button variant="tertiary" onClick={() => navigate('/month')}>
-              <Icon name="calendar" />
-              View Month
-            </Button>
+              <div className="dash-actions">
+                <Button variant="primary" onClick={() => setDialogDate(today)}>
+                  <Icon name="clock" />
+                  Log Time
+                </Button>
+                <Button variant="tertiary" onClick={() => navigate('/month')}>
+                  <Icon name="calendar" />
+                  View Month
+                </Button>
+              </div>
+            </div>
+
+            <div className="dash-hero__side">
+              <BalanceCard minutes={data.currentBalanceMinutes} year={today.slice(0, 4)} />
+              <WeeklyProgressCard progress={data.weeklyProgress} />
+            </div>
           </div>
-
-          <div className="dash-stats">
-            <BalanceCard minutes={data.currentBalanceMinutes} year={today.slice(0, 4)} />
-            <WeeklyProgressCard progress={data.weeklyProgress} />
-          </div>
-
           <WeekChart week={data.week} todayDate={today} />
         </div>
       )}
