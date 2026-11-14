@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.11.0] - 2026-11-14
+
+### Added
+- Vaadin replacement - add frontend structure with initial React components and configuration
+
+
+### Maintenance
+- Merge pull request #80 from LuxFerre86/feature/vaadin-replacement
+
 ## [2026.10.0] - 2026-10-03
 
 ### Maintenance
