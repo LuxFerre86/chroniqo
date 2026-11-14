@@ -166,6 +166,16 @@ describe('MonthPage', () => {
     expect(within(empty).getByText('-7:48 h')).toHaveClass('balance-negative');
   });
 
+  it('marks days off and weekends with their own surface classes', async () => {
+    renderPage();
+
+    const saturday = await screen.findByRole('button', { name: /^07\.11\.2026/ });
+    expect(saturday).toHaveClass('day--off', 'day--weekend');
+    const holiday = screen.getByRole('button', { name: /^11\.11\.2026/ });
+    expect(holiday).toHaveClass('day--off');
+    expect(holiday).not.toHaveClass('day--weekend');
+  });
+
   it('lists only the absence types present in the month in the legend', async () => {
     renderPage();
 

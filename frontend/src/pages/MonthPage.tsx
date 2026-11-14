@@ -125,7 +125,10 @@ function DayCard({
     .filter(Boolean)
     .join(', ');
 
-  const classes = ['day', isToday ? 'day--today' : '', workday ? '' : 'day--off'].filter(Boolean).join(' ');
+  const isWeekend = WEEKEND_INDICES.includes(weekdayIndex(parseIsoDate(iso)));
+  const classes = ['day', isToday ? 'day--today' : '', workday ? '' : 'day--off', isWeekend ? 'day--weekend' : '']
+    .filter(Boolean)
+    .join(' ');
   const heat = !isFuture && worked > 0 ? Math.min(1, worked / (target > 0 ? target : HEAT_FALLBACK_MINUTES)) : 0;
 
   return (

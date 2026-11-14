@@ -131,6 +131,7 @@
 }
 
 .day {
+  --day-base: linear-gradient(135deg, hsl(220, 20%, 14%), hsl(220, 20%, 12%));
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -139,7 +140,7 @@
   padding: 0.75rem;
   background:
     linear-gradient(hsla(38, 92%, 58%, calc(var(--heat, 0) * 0.14)), hsla(38, 92%, 58%, calc(var(--heat, 0) * 0.14))),
-    linear-gradient(135deg, hsl(220, 20%, 14%), hsl(220, 20%, 12%));
+    var(--day-base);
   border: 1px solid hsla(32, 30%, 50%, 0.1);
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -148,7 +149,17 @@
 }
 
 .day--off {
-  opacity: 0.75;
+  --day-base: linear-gradient(hsl(220, 16%, 10.5%), hsl(220, 16%, 10.5%));
+  border-color: hsla(32, 30%, 50%, 0.06);
+  box-shadow: none;
+}
+
+.day--weekend {
+  --day-base: linear-gradient(hsl(225, 22%, 9.5%), hsl(225, 22%, 9.5%));
+}
+
+.day--off .day__num {
+  color: var(--secondary-text-color);
 }
 
 .day--today {
