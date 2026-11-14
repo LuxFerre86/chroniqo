@@ -56,7 +56,7 @@ export function AppShell() {
       <aside className="sidebar" aria-label="Main navigation">
         <nav className="sidebar__nav">
           {NAV_ITEMS.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className="nav-link">
+            <NavLink key={item.to} to={item.to} end={item.end} className="nav-link" title={item.label}>
               <Icon name={item.icon} />
               {item.label}
             </NavLink>
