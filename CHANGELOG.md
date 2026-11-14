@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.11.9] - 2026-11-14
+
+### Maintenance
+- Merge pull request #89 from LuxFerre86/feature/month-view-polish
+- Mobile month list: week headers with weekly sums, compact empty days (M-04)
+- Clarify scope of target and worked hours with hint lines (M-03)
+- Give days off and weekends their own surface instead of opacity (M-02)
+- Reduce calendar noise: hide empty 0:00, heat tint, absence dots with legend (M-01)
+
 ## [2026.11.8] - 2026-11-14
 
 ### Maintenance
