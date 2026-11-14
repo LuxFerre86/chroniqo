@@ -74,8 +74,11 @@ describe('TimeEntryDialog', () => {
     expect(dialog).toHaveTextContent('14.11.2026');
     expect(dialog).toHaveTextContent('Working time');
     expect(dialog).toHaveTextContent('No bookings yet for this day');
-    expect(screen.getByText(/Add the first one below/)).toBeInTheDocument();
+    expect(screen.getByText(/Add the first booking for this day/)).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Bookings' })).toBeNull();
+    expect(screen.queryByLabelText(/^Date/)).toBeNull();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Change date' }));
+    expect(screen.getByLabelText(/^Date/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Break \(min\)/)).toHaveValue(30);
     expect(screen.queryByRole('button', { name: 'Delete booking' })).not.toBeInTheDocument();
   });

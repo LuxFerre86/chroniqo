@@ -140,6 +140,15 @@
   opacity: 0.7;
 }
 
+.dialog-date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 14px;
+  color: var(--secondary-text-color);
+}
+
 /* ===== Bookings list ===== */
 .bookings {
   display: flex;

@@ -104,6 +104,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const [absenceEnd, setAbsenceEnd] = useState(date);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [dateEditable, setDateEditable] = useState(false);
 
   const entriesQuery = useQuery({
     queryKey: queryKeys.timeEntries(listDate, listDate),
@@ -375,17 +376,26 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
                     ? 'Update the selected booking or delete it if it is no longer needed.'
                     : showList
                       ? 'Create a new booking for the selected day.'
-                      : 'No bookings yet for this day. Add the first one below.'}
+                      : 'Add the first booking for this day.'}
                 </p>
                 <div className="dialog-grid">
-                  <TextField
-                    className="dialog-grid__full"
-                    label="Date"
-                    type="date"
-                    required
-                    value={editor.date}
-                    onChange={(e) => changeEditorDate(e.target.value)}
-                  />
+                  {dateEditable ? (
+                    <TextField
+                      className="dialog-grid__full"
+                      label="Date"
+                      type="date"
+                      required
+                      value={editor.date}
+                      onChange={(e) => changeEditorDate(e.target.value)}
+                    />
+                  ) : (
+                    <div className="dialog-grid__full dialog-date">
+                      <span>For {formatShortDate(editor.date)}</span>
+                      <Button variant="tertiary" small onClick={() => setDateEditable(true)}>
+                        Change date
+                      </Button>
+                    </div>
+                  )}
                   <TextField
                     label="Start time"
                     type="time"
