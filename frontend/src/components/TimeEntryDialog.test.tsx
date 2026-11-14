@@ -61,6 +61,18 @@ describe('TimeEntryDialog', () => {
     vi.mocked(api.deleteAbsences).mockResolvedValue(undefined);
   });
 
+  it('rejects times that are not valid 24-hour values', async () => {
+    const user = userEvent.setup();
+    renderDialog();
+
+    await screen.findByText('New booking');
+    fireEvent.change(screen.getByLabelText(/Start time/), { target: { value: '25:99' } });
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('HH:MM (24-hour)');
+    expect(api.createTimeEntry).not.toHaveBeenCalled();
+  });
+
   it('renders nothing without a date', () => {
     render(<TimeEntryDialog date={null} onClose={() => undefined} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -74,7 +86,11 @@ describe('TimeEntryDialog', () => {
     expect(dialog).toHaveTextContent('14.11.2026');
     expect(dialog).toHaveTextContent('Working time');
     expect(dialog).toHaveTextContent('No bookings yet for this day');
-    expect(screen.getByText(/Use Add booking to create the first one/)).toBeInTheDocument();
+    expect(screen.getByText(/Add the first booking for this day/)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Bookings' })).toBeNull();
+    expect(screen.queryByLabelText(/^Date/)).toBeNull();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Change date' }));
+    expect(screen.getByLabelText(/^Date/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Break \(min\)/)).toHaveValue(30);
     expect(screen.queryByRole('button', { name: 'Delete booking' })).not.toBeInTheDocument();
   });

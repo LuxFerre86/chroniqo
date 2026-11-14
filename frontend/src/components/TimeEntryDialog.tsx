@@ -5,7 +5,7 @@ import { api } from '../api/endpoints';
 import { ApiError } from '../api/http';
 import type { AbsenceType, TimeEntry } from '../api/types';
 import { formatShortDate } from '../lib/dates';
-import { formatMinutes, trimSeconds, worked } from '../lib/format';
+import { formatMinutes, isTime24h, normalizeTime, trimSeconds, worked } from '../lib/format';
 import { invalidateTimeData, queryKeys } from '../lib/queries';
 import { Button } from './Button';
 import { NumberField, TextAreaField, TextField } from './fields';
@@ -104,6 +104,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const [absenceEnd, setAbsenceEnd] = useState(date);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [dateEditable, setDateEditable] = useState(false);
 
   const entriesQuery = useQuery({
     queryKey: queryKeys.timeEntries(listDate, listDate),
@@ -115,10 +116,12 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   });
 
   const entries = useMemo(
-    () => [...(entriesQuery.data ?? [])].sort((a, b) => trimSeconds(a.startTime).localeCompare(trimSeconds(b.startTime))),
+    () =>
+      [...(entriesQuery.data ?? [])].sort((a, b) => trimSeconds(a.startTime).localeCompare(trimSeconds(b.startTime))),
     [entriesQuery.data],
   );
 
+  const showList = entriesQuery.isError || entries.length > 0;
   const initiallyLoaded = !entriesQuery.isPending && !absencesQuery.isPending;
   useEffect(() => {
     if (mode !== null || !initiallyLoaded) return;
@@ -179,11 +182,16 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const saveWorking = () =>
     run(async () => {
       if (!editor.date) throw new ValidationError('Date cannot be null');
-      if (!editor.startTime) throw new ValidationError('Start time is mandatory');
+      const startTime = normalizeTime(editor.startTime);
+      const endTime = normalizeTime(editor.endTime);
+      if (!startTime) throw new ValidationError('Start time is mandatory');
+      if (!isTime24h(startTime) || (endTime && !isTime24h(endTime))) {
+        throw new ValidationError('Enter times as HH:MM (24-hour), e.g. 08:30');
+      }
       const payload = {
         date: editor.date,
-        startTime: editor.startTime,
-        endTime: editor.endTime || null,
+        startTime,
+        endTime: endTime || null,
         breakMinutes: editor.breakMinutes,
         notes: editor.notes.trim() || null,
       };
@@ -252,8 +260,8 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const footer =
     mode === null ? undefined : (
       <>
-        <Button type="submit" form={formId} variant="primary" loading={busy}>
-          Save changes
+        <Button variant="tertiary" onClick={onClose}>
+          Close
         </Button>
         {mode === 'WORKING' && editor.id && (
           <Button variant="error" disabled={busy} onClick={() => void deleteBooking(editor.id as string)}>
@@ -265,8 +273,8 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
             {mode === 'SICK' ? 'Remove sick leave' : 'Remove vacation'}
           </Button>
         )}
-        <Button variant="tertiary" onClick={onClose}>
-          Close
+        <Button type="submit" form={formId} variant="primary" className="modal__primary" loading={busy}>
+          Save changes
         </Button>
       </>
     );
@@ -300,102 +308,121 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
           )}
 
           {mode === 'WORKING' ? (
-            <div className="dialog-panels dialog-panels--working">
-              <section className="dialog-panel" aria-label="Bookings">
-                <h3 className="dialog-panel__title">Bookings</h3>
-                <p className="dialog-panel__hint">{summarize(entries)}</p>
-                {entriesQuery.isPending ? (
-                  <div className="dialog-loading" role="status">
-                    <span className="spinner" aria-hidden="true" />
-                    Loading…
-                  </div>
-                ) : entriesQuery.isError ? (
-                  <div className="notice notice--error" role="alert">
-                    The bookings could not be loaded.
-                  </div>
-                ) : entries.length === 0 ? (
-                  <p className="dialog-empty">No bookings yet for this day. Use Add booking to create the first one.</p>
-                ) : (
-                  <ul className="bookings">
-                    {entries.map((entry) => {
-                      const selected = editor.id === entry.id;
-                      return (
-                        <li key={entry.id} className={`booking${selected ? ' booking--selected' : ''}`}>
-                          <button
-                            type="button"
-                            className="booking__main"
-                            aria-pressed={selected}
-                            onClick={() => selectEntry(entry)}
-                          >
-                            <span className="booking__time">{bookingHeadline(entry)}</span>
-                            <span className="booking__details">{bookingDetails(entry)}</span>
-                          </button>
-                          <div className="booking__actions">
-                            <Button
-                              icon
-                              variant="tertiary"
-                              aria-label={`Edit booking ${bookingHeadline(entry)}`}
+            <div className={`dialog-panels`}>
+              {showList && (
+                <section className="dialog-panel" aria-label="Bookings">
+                  <h3 className="dialog-panel__title">Bookings</h3>
+                  <p className="dialog-panel__hint">{summarize(entries)}</p>
+                  {entriesQuery.isPending ? (
+                    <div className="dialog-loading" role="status">
+                      <span className="spinner" aria-hidden="true" />
+                      Loading…
+                    </div>
+                  ) : entriesQuery.isError ? (
+                    <div className="notice notice--error" role="alert">
+                      The bookings could not be loaded.
+                    </div>
+                  ) : (
+                    <ul className="bookings">
+                      {entries.map((entry) => {
+                        const selected = editor.id === entry.id;
+                        return (
+                          <li key={entry.id} className={`booking${selected ? ' booking--selected' : ''}`}>
+                            <button
+                              type="button"
+                              className="booking__main"
+                              aria-pressed={selected}
                               onClick={() => selectEntry(entry)}
                             >
-                              <Icon name="edit" />
-                            </Button>
-                            <Button
-                              icon
-                              variant="tertiary"
-                              className="btn--danger-text"
-                              aria-label={`Delete booking ${bookingHeadline(entry)}`}
-                              disabled={busy}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                void deleteBooking(entry.id);
-                              }}
-                            >
-                              <Icon name="trash" />
-                            </Button>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-                <div>
-                  <Button variant="tertiary" onClick={() => startNewBooking()}>
-                    <Icon name="plus" />
-                    Add booking
-                  </Button>
-                </div>
-              </section>
+                              <span className="booking__time">{bookingHeadline(entry)}</span>
+                              <span className="booking__details">{bookingDetails(entry)}</span>
+                            </button>
+                            <div className="booking__actions">
+                              <Button
+                                icon
+                                variant="tertiary"
+                                aria-label={`Edit booking ${bookingHeadline(entry)}`}
+                                onClick={() => selectEntry(entry)}
+                              >
+                                <Icon name="edit" />
+                              </Button>
+                              <Button
+                                icon
+                                variant="tertiary"
+                                className="btn--danger-text"
+                                aria-label={`Delete booking ${bookingHeadline(entry)}`}
+                                disabled={busy}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void deleteBooking(entry.id);
+                                }}
+                              >
+                                <Icon name="trash" />
+                              </Button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <div>
+                    <Button variant="tertiary" onClick={() => startNewBooking()}>
+                      <Icon name="plus" />
+                      Add booking
+                    </Button>
+                  </div>
+                </section>
+              )}
 
               <section className="dialog-panel dialog-panel--editor" aria-label="Booking editor">
                 <h3 className="dialog-panel__title">{editor.id ? 'Editing booking' : 'New booking'}</h3>
                 <p className="dialog-panel__hint">
                   {editor.id
                     ? 'Update the selected booking or delete it if it is no longer needed.'
-                    : 'Create a new booking for the selected day.'}
+                    : showList
+                      ? 'Create a new booking for the selected day.'
+                      : 'Add the first booking for this day.'}
                 </p>
                 <div className="dialog-grid">
-                  <TextField
-                    className="dialog-grid__full"
-                    label="Date"
-                    type="date"
-                    required
-                    value={editor.date}
-                    onChange={(e) => changeEditorDate(e.target.value)}
-                  />
+                  {dateEditable ? (
+                    <TextField
+                      className="dialog-grid__full"
+                      label="Date"
+                      type="date"
+                      required
+                      value={editor.date}
+                      onChange={(e) => changeEditorDate(e.target.value)}
+                    />
+                  ) : (
+                    <div className="dialog-grid__full dialog-date">
+                      <span>For {formatShortDate(editor.date)}</span>
+                      <Button variant="tertiary" small onClick={() => setDateEditable(true)}>
+                        Change date
+                      </Button>
+                    </div>
+                  )}
                   <TextField
                     label="Start time"
-                    type="time"
-                    step={300}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="HH:MM"
+                    maxLength={5}
+                    autoComplete="off"
                     required
                     value={editor.startTime}
                     onChange={(e) => patchEditor({ startTime: e.target.value })}
+                    onBlur={() => patchEditor({ startTime: normalizeTime(editor.startTime) })}
                   />
                   <TextField
                     label="End time"
-                    type="time"
-                    step={300}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="HH:MM"
+                    maxLength={5}
+                    autoComplete="off"
                     value={editor.endTime}
                     onChange={(e) => patchEditor({ endTime: e.target.value })}
+                    onBlur={() => patchEditor({ endTime: normalizeTime(editor.endTime) })}
                   />
                   <NumberField
                     className="dialog-grid__full"
