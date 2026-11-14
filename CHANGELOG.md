@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026.11.11] - 2026-11-14
+
+### Maintenance
+- Merge pull request #91 from LuxFerre86/feature/settings-polish
+- Settings: working days as chips ordered by the regional week start (S-03)
+- Settings: drop email and version duplicated in the sidebar footer (S-02)
+- Settings: two-column layout on wide screens (S-01)
+
 ## [2026.11.10] - 2026-11-14
 
 ### Maintenance
