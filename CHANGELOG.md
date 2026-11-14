@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026.11.8] - 2026-11-14
+
+### Maintenance
+- Merge pull request #88 from LuxFerre86/feature/dashboard-redesign
+- Replace the dashboard loading spinner with a skeleton (D-06)
+- Add target line, today highlight and empty state to the week chart (D-04)
+- Restructure the dashboard into a hero with progress ring and KPI column (D-02)
+- Make Log Time the primary dashboard action (D-03)
+- Tone down the glow of the today figure (D-05)
+- Align dashboard header with the content column (D-01)
+
 ## [2026.11.7] - 2026-11-14
 
 ### Maintenance
