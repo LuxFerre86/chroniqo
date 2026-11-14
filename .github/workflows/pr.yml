@@ -23,11 +23,8 @@ jobs:
         with:
           node-version: 24
 
-      - name: Build + Test
+      - name: Build + Test (backend + frontend)
         run: mvn -B clean verify
-
-      - name: Vaadin Production Build Check
-        run: mvn -B -Pproduction package -DskipTests
 
       - name: Build Docker Image (for scan)
         run: docker build -t chroniqo:pr-${{ github.sha }} .

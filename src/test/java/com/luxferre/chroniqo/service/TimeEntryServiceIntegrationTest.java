@@ -7,7 +7,6 @@ import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.util.LoggingTestUtils;
 import ch.qos.logback.classic.Level;
-import com.vaadin.flow.component.UI;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jpa.test.autoconfigure.AutoConfigureTestEntityManager;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,15 +47,14 @@ public class TimeEntryServiceIntegrationTest {
     @BeforeEach
     public void setup() {
         testUser = entityManager.find(User.class, "a0000000-0000-0000-0000-000000000001");
-        UI ui = new UI();
-        ui.setLocale(Locale.GERMANY);
-        UI.setCurrent(ui);
+        LocaleContextHolder.setLocale(Locale.GERMANY);
         logs = LoggingTestUtils.captureLogsFor(TimeEntryService.class);
     }
 
     @AfterEach
     public void tearDown() {
         logs.stop();
+        LocaleContextHolder.resetLocaleContext();
     }
 
     @Test

@@ -7,17 +7,16 @@ import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.model.User;
-import com.luxferre.chroniqo.service.event.AbsenceBroadcaster;
-import com.luxferre.chroniqo.service.event.TimeEntryBroadcaster;
-import com.luxferre.chroniqo.service.event.UserBroadcaster;
 import com.luxferre.chroniqo.service.user.UserService;
 import de.focus_shift.jollyday.core.Holiday;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.time.Clock;
 import java.time.DayOfWeek;
@@ -58,9 +57,6 @@ public class SummaryServiceUnitTest {
                 mock(TimeTrackingService.class),
                 mock(UserService.class),
                 mock(PublicHolidayService.class),
-                mock(TimeEntryBroadcaster.class),
-                mock(AbsenceBroadcaster.class),
-                mock(UserBroadcaster.class),
                 Clock.systemDefaultZone());
     }
 
@@ -343,9 +339,6 @@ public class SummaryServiceUnitTest {
 
             spySummaryService = new SummaryService(
                     mock(TimeTrackingService.class), mockUs, mock(PublicHolidayService.class),
-                    mock(TimeEntryBroadcaster.class),
-                    mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class),
                     Clock.systemDefaultZone());
         }
 
@@ -593,9 +586,6 @@ public class SummaryServiceUnitTest {
 
             spySummaryService = new SummaryService(
                     mockTts, mockUs, mockPhs,
-                    mock(TimeEntryBroadcaster.class),
-                    mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class),
                     Clock.systemDefaultZone());
 
             User user = new User();
@@ -606,9 +596,12 @@ public class SummaryServiceUnitTest {
             when(mockPhs.getHolidays(any(), any(), any(Year.class)))
                     .thenReturn(Set.of());
 
-            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
-            ui.setLocale(java.util.Locale.GERMANY);
-            com.vaadin.flow.component.UI.setCurrent(ui);
+            LocaleContextHolder.setLocale(Locale.GERMANY);
+        }
+
+        @AfterEach
+        void tearDown() {
+            LocaleContextHolder.resetLocaleContext();
         }
 
         @Test
@@ -678,9 +671,6 @@ public class SummaryServiceUnitTest {
 
             spySummaryService = new SummaryService(
                     mockTts, mockUs, mockPhs,
-                    mock(TimeEntryBroadcaster.class),
-                    mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class),
                     fixedClock);
 
             User user = new User();
@@ -690,9 +680,12 @@ public class SummaryServiceUnitTest {
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
             when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
 
-            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
-            ui.setLocale(java.util.Locale.GERMANY);
-            com.vaadin.flow.component.UI.setCurrent(ui);
+            LocaleContextHolder.setLocale(Locale.GERMANY);
+        }
+
+        @AfterEach
+        void tearDown() {
+            LocaleContextHolder.resetLocaleContext();
         }
 
         @Test
@@ -738,9 +731,6 @@ public class SummaryServiceUnitTest {
                     mockTts,
                     mockUs,
                     mockPhs,
-                    mock(TimeEntryBroadcaster.class),
-                    mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class),
                     fixedClock);
 
             User user = new User();
@@ -805,9 +795,6 @@ public class SummaryServiceUnitTest {
 
             spySummaryService = new SummaryService(
                     mockTts, mockUs, mockPhs,
-                    mock(TimeEntryBroadcaster.class),
-                    mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class),
                     Clock.systemDefaultZone());
 
             User user = new User();
@@ -817,9 +804,12 @@ public class SummaryServiceUnitTest {
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
             when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
 
-            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
-            ui.setLocale(java.util.Locale.GERMANY);
-            com.vaadin.flow.component.UI.setCurrent(ui);
+            LocaleContextHolder.setLocale(Locale.GERMANY);
+        }
+
+        @AfterEach
+        void tearDown() {
+            LocaleContextHolder.resetLocaleContext();
         }
 
         @Test
@@ -863,9 +853,6 @@ public class SummaryServiceUnitTest {
 
             spySummaryService = new SummaryService(
                     mockTts, mockUs, mockPhs,
-                    mock(TimeEntryBroadcaster.class),
-                    mock(AbsenceBroadcaster.class),
-                    mock(UserBroadcaster.class),
                     Clock.systemDefaultZone());
 
             User user = new User();
@@ -875,9 +862,12 @@ public class SummaryServiceUnitTest {
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
             when(mockPhs.getHolidays(any(), any(), any(Year.class))).thenReturn(Set.of());
 
-            com.vaadin.flow.component.UI ui = new com.vaadin.flow.component.UI();
-            ui.setLocale(java.util.Locale.GERMANY);
-            com.vaadin.flow.component.UI.setCurrent(ui);
+            LocaleContextHolder.setLocale(Locale.GERMANY);
+        }
+
+        @AfterEach
+        void tearDown() {
+            LocaleContextHolder.resetLocaleContext();
         }
 
         @Test

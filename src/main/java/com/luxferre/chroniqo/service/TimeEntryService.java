@@ -5,11 +5,9 @@ import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.TimeEntryStatus;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
-import com.luxferre.chroniqo.service.event.TimeEntryChangedEvent;
 import com.luxferre.chroniqo.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,7 +48,6 @@ public class TimeEntryService {
 
     private final TimeEntryRepository timeEntryRepository;
     private final UserService userService;
-    private final ApplicationEventPublisher eventPublisher;
 
     // Validation constants
     private static final int MIN_BREAK_MINUTES = 0;
@@ -132,8 +129,6 @@ public class TimeEntryService {
         timeEntryRepository.save(entry);
 
         log.info("Time entry saved for date {} with status {}", date, entry.getStatus());
-
-        eventPublisher.publishEvent(new TimeEntryChangedEvent(user, getClass()));
     }
 
     /**
@@ -148,7 +143,6 @@ public class TimeEntryService {
             timeEntryRepository.findByIdAndUser(timeEntryDTO.getId(), user).ifPresent(entry -> {
                 log.info("Deleting time entry {} for date {}", entry.getId(), entry.getDate());
                 timeEntryRepository.delete(entry);
-                eventPublisher.publishEvent(new TimeEntryChangedEvent(user, getClass()));
             });
             return;
         }
@@ -173,7 +167,6 @@ public class TimeEntryService {
         if (!timeEntryList.isEmpty()) {
             timeEntryRepository.deleteAll(timeEntryList);
             log.info("Deleted {} time entries", timeEntryList.size());
-            eventPublisher.publishEvent(new TimeEntryChangedEvent(user, getClass()));
         }
     }
 

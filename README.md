@@ -1,12 +1,12 @@
 # chroniqo
 
-A self-hosted time tracking web application built with Spring Boot and Vaadin.
+A self-hosted time tracking web application built with Spring Boot and React.
 
 Track your working hours, manage absences, and monitor your work-time balance — all in a clean, privacy-friendly interface you host yourself.
 
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.5-green)
-![Vaadin](https://img.shields.io/badge/Vaadin-25-blue)
+![React](https://img.shields.io/badge/React-19-blue)
 ![License](https://img.shields.io/badge/License-AGPL%20v3-blue)
 
 ## ✨ Features
@@ -26,9 +26,10 @@ Track your working hours, manage absences, and monitor your work-time balance �
 | Layer      | Technology                                               |
 |------------|----------------------------------------------------------|
 | Backend    | Java 21, Spring Boot 4, Spring Security, Spring Data JPA |
-| Frontend   | Vaadin 25 (server-side Java UI)                          |
+| Frontend   | React 19, TypeScript, Vite (installable PWA)             |
+| API        | REST/JSON (`/api`), session cookie + CSRF protection     |
 | Database   | MariaDB 11.6                                             |
-| Build      | Maven, Vaadin Maven Plugin                               |
+| Build      | Maven, frontend-maven-plugin (Node/npm)                  |
 | Deployment | Docker, GitHub Container Registry                        |
 
 ## 🚀 Quick Start
@@ -82,7 +83,7 @@ docker compose logs -f chroniqo
 - Java 21+
 - Maven 3.9+
 - MariaDB 11.6+
-- Node.js 18+ (used by Vaadin frontend tooling)
+- Node.js 24+ (only for frontend development; `mvn verify` downloads its own Node)
 
 1. **Set up MariaDB:**
 ```bash
@@ -109,21 +110,30 @@ export REGISTRATION_ENABLED=true
 ```
 
 3. **Run in development mode:**
+
+Backend (API on port 8080):
 ```bash
-mvn spring-boot:run
+mvn spring-boot:run -Dskip.frontend=true
+```
+
+Frontend with hot reload (proxies `/api` to the backend; open `http://localhost:5173`):
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 4. **Build production artifact (optional):**
 ```bash
-mvn clean verify -Pproduction
+mvn clean verify
 java -jar target/chroniqo-*.jar
 ```
 
-The app is available at `http://localhost:8080`.
+The React app is bundled into the JAR and served together with the API at `http://localhost:8080`.
 
 ## ✅ Tests
 
-Run unit/integration tests:
+Run unit/integration tests (backend and frontend):
 
 ```bash
 mvn test
@@ -160,6 +170,7 @@ All configuration is done via environment variables. Use [`.env.example`](.env.e
 | `REGISTRATION_ENABLED`              | Allow new user registration | `false`     |
 | `REMEMBER_ME_SECURE_COOKIE_ENABLED` | Use HTTPS-only cookies      | `true`      |
 | `REMEMBER_ME_COOKIE_DOMAIN`         | Cookie domain               | *(empty)*   |
+| `FORWARD_HEADERS_STRATEGY`          | Set to `framework` behind a reverse proxy that sends `X-Forwarded-*` headers (see below) | `none` |
 | `TZ`                                | Application timezone        | `UTC`       |
 | `APP_VERSION`                       | Displayed version string    | `dev`       |
 
@@ -202,7 +213,8 @@ docker compose -f docker-compose.local.yaml up -d --build
 
 ### Reverse Proxy (Nginx/Traefik)
 
-For production deployments with HTTPS, use a reverse proxy:
+For production deployments with HTTPS, use a reverse proxy and set `FORWARD_HEADERS_STRATEGY=framework`
+so that the application recognizes the original HTTPS request (and marks its cookies as `Secure`):
 
 **Nginx Example:**
 ```nginx

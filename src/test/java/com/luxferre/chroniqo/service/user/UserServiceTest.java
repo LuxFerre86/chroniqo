@@ -9,7 +9,6 @@ import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.service.EmailService;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
-import com.luxferre.chroniqo.service.event.EntityChangedEvent;
 import com.luxferre.chroniqo.util.LoggingTestUtils;
 import ch.qos.logback.classic.Level;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +22,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -61,8 +59,6 @@ public class UserServiceTest {
     private TimeEntryRepository timeEntryRepository;
     @Mock
     private AbsenceRepository absenceRepository;
-    @Mock
-    private ApplicationEventPublisher eventPublisher;
     @Mock
     private AppProperties appProperties;
     @Mock
@@ -120,7 +116,6 @@ public class UserServiceTest {
 
             verify(userRepository).save(any(User.class));
             verify(emailService).sendVerificationEmail(any(User.class));
-            verify(eventPublisher, never()).publishEvent(any());
 
             logs.assertContains(Level.INFO, "User registration completed");
         }
@@ -166,16 +161,17 @@ public class UserServiceTest {
         }
 
         @Test
-        void register_existingEmail_throwsIllegalArgumentException() {
+        void register_existingEmail_throwsEmailAlreadyRegisteredException() {
             when(userRepository.findByEmail("existing@example.com"))
                     .thenReturn(Optional.of(new User()));
 
             assertThatThrownBy(() -> userService.register(
                     registrationRequest("existing@example.com", "pw", "A", "B", 40,
                             null, null)))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(EmailAlreadyRegisteredException.class)
                     .hasMessageContaining("already registered");
 
+            verify(passwordEncoder).encode("pw");
             verify(userRepository, never()).save(any());
             verify(emailService, never()).sendVerificationEmail(any());
 
@@ -322,6 +318,26 @@ public class UserServiceTest {
                     new ServletRequestAttributes(request));
 
             assertThat(userService.autoLogin(user)).isTrue();
+        }
+
+        @Test
+        void autoLogin_withExistingSession_changesSessionIdAndClearsCredentials() {
+            User user = basicUser();
+            when(userDetailsService.loadUserByUsername("user@example.com"))
+                    .thenReturn(userDetails);
+            when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
+
+            HttpServletRequest request = mock(HttpServletRequest.class);
+            HttpSession session = mock(HttpSession.class);
+            when(request.getSession(true)).thenReturn(session);
+            when(session.isNew()).thenReturn(false);
+            RequestContextHolder.setRequestAttributes(
+                    new ServletRequestAttributes(request));
+
+            assertThat(userService.autoLogin(user)).isTrue();
+
+            verify(request).changeSessionId();
+            assertThat(SecurityContextHolder.getContext().getAuthentication().getCredentials()).isNull();
         }
 
         @Test
@@ -574,7 +590,7 @@ public class UserServiceTest {
         }
 
         @Test
-        void updateProfile_publishesUserChangedEvent() {
+        void updateProfile_savesUpdatedUser() {
             User user = new User();
             user.setEmail("user@example.com");
             user.setFirstName("First");
@@ -585,7 +601,7 @@ public class UserServiceTest {
             userService.updateProfile("user@example.com", "First", "Last", 40,
                     User.DEFAULT_WORKING_DAYS, null, null);
 
-            verify(eventPublisher).publishEvent(any(EntityChangedEvent.class));
+            verify(userRepository).save(user);
         }
 
         @Test
@@ -627,7 +643,7 @@ public class UserServiceTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("At least one working day");
 
-            verify(eventPublisher, never()).publishEvent(any());
+            verify(userRepository, never()).save(any());
         }
 
         @Test
@@ -645,7 +661,7 @@ public class UserServiceTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("weeklyTargetHours must be between 0 and 80");
 
-            verify(eventPublisher, never()).publishEvent(any());
+                                verify(userRepository, never()).save(any());
         }
 
         @Test

@@ -9,7 +9,7 @@ Thank you for your interest in contributing! By participating you agree to abide
 - Java 21
 - Maven 3.9+
 - Docker & Docker Compose (for running MariaDB locally)
-- Node.js 18+ (used internally by Vaadin's frontend build)
+- Node.js 24+ (only needed for working on the frontend with `npm`; the Maven build downloads its own Node for `mvn verify`)
 
 ### Getting Started
 
@@ -38,15 +38,32 @@ Thank you for your interest in contributing! By participating you agree to abide
    ```
 
 4. **Run the application**
+
+   Backend (REST API on `http://localhost:8080`, serves the built frontend if present):
    ```bash
-   mvn spring-boot:run
+   mvn spring-boot:run -Dskip.frontend=true
    ```
-   The app will be available at `http://localhost:8080`.
+
+   Frontend with hot reload (in a second terminal, proxies `/api` to the backend):
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   Open `http://localhost:5173`. For local HTTP development set
+   `REMEMBER_ME_SECURE_COOKIE_ENABLED=false` in your `.env`.
 
 5. **Run the tests**
    ```bash
-   mvn verify
+   mvn verify                 # backend + frontend (Vitest) tests and the production frontend build
+   mvn verify -Dskip.frontend=true   # backend only
+   cd frontend && npm test    # frontend only
    ```
+
+### Project layout
+
+- `src/main/java` – Spring Boot backend (`api` = REST controllers/DTOs, `service`, `config` = security)
+- `frontend/` – React + TypeScript + Vite single-page app (PWA); built by the `frontend-maven-plugin` and packaged into the JAR under `static/`
 
 ## Branch Naming
 
@@ -72,7 +89,7 @@ chore: remove unused test dependencies
 - Open PRs against `master`
 - Make sure `mvn verify` passes locally before pushing
 - Keep PRs focused – one logical change per PR
-- The PR pipeline runs tests + a Vaadin production build check automatically
+- The PR pipeline runs backend and frontend tests, the production build, a Docker build and a Trivy scan automatically
 
 ## Reporting Issues
 

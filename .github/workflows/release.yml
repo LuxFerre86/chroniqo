@@ -182,10 +182,10 @@ jobs:
             --notes-file RELEASE_NOTES.md
 
       # -------------------
-      # Maven Production Build
+      # Maven Production Build (bundles the React frontend into the JAR)
       # -------------------
       - name: Build Application
-        run: mvn -B -Pproduction clean package -DskipTests
+        run: mvn -B clean package -DskipTests
 
       # -------------------
       # Docker Setup

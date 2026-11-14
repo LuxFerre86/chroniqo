@@ -74,5 +74,14 @@ class LoginSuccessHandlerTest {
 
         logs.assertContains(Level.INFO, "User login successful");
     }
+
+    @Test
+    void onAuthenticationSuccess_respondsWithNoContent() throws IOException, ServletException {
+        when(authentication.getName()).thenReturn("test@example.com");
+
+        handler.onAuthenticationSuccess(request, response, authentication);
+
+        verify(response).setStatus(HttpServletResponse.SC_NO_CONTENT);
+    }
 }
 

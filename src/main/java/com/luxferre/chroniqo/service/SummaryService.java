@@ -6,15 +6,10 @@ import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.dto.WeeklyProgressDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.User;
-import com.luxferre.chroniqo.service.event.AbsenceBroadcaster;
-import com.luxferre.chroniqo.service.event.BroadcastListener;
-import com.luxferre.chroniqo.service.event.TimeEntryBroadcaster;
-import com.luxferre.chroniqo.service.event.UserBroadcaster;
 import com.luxferre.chroniqo.service.user.UserService;
-import com.vaadin.flow.component.UI;
-import com.vaadin.flow.shared.Registration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -49,9 +44,6 @@ public class SummaryService {
     private final TimeTrackingService timeTrackingService;
     private final UserService userService;
     private final PublicHolidayService publicHolidayService;
-    private final TimeEntryBroadcaster timeEntryBroadcaster;
-    private final AbsenceBroadcaster absenceBroadcaster;
-    private final UserBroadcaster userBroadcaster;
     private final Clock clock;
 
     /**
@@ -66,14 +58,16 @@ public class SummaryService {
     }
 
     /**
-     * Returns summaries for every day of the current ISO week (Monday through
-     * Sunday) relative to the current UI locale.
+     * Returns summaries for every day of the current week. The first day of the
+     * week depends on the locale of the current request (see
+     * {@link LocaleContextHolder}), e.g. Monday for most of Europe and Sunday
+     * for {@code en-US}.
      *
      * @return list of {@link DaySummaryDTO}, one per day
      */
     public List<DaySummaryDTO> getCurrentWeek() {
         LocalDate today = LocalDate.now(clock);
-        WeekFields weekFields = WeekFields.of(UI.getCurrent().getLocale());
+        WeekFields weekFields = WeekFields.of(LocaleContextHolder.getLocale());
         LocalDate weekStart = today.with(weekFields.dayOfWeek(), 1);
         LocalDate weekEnd = today.with(weekFields.dayOfWeek(), 7);
         return getSummary(weekStart, weekEnd);
@@ -149,34 +143,30 @@ public class SummaryService {
 
     /**
      * Returns the aggregated progress towards the user's weekly hour target for
-     * the current ISO week.
+     * the current week (see {@link #getCurrentWeek()}).
      *
      * @return a {@link WeeklyProgressDTO} with worked minutes, target minutes,
      * percentage, and a flag indicating whether a target is configured
      */
     public WeeklyProgressDTO getWeeklyProgress() {
+        return getWeeklyProgress(getCurrentWeek());
+    }
+
+    /**
+     * Aggregates the progress towards the weekly hour target for an already
+     * loaded week, avoiding a second query when the caller needs both.
+     *
+     * @param currentWeek the summaries returned by {@link #getCurrentWeek()}
+     * @return a {@link WeeklyProgressDTO} with worked minutes, target minutes,
+     * percentage, and a flag indicating whether a target is configured
+     */
+    public WeeklyProgressDTO getWeeklyProgress(List<DaySummaryDTO> currentWeek) {
         log.info("Retrieving weekly progress");
-        List<DaySummaryDTO> currentWeek = getCurrentWeek();
         int workedMinutes = currentWeek.stream().mapToInt(DaySummaryDTO::workedMinutes).sum();
         int targetMinutes = currentWeek.stream().mapToInt(DaySummaryDTO::targetMinutes).sum();
         int percentage = targetMinutes > 0 ? (workedMinutes * 100) / targetMinutes : 0;
         boolean hasTarget = targetMinutes > 0;
         return new WeeklyProgressDTO(workedMinutes, targetMinutes, percentage, hasTarget);
-    }
-
-    /**
-     * Registers a broadcast listener for time entry, absence, and user events
-     * for the current user.
-     *
-     * @param listener the listener to register
-     * @return a set of registrations for the listener
-     */
-    public Set<Registration> register(BroadcastListener listener) {
-        User user = userService.getCurrentUser();
-        return Set.of(
-                timeEntryBroadcaster.register(user, listener),
-                absenceBroadcaster.register(user, listener),
-                userBroadcaster.register(user, listener));
     }
 
     /**
