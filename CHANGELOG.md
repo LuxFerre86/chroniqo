@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.11.4] - 2026-11-14
+
+### Fixed
+- log authenticated user instead of anonymous
+
+
+### Maintenance
+- Merge pull request #84 from LuxFerre86/fix/logging-filter-user-context
+
 ## [2026.11.3] - 2026-11-14
 
 ### Fixed
