@@ -11,6 +11,10 @@
   margin: 0 auto;
 }
 
+.page.dash-page {
+  max-width: calc(1100px + 3rem);
+}
+
 .dash__refresh .icon.is-spinning {
   animation: spin 0.8s linear infinite;
 }

@@ -135,7 +135,7 @@ export function DashboardPage() {
   const today = todayIso();
 
   return (
-    <div className="page">
+    <div className="page dash-page">
       <div className="page__header">
         <div>
           <h2 className="page__title">Dashboard</h2>
