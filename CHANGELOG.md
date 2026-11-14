@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.11.6] - 2026-11-14
+
+### Maintenance
+- Merge pull request #86 from LuxFerre86/feature/neutral-future-days
+- Show neutral target on future workdays in month view
+
 ## [2026.11.5] - 2026-11-14
 
 ### Maintenance
