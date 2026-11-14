@@ -56,7 +56,7 @@ describe('AppShell', () => {
 
     const sidebar = screen.getByRole('complementary', { name: 'Main navigation' });
     expect(within(sidebar).getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/');
-    expect(within(sidebar).getByRole('link', { name: 'Monthly View' })).toHaveAttribute('href', '/month');
+    expect(within(sidebar).getByRole('link', { name: 'Month' })).toHaveAttribute('href', '/month');
     expect(within(sidebar).getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
   });
 

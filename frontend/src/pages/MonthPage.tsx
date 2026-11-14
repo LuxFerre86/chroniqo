@@ -296,7 +296,7 @@ export function MonthPage() {
   const [dialogDate, setDialogDate] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = 'Monthly View | chroniqo';
+    document.title = 'Month | chroniqo';
   }, []);
 
   const from = `${ym.year}-01-01`;

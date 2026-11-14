@@ -11,7 +11,7 @@ const SIDEBAR_KEY = 'chroniqo.sidebar.collapsed';
 
 const NAV_ITEMS: { to: string; label: string; icon: IconName; end?: boolean }[] = [
   { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
-  { to: '/month', label: 'Monthly View', icon: 'calendar' },
+  { to: '/month', label: 'Month', icon: 'calendar' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
@@ -32,7 +32,6 @@ export function AppShell() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
-
 
   return (
     <div className={collapsed ? 'shell shell--collapsed' : 'shell'}>
@@ -77,7 +76,7 @@ export function AppShell() {
         {NAV_ITEMS.map((item) => (
           <NavLink key={item.to} to={item.to} end={item.end} className="tabbar__item">
             <Icon name={item.icon} />
-            <span>{item.label.replace('Monthly View', 'Month')}</span>
+            <span>{item.label}</span>
           </NavLink>
         ))}
       </nav>
