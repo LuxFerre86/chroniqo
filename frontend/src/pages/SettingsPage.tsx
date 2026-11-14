@@ -44,10 +44,14 @@ export function SettingsPage() {
         <h1 className="page__title">Settings</h1>
       </div>
       <div className="settings">
-        <ProfileSection />
-        <PasswordSection />
-        <AccountSection />
-        <DangerSection />
+        <div className="settings__col">
+          <ProfileSection />
+        </div>
+        <div className="settings__col">
+          <PasswordSection />
+          <AccountSection />
+          <DangerSection />
+        </div>
       </div>
     </div>
   );
