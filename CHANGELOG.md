@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026.11.12] - 2026-11-14
+
+### Added
+- feat(ui): rounded accent bar on active nav item and nav tooltips (G-06)
+- feat(ui): add direction markers to dashboard balance values (G-03)
+- feat(ui): account menu with avatar replaces name and logout button (G-01)
+
+
+### Maintenance
+- Merge pull request #92 from LuxFerre86/feature/shell-polish
+- chore(ui): unify navigation label to Month; UI audit found no German text (G-05)
+- refactor(ui): replace hard-coded colours with theme tokens (G-04)
+- style(ui): raise tertiary text contrast to AA and min font size to 12px (G-02)
+
 ## [2026.11.11] - 2026-11-14
 
 ### Maintenance
