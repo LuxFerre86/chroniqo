@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026.11.1] - 2026-11-14
+
+### Maintenance
+- Merge pull request #81 from LuxFerre86/fix/github-actions-deprecations
+- ci: update GitHub Actions to Node 24 versions and pin ubuntu-24.04
+
 ## [2026.11.0] - 2026-11-14
 
 ### Added
