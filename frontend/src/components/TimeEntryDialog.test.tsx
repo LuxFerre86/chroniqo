@@ -61,6 +61,18 @@ describe('TimeEntryDialog', () => {
     vi.mocked(api.deleteAbsences).mockResolvedValue(undefined);
   });
 
+  it('rejects times that are not valid 24-hour values', async () => {
+    const user = userEvent.setup();
+    renderDialog();
+
+    await screen.findByText('New booking');
+    fireEvent.change(screen.getByLabelText(/Start time/), { target: { value: '25:99' } });
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('HH:MM (24-hour)');
+    expect(api.createTimeEntry).not.toHaveBeenCalled();
+  });
+
   it('renders nothing without a date', () => {
     render(<TimeEntryDialog date={null} onClose={() => undefined} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

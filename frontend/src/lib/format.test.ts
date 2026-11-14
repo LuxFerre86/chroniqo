@@ -4,6 +4,8 @@ import {
   formatClock,
   formatHours,
   formatLongBalance,
+  isTime24h,
+  normalizeTime,
   formatMinutes,
   formatSignedClock,
   trimSeconds,
@@ -116,5 +118,22 @@ describe('worked', () => {
   it('never returns a negative duration', () => {
     expect(worked('08:00', '08:30', 60)).toBe(0);
     expect(worked('17:00', '08:00', 0)).toBe(0);
+  });
+});
+
+describe('normalizeTime', () => {
+  it('completes lenient 24-hour input', () => {
+    expect(normalizeTime('9')).toBe('09:00');
+    expect(normalizeTime('930')).toBe('09:30');
+    expect(normalizeTime('1730')).toBe('17:30');
+    expect(normalizeTime('9:5')).toBe('09:05');
+    expect(normalizeTime('')).toBe('');
+  });
+
+  it('leaves invalid input untouched', () => {
+    expect(normalizeTime('25:00')).toBe('25:00');
+    expect(normalizeTime('abc')).toBe('abc');
+    expect(isTime24h('08:15')).toBe(true);
+    expect(isTime24h('8:15')).toBe(false);
   });
 });

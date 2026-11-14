@@ -5,7 +5,7 @@ import { api } from '../api/endpoints';
 import { ApiError } from '../api/http';
 import type { AbsenceType, TimeEntry } from '../api/types';
 import { formatShortDate } from '../lib/dates';
-import { formatMinutes, trimSeconds, worked } from '../lib/format';
+import { formatMinutes, isTime24h, normalizeTime, trimSeconds, worked } from '../lib/format';
 import { invalidateTimeData, queryKeys } from '../lib/queries';
 import { Button } from './Button';
 import { NumberField, TextAreaField, TextField } from './fields';
@@ -182,11 +182,16 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const saveWorking = () =>
     run(async () => {
       if (!editor.date) throw new ValidationError('Date cannot be null');
-      if (!editor.startTime) throw new ValidationError('Start time is mandatory');
+      const startTime = normalizeTime(editor.startTime);
+      const endTime = normalizeTime(editor.endTime);
+      if (!startTime) throw new ValidationError('Start time is mandatory');
+      if (!isTime24h(startTime) || (endTime && !isTime24h(endTime))) {
+        throw new ValidationError('Enter times as HH:MM (24-hour), e.g. 08:30');
+      }
       const payload = {
         date: editor.date,
-        startTime: editor.startTime,
-        endTime: editor.endTime || null,
+        startTime,
+        endTime: endTime || null,
         breakMinutes: editor.breakMinutes,
         notes: editor.notes.trim() || null,
       };
@@ -398,18 +403,26 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
                   )}
                   <TextField
                     label="Start time"
-                    type="time"
-                    step={300}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="HH:MM"
+                    maxLength={5}
+                    autoComplete="off"
                     required
                     value={editor.startTime}
                     onChange={(e) => patchEditor({ startTime: e.target.value })}
+                    onBlur={() => patchEditor({ startTime: normalizeTime(editor.startTime) })}
                   />
                   <TextField
                     label="End time"
-                    type="time"
-                    step={300}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="HH:MM"
+                    maxLength={5}
+                    autoComplete="off"
                     value={editor.endTime}
                     onChange={(e) => patchEditor({ endTime: e.target.value })}
+                    onBlur={() => patchEditor({ endTime: normalizeTime(editor.endTime) })}
                   />
                   <NumberField
                     className="dialog-grid__full"
