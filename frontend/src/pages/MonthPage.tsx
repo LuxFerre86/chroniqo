@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
 import { useAuth } from '../auth/AuthContext';
@@ -32,6 +32,12 @@ const WEEKEND_INDICES = [5, 6];
 const SHORT_MONTHS = Array.from({ length: 12 }, (_, i) =>
   new Date(2000, i, 1).toLocaleDateString('en-US', { month: 'short' }),
 );
+const HEAT_FALLBACK_MINUTES = 480;
+const ABSENCE_LEGEND: { type: DaySummary['absenceType']; label: string }[] = [
+  { type: 'HOLIDAY', label: 'Public holiday' },
+  { type: 'VACATION', label: 'Vacation' },
+  { type: 'SICK', label: 'Sick leave' },
+];
 const MIN_YEAR = 2000;
 const MAX_YEAR = 2050;
 
@@ -64,12 +70,14 @@ function StatSection({
   value,
   tone,
   sub,
+  hint,
 }: {
   kind: 'target' | 'worked' | 'balance';
   label: string;
   value: string;
   tone?: 'positive' | 'negative';
   sub?: { label: string; value: string; tone: 'positive' | 'negative' };
+  hint?: string;
 }) {
   return (
     <div className={`month-stat month-stat--${kind}`}>
@@ -77,6 +85,7 @@ function StatSection({
       <div className="month-stat__value">
         <span className={`month-stat__month${tone ? ` is-${tone}` : ''}`}>{value}</span>
       </div>
+      {hint && <div className="month-stat__sub">{hint}</div>}
       {sub && (
         <div className="month-stat__sub">
           {sub.label} <span className={`is-${sub.tone}`}>{sub.value}</span>
@@ -105,7 +114,7 @@ function DayCard({
   const balance = day?.balanceMinutes ?? 0;
   const target = day?.targetMinutes ?? 0;
   const showTarget = isFuture && workday && target > 0 && worked === 0;
-  const showWorked = !!day && !showTarget && (workday || worked > 0);
+  const showWorked = !showTarget && worked > 0;
   const showBalance = !!day && !showTarget && (workday || balance > 0);
   const hasBadge = !!day?.absenceType && !!day.absenceLabel;
 
@@ -119,7 +128,18 @@ function DayCard({
     .filter(Boolean)
     .join(', ');
 
-  const classes = ['day', isToday ? 'day--today' : '', workday ? '' : 'day--off'].filter(Boolean).join(' ');
+  const isEmpty = worked === 0 && !hasBadge && (isFuture || !workday);
+  const isWeekend = WEEKEND_INDICES.includes(weekdayIndex(parseIsoDate(iso)));
+  const classes = [
+    'day',
+    isToday ? 'day--today' : '',
+    workday ? '' : 'day--off',
+    isWeekend ? 'day--weekend' : '',
+    isEmpty ? 'day--empty' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const heat = !isFuture && worked > 0 ? Math.min(1, worked / (target > 0 ? target : HEAT_FALLBACK_MINUTES)) : 0;
 
   return (
     <div
@@ -129,6 +149,7 @@ function DayCard({
       aria-label={label}
       aria-current={isToday ? 'date' : undefined}
       data-date={iso}
+      style={heat > 0 ? ({ '--heat': heat.toFixed(2) } as CSSProperties) : undefined}
       onClick={() => onOpen(iso)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -141,7 +162,11 @@ function DayCard({
         <span className="day__weekday">{WEEKDAYS[weekdayIndex(parseIsoDate(iso))]}</span>
         <span className="day__num">{dayNumber}</span>
       </div>
-      {hasBadge && <span className={`day__badge ${badgeClass(day?.absenceType ?? null)}`}>{day?.absenceLabel}</span>}
+      {hasBadge && (
+        <span className={`day__badge ${badgeClass(day?.absenceType ?? null)}`} title={day?.absenceLabel ?? undefined}>
+          {day?.absenceLabel}
+        </span>
+      )}
       {showTarget && (
         <div className="day__figures">
           <span className="day__target">Target {formatMinutes(target)}</span>
@@ -157,6 +182,39 @@ function DayCard({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function WeekHeader({
+  ym,
+  startDay,
+  endDay,
+  byDate,
+}: {
+  ym: YearMonth;
+  startDay: number;
+  endDay: number;
+  byDate: Map<string, DaySummary>;
+}) {
+  let worked = 0;
+  let target = 0;
+  for (let d = startDay; d <= endDay; d++) {
+    const day = byDate.get(isoOf(ym, d));
+    worked += day?.workedMinutes ?? 0;
+    target += day?.targetMinutes ?? 0;
+  }
+  const range =
+    startDay === endDay
+      ? formatShortDate(isoOf(ym, startDay))
+      : `${formatShortDate(isoOf(ym, startDay))} – ${formatShortDate(isoOf(ym, endDay))}`;
+
+  return (
+    <div className="week-head">
+      <span className="week-head__range">{range}</span>
+      <span className="week-head__sum">
+        <strong>{formatMinutes(worked)}</strong> / {formatMinutes(target)}
+      </span>
     </div>
   );
 }
@@ -202,7 +260,12 @@ function MonthPicker({
       }
     >
       <div className="month-picker">
-        <SelectField label="Year" value={String(year)} options={years} onChange={(e) => setYear(Number(e.target.value))} />
+        <SelectField
+          label="Year"
+          value={String(year)}
+          options={years}
+          onChange={(e) => setYear(Number(e.target.value))}
+        />
         <div className="month-picker__grid">
           {SHORT_MONTHS.map((name, i) => {
             const ym = { year, month: i + 1 };
@@ -250,10 +313,18 @@ export function MonthPage() {
   const monthTotals = useMemo(() => totalsFor(data ?? [], today, ym.month), [data, today, ym.month]);
   const yearTotals = useMemo(() => totalsFor(data ?? [], today), [data, today]);
 
+  const legend = useMemo(() => {
+    const prefix = `0${ym.month}`.slice(-2);
+    const present = new Set((data ?? []).filter((d) => d.date.slice(5, 7) === prefix).map((d) => d.absenceType));
+    return ABSENCE_LEGEND.filter((item) => present.has(item.type));
+  }, [data, ym.month]);
+
   const total = daysInMonth(ym);
   const firstDay = user?.firstDayOfWeek ?? 'MONDAY';
   const leading = firstWeekdayIndex(ym, firstDay);
   const headerOrder = weekdayOrder(firstDay);
+  const isFutureMonth = ym.year * 12 + ym.month > current.year * 12 + current.month;
+  const hint = sameMonth(ym, current) ? 'up to today' : isFutureMonth ? 'not started yet' : 'full month';
   const tone = (n: number) => (n >= 0 ? 'positive' : 'negative');
 
   const selectMonth = (next: YearMonth) => {
@@ -302,14 +373,18 @@ export function MonthPage() {
       ) : (
         <>
           <section className="card month-stats" aria-label="Statistics">
-            <StatSection kind="target" label="Target hours" value={formatMinutes(monthTotals.target)} />
-            <StatSection kind="worked" label="Worked hours" value={formatMinutes(monthTotals.worked)} />
+            <StatSection kind="target" label="Target hours" value={formatMinutes(monthTotals.target)} hint={hint} />
+            <StatSection kind="worked" label="Worked hours" value={formatMinutes(monthTotals.worked)} hint={hint} />
             <StatSection
               kind="balance"
               label="Balance"
               value={formatBalance(monthTotals.balance)}
               tone={tone(monthTotals.balance)}
-              sub={{ label: `Year ${ym.year}`, value: formatBalance(yearTotals.balance), tone: tone(yearTotals.balance) }}
+              sub={{
+                label: `Year ${ym.year}`,
+                value: formatBalance(yearTotals.balance),
+                tone: tone(yearTotals.balance),
+              }}
             />
           </section>
 
@@ -328,17 +403,36 @@ export function MonthPage() {
             ))}
             {Array.from({ length: total }, (_, i) => {
               const iso = isoOf(ym, i + 1);
+              const weekStart = i === 0 || (leading + i) % 7 === 0;
               return (
-                <DayCard
-                  key={iso}
-                  iso={iso}
-                  day={byDate.get(iso)}
-                  today={today}
-                  onOpen={setDialogDate}
-                />
+                <Fragment key={iso}>
+                  {weekStart && (
+                    <WeekHeader
+                      ym={ym}
+                      startDay={i + 1}
+                      endDay={Math.min(total, i + 7 - ((leading + i) % 7))}
+                      byDate={byDate}
+                    />
+                  )}
+                  <DayCard iso={iso} day={byDate.get(iso)} today={today} onOpen={setDialogDate} />
+                </Fragment>
               );
             })}
           </div>
+
+          {legend.length > 0 && (
+            <ul className="cal-legend" aria-label="Legend">
+              {legend.map((item) => (
+                <li key={item.type} className="cal-legend__item">
+                  <span
+                    className={`cal-legend__dot badge--${(item.type ?? 'holiday').toLowerCase()}`}
+                    aria-hidden="true"
+                  />
+                  {item.label}
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       )}
 

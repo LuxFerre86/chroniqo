@@ -131,13 +131,16 @@
 }
 
 .day {
+  --day-base: linear-gradient(135deg, hsl(220, 20%, 14%), hsl(220, 20%, 12%));
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto 1fr;
   min-height: 120px;
   padding: 0.75rem;
-  background: linear-gradient(135deg, hsl(220, 20%, 14%), hsl(220, 20%, 12%));
+  background:
+    linear-gradient(hsla(38, 92%, 58%, calc(var(--heat, 0) * 0.14)), hsla(38, 92%, 58%, calc(var(--heat, 0) * 0.14))),
+    var(--day-base);
   border: 1px solid hsla(32, 30%, 50%, 0.1);
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -146,7 +149,17 @@
 }
 
 .day--off {
-  opacity: 0.75;
+  --day-base: linear-gradient(hsl(220, 16%, 10.5%), hsl(220, 16%, 10.5%));
+  border-color: hsla(32, 30%, 50%, 0.06);
+  box-shadow: none;
+}
+
+.day--weekend {
+  --day-base: linear-gradient(hsl(225, 22%, 9.5%), hsl(225, 22%, 9.5%));
+}
+
+.day--off .day__num {
+  color: var(--secondary-text-color);
 }
 
 .day--today {
@@ -260,6 +273,72 @@
   box-shadow: inset 0 0 0 1px hsla(8, 85%, 58%, 0.4);
 }
 
+/* Desktop: absences are shown as a colored dot, the label is kept for assistive tech and the tooltip */
+@media (min-width: 701px) {
+  .day__badge {
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    font-size: 0;
+  }
+
+  .day__badge.badge--holiday {
+    background: hsl(38, 92%, 58%);
+  }
+
+  .day__badge.badge--vacation {
+    background: hsl(145, 60%, 48%);
+  }
+
+  .day__badge.badge--sick {
+    background: hsl(210, 15%, 62%);
+  }
+}
+
+/* ===== Legend ===== */
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-top: 1rem;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--secondary-text-color);
+}
+
+.cal-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cal-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.cal-legend__dot.badge--holiday {
+  background: hsl(38, 92%, 58%);
+}
+
+.cal-legend__dot.badge--vacation {
+  background: hsl(145, 60%, 48%);
+}
+
+.cal-legend__dot.badge--sick {
+  background: hsl(210, 15%, 62%);
+}
+
+@media (max-width: 700px) {
+  .cal-legend {
+    display: none;
+  }
+}
+
 /* ===== Month picker ===== */
 .month-picker {
   display: flex;
@@ -280,6 +359,11 @@
 .month-picker__grid .btn--current {
   border-color: hsla(38, 40%, 60%, 0.45);
   color: var(--body-text-color);
+}
+
+/* ===== Week headers (phones only) ===== */
+.week-head {
+  display: none;
 }
 
 /* ===== Phones: vertical list ===== */
@@ -350,6 +434,35 @@
   .cal__head,
   .cal__pad {
     display: none;
+  }
+
+  .week-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 4px 0;
+    font-size: 12px;
+    letter-spacing: 0.4px;
+    color: var(--secondary-text-color);
+  }
+
+  .week-head:first-child {
+    padding-top: 0;
+  }
+
+  .week-head__sum strong {
+    color: var(--body-text-color);
+    font-weight: 600;
+  }
+
+  .day--empty {
+    min-height: 44px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .day--empty .day__num {
+    font-size: 20px;
   }
 
   .day {

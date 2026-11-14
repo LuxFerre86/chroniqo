@@ -112,6 +112,7 @@ describe('MonthPage', () => {
     expect(api.getSummary).toHaveBeenCalledWith('2026-01-01', '2026-12-31');
 
     // target and worked: Nov 2 + Nov 3 only (the 16th is in the future); year balance additionally includes Oct 30
+    expect(within(stats).getAllByText('up to today')).toHaveLength(2);
     expect(within(stats).getByText('15:36 h')).toBeInTheDocument();
     expect(within(stats).getByText('14:38 h')).toBeInTheDocument();
     expect(within(stats).getByText('-0:58 h')).toHaveClass('is-negative');
@@ -151,6 +152,57 @@ describe('MonthPage', () => {
     const today = screen.getByRole('button', { name: /^14\.11\.2026/ });
     expect(today).toHaveClass('day--today');
     expect(screen.getAllByRole('button', { name: /^\d\d\.11\.2026/ })).toHaveLength(30);
+  });
+
+  it('colors worked days by intensity and hides empty 0:00 figures', async () => {
+    vi.mocked(api.getSummary).mockResolvedValue([...SUMMARIES, day('2026-11-04')]);
+    renderPage();
+
+    const worked = await screen.findByRole('button', { name: /^02\.11\.2026/ });
+    expect(worked.style.getPropertyValue('--heat')).toBe('0.88');
+
+    const empty = screen.getByRole('button', { name: /^04\.11\.2026/ });
+    expect(empty.style.getPropertyValue('--heat')).toBe('');
+    expect(within(empty).queryByText('0:00 h')).not.toBeInTheDocument();
+    expect(within(empty).getByText('-7:48 h')).toHaveClass('balance-negative');
+  });
+
+  it('marks days off and weekends with their own surface classes', async () => {
+    renderPage();
+
+    const saturday = await screen.findByRole('button', { name: /^07\.11\.2026/ });
+    expect(saturday).toHaveClass('day--off', 'day--weekend');
+    const holiday = screen.getByRole('button', { name: /^11\.11\.2026/ });
+    expect(holiday).toHaveClass('day--off');
+    expect(holiday).not.toHaveClass('day--weekend');
+  });
+
+  it('renders week headers with date range and weekly sums that are not buttons', async () => {
+    renderPage();
+
+    await screen.findByLabelText('Statistics');
+    const heads = document.querySelectorAll('.week-head');
+    expect(heads).toHaveLength(6);
+    expect(heads[1].textContent).toMatch(/^02\.11\.2026 . 08\.11\.2026/);
+    expect(screen.getByLabelText('Legend')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /â€“/ })).toBeNull();
+  });
+
+  it('marks empty future and off days as compact', async () => {
+    renderPage();
+
+    const future = await screen.findByRole('button', { name: /^16\.11\.2026/ });
+    expect(future).toHaveClass('day--empty');
+    expect(screen.getByRole('button', { name: /^07\.11\.2026/ })).toHaveClass('day--empty');
+    expect(screen.getByRole('button', { name: /^02\.11\.2026/ })).not.toHaveClass('day--empty');
+  });
+
+  it('lists only the absence types present in the month in the legend', async () => {
+    renderPage();
+
+    const legend = await screen.findByRole('list', { name: 'Legend' });
+    expect(within(legend).getByText('Public holiday')).toBeInTheDocument();
+    expect(within(legend).queryByText('Vacation')).not.toBeInTheDocument();
   });
 
   it('navigates between months without refetching the year and offers a Today shortcut', async () => {
