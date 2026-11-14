@@ -3,8 +3,8 @@ import {
   formatBalance,
   formatClock,
   formatHours,
+  formatLongBalance,
   formatMinutes,
-  formatRunningBalance,
   formatSignedClock,
   trimSeconds,
   worked,
@@ -56,14 +56,14 @@ describe('formatSignedClock', () => {
   });
 });
 
-describe('formatRunningBalance', () => {
-  it('renders exactly zero without a sign', () => {
-    expect(formatRunningBalance(0)).toBe('0:00');
+describe('formatLongBalance', () => {
+  it('renders zero without a sign', () => {
+    expect(formatLongBalance(0)).toBe('0 h 0 min');
   });
 
-  it('renders non-zero values signed', () => {
-    expect(formatRunningBalance(75)).toBe('+1:15');
-    expect(formatRunningBalance(-75)).toBe('-1:15');
+  it('renders signed values with thousands separator and a real minus', () => {
+    expect(formatLongBalance(75)).toBe('+1 h 15 min');
+    expect(formatLongBalance(-103668)).toBe('\u22121,727 h 48 min');
   });
 });
 

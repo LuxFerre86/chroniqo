@@ -5,7 +5,7 @@ import { api } from '../api/endpoints';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { TimeEntryDialog } from '../components/TimeEntryDialog';
-import { formatClock, formatHours, formatRunningBalance, formatSignedClock } from '../lib/format';
+import { formatClock, formatHours, formatLongBalance, formatSignedClock } from '../lib/format';
 import { formatLongDate, parseIsoDate, todayIso, weekdayShort } from '../lib/dates';
 import { queryKeys } from '../lib/queries';
 import type { Dashboard, DaySummary } from '../api/types';
@@ -39,15 +39,15 @@ function TodayCard({ today }: { today: DaySummary | null }) {
   );
 }
 
-function BalanceCard({ minutes }: { minutes: number }) {
+function BalanceCard({ minutes, year }: { minutes: number; year: string }) {
   return (
     <section className="card dash-stat" aria-label="Current balance">
-      <div className="dash__label">Current balance</div>
+      <div className="dash__label">Current balance ({year})</div>
       <div
         className={`dash-stat__value dash-stat__value--${minutes >= 0 ? 'positive' : 'negative'}`}
         data-testid="current-balance"
       >
-        {formatRunningBalance(minutes)}
+        {formatLongBalance(minutes)}
       </div>
     </section>
   );
@@ -182,7 +182,7 @@ export function DashboardPage() {
           </div>
 
           <div className="dash-stats">
-            <BalanceCard minutes={data.currentBalanceMinutes} />
+            <BalanceCard minutes={data.currentBalanceMinutes} year={today.slice(0, 4)} />
             <WeeklyProgressCard progress={data.weeklyProgress} />
           </div>
 

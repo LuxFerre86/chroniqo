@@ -28,9 +28,11 @@ export function formatSignedClock(minutes: number): string {
   return `${minutes >= 0 ? '+' : sign}${hours}:${String(mins).padStart(2, '0')}`;
 }
 
-/** Running balance: "0:00" when exactly zero, otherwise signed. */
-export function formatRunningBalance(minutes: number): string {
-  return minutes === 0 ? '0:00' : formatSignedClock(minutes);
+/** "−1,723 h 48 min" – long-form signed duration with a real minus sign; zero is unsigned. */
+export function formatLongBalance(minutes: number): string {
+  const { hours, mins } = split(minutes);
+  const sign = minutes < 0 ? '\u2212' : minutes > 0 ? '+' : '';
+  return `${sign}${hours.toLocaleString('en-US')} h ${mins} min`;
 }
 
 /** "8h" or "8:10h" – used for chart labels and weekly progress. */
