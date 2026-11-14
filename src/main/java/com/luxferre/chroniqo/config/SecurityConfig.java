@@ -2,6 +2,7 @@ package com.luxferre.chroniqo.config;
 
 import com.luxferre.chroniqo.service.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -16,7 +17,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
-import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.util.StringUtils;
@@ -115,8 +116,8 @@ public class SecurityConfig {
         http.headers(headers -> headers
                 .contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY)));
 
-        // Add logging filter to include user in MDC
-        http.addFilterBefore(loggingFilter, SecurityContextHolderFilter.class);
+        // Must run after session and remember-me authentication so the user is already resolved
+        http.addFilterAfter(loggingFilter, AnonymousAuthenticationFilter.class);
 
         return http.build();
     }
@@ -211,5 +212,21 @@ public class SecurityConfig {
     @Bean
     public LoggingFilter loggingFilter(UserService userService) {
         return new LoggingFilter(userService);
+    }
+
+    /**
+     * Prevents Spring Boot from additionally registering the {@link LoggingFilter}
+     * as a servlet filter. Outside the security chain it would run before
+     * authentication and, being a once-per-request filter, suppress the
+     * execution inside the chain.
+     *
+     * @param loggingFilter the logging filter
+     * @return a disabled registration for the filter
+     */
+    @Bean
+    public FilterRegistrationBean<LoggingFilter> loggingFilterRegistration(LoggingFilter loggingFilter) {
+        FilterRegistrationBean<LoggingFilter> registration = new FilterRegistrationBean<>(loggingFilter);
+        registration.setEnabled(false);
+        return registration;
     }
 }
