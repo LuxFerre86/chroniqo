@@ -6,6 +6,7 @@ export type IconName =
   | 'refresh'
   | 'chevron-left'
   | 'chevron-right'
+  | 'chevron-down'
   | 'edit'
   | 'trash'
   | 'eye'
@@ -39,6 +40,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   ),
   'chevron-left': <polyline points="15 18 9 12 15 6" />,
   'chevron-right': <polyline points="9 18 15 12 9 6" />,
+  'chevron-down': <polyline points="6 9 12 15 18 9" />,
   edit: (
     <>
       <path d="M12 20h9" />

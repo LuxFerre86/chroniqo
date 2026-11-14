@@ -137,7 +137,7 @@
 
 /* ===== Cards ===== */
 .card {
-  background: linear-gradient(145deg, hsl(215, 22%, 12%) 0%, hsl(215, 22%, 10%) 100%);
+  background: linear-gradient(145deg, var(--surface-1) 0%, hsl(215, 22%, 10%) 100%);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-l);
   box-shadow: var(--shadow-s), inset 0 1px 0 hsla(38, 50%, 70%, 0.04);
@@ -227,7 +227,7 @@ select.field__input {
 }
 
 select.field__input option {
-  background: hsl(215, 22%, 12%);
+  background: var(--surface-1);
   color: var(--body-text-color);
 }
 
@@ -364,7 +364,7 @@ select.field__input option {
 
 .notice--success {
   background: var(--success-color-10pct);
-  border: 1px solid hsla(142, 70%, 48%, 0.4);
+  border: 1px solid var(--positive-border);
   color: var(--success-text-color);
 }
 
@@ -437,11 +437,11 @@ select.field__input option {
 }
 
 .tone-positive {
-  color: hsl(145, 75%, 55%);
+  color: var(--positive);
 }
 
 .tone-negative {
-  color: hsl(8, 85%, 65%);
+  color: var(--negative);
 }
 
 .progress {
