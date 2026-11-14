@@ -260,8 +260,8 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const footer =
     mode === null ? undefined : (
       <>
-        <Button type="submit" form={formId} variant="primary" loading={busy}>
-          Save changes
+        <Button variant="tertiary" onClick={onClose}>
+          Close
         </Button>
         {mode === 'WORKING' && editor.id && (
           <Button variant="error" disabled={busy} onClick={() => void deleteBooking(editor.id as string)}>
@@ -273,8 +273,8 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
             {mode === 'SICK' ? 'Remove sick leave' : 'Remove vacation'}
           </Button>
         )}
-        <Button variant="tertiary" onClick={onClose}>
-          Close
+        <Button type="submit" form={formId} variant="primary" className="modal__primary" loading={busy}>
+          Save changes
         </Button>
       </>
     );

@@ -516,6 +516,10 @@ select.field__input option {
   background: hsla(220, 20%, 10%, 0.5);
 }
 
+.modal__footer .modal__primary {
+  margin-left: auto;
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -559,6 +563,10 @@ select.field__input option {
   .modal__footer {
     flex-direction: column-reverse;
     padding: 0.9rem 1rem calc(0.9rem + var(--safe-bottom));
+  }
+
+  .modal__footer .modal__primary {
+    margin-left: 0;
   }
 
   .modal__footer .btn {
