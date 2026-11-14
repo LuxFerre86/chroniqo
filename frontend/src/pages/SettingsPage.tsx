@@ -7,9 +7,10 @@ import { DAYS_OF_WEEK } from '../api/types';
 import type { DayOfWeekName } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../components/Button';
-import { Checkbox, NumberField, PasswordField, SelectField, TextField } from '../components/fields';
+import { NumberField, PasswordField, SelectField, TextField } from '../components/fields';
 import { Modal } from '../components/Modal';
 import { useToast } from '../components/Toast';
+import { weekdayOrder } from '../lib/dates';
 import { passwordHelperText, validatePassword } from '../lib/password';
 import { invalidateTimeData, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
 import '../styles/settings.css';
@@ -44,10 +45,14 @@ export function SettingsPage() {
         <h1 className="page__title">Settings</h1>
       </div>
       <div className="settings">
-        <ProfileSection />
-        <PasswordSection />
-        <AccountSection />
-        <DangerSection />
+        <div className="settings__col">
+          <ProfileSection />
+        </div>
+        <div className="settings__col">
+          <PasswordSection />
+          <AccountSection />
+          <DangerSection />
+        </div>
       </div>
     </div>
   );
@@ -181,15 +186,21 @@ function ProfileSection() {
           <span className="field__label" id={workingDaysId}>
             Working Days
           </span>
-          <div className="checkbox-group">
-            {DAYS_OF_WEEK.map((day) => (
-              <Checkbox
-                key={day}
-                label={DAY_LABELS[day]}
-                checked={workingDays.includes(day)}
-                onChange={(e) => toggleDay(day, e.target.checked)}
-              />
-            ))}
+          <div className="day-chips">
+            {weekdayOrder(user?.firstDayOfWeek).map((i) => {
+              const day = DAYS_OF_WEEK[i];
+              return (
+                <label key={day} className="day-chip">
+                  <input
+                    type="checkbox"
+                    aria-label={DAY_LABELS[day]}
+                    checked={workingDays.includes(day)}
+                    onChange={(e) => toggleDay(day, e.target.checked)}
+                  />
+                  <span aria-hidden="true">{DAY_LABELS[day].slice(0, 3)}</span>
+                </label>
+              );
+            })}
           </div>
           <span className="field__helper">Select the days you are scheduled to work</span>
         </div>
@@ -288,7 +299,6 @@ function PasswordSection() {
 
 function AccountSection() {
   const { user } = useAuth();
-  const config = useAppConfig();
 
   return (
     <section className="card settings__section" aria-labelledby="settings-account">
@@ -305,10 +315,6 @@ function AccountSection() {
           <div className="settings__stat-value">{datePart(user?.lastLoginAt, 'Never')}</div>
         </div>
       </div>
-      <p className="settings__meta">
-        {user && <span>{user.email}</span>}
-        {config.version && <span>{config.version}</span>}
-      </p>
     </section>
   );
 }
