@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
 import { useAuth } from '../auth/AuthContext';
@@ -128,8 +128,15 @@ function DayCard({
     .filter(Boolean)
     .join(', ');
 
+  const isEmpty = worked === 0 && !hasBadge && (isFuture || !workday);
   const isWeekend = WEEKEND_INDICES.includes(weekdayIndex(parseIsoDate(iso)));
-  const classes = ['day', isToday ? 'day--today' : '', workday ? '' : 'day--off', isWeekend ? 'day--weekend' : '']
+  const classes = [
+    'day',
+    isToday ? 'day--today' : '',
+    workday ? '' : 'day--off',
+    isWeekend ? 'day--weekend' : '',
+    isEmpty ? 'day--empty' : '',
+  ]
     .filter(Boolean)
     .join(' ');
   const heat = !isFuture && worked > 0 ? Math.min(1, worked / (target > 0 ? target : HEAT_FALLBACK_MINUTES)) : 0;
@@ -175,6 +182,39 @@ function DayCard({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function WeekHeader({
+  ym,
+  startDay,
+  endDay,
+  byDate,
+}: {
+  ym: YearMonth;
+  startDay: number;
+  endDay: number;
+  byDate: Map<string, DaySummary>;
+}) {
+  let worked = 0;
+  let target = 0;
+  for (let d = startDay; d <= endDay; d++) {
+    const day = byDate.get(isoOf(ym, d));
+    worked += day?.workedMinutes ?? 0;
+    target += day?.targetMinutes ?? 0;
+  }
+  const range =
+    startDay === endDay
+      ? formatShortDate(isoOf(ym, startDay))
+      : `${formatShortDate(isoOf(ym, startDay))} – ${formatShortDate(isoOf(ym, endDay))}`;
+
+  return (
+    <div className="week-head">
+      <span className="week-head__range">{range}</span>
+      <span className="week-head__sum">
+        <strong>{formatMinutes(worked)}</strong> / {formatMinutes(target)}
+      </span>
     </div>
   );
 }
@@ -363,7 +403,20 @@ export function MonthPage() {
             ))}
             {Array.from({ length: total }, (_, i) => {
               const iso = isoOf(ym, i + 1);
-              return <DayCard key={iso} iso={iso} day={byDate.get(iso)} today={today} onOpen={setDialogDate} />;
+              const weekStart = i === 0 || (leading + i) % 7 === 0;
+              return (
+                <Fragment key={iso}>
+                  {weekStart && (
+                    <WeekHeader
+                      ym={ym}
+                      startDay={i + 1}
+                      endDay={Math.min(total, i + 7 - ((leading + i) % 7))}
+                      byDate={byDate}
+                    />
+                  )}
+                  <DayCard iso={iso} day={byDate.get(iso)} today={today} onOpen={setDialogDate} />
+                </Fragment>
+              );
             })}
           </div>
 

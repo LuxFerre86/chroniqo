@@ -361,6 +361,11 @@
   color: var(--body-text-color);
 }
 
+/* ===== Week headers (phones only) ===== */
+.week-head {
+  display: none;
+}
+
 /* ===== Phones: vertical list ===== */
 @media (max-width: 700px) {
   .month-nav {
@@ -429,6 +434,35 @@
   .cal__head,
   .cal__pad {
     display: none;
+  }
+
+  .week-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 4px 0;
+    font-size: 12px;
+    letter-spacing: 0.4px;
+    color: var(--secondary-text-color);
+  }
+
+  .week-head:first-child {
+    padding-top: 0;
+  }
+
+  .week-head__sum strong {
+    color: var(--body-text-color);
+    font-weight: 600;
+  }
+
+  .day--empty {
+    min-height: 44px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .day--empty .day__num {
+    font-size: 20px;
   }
 
   .day {

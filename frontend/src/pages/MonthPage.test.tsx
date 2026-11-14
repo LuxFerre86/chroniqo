@@ -177,6 +177,26 @@ describe('MonthPage', () => {
     expect(holiday).not.toHaveClass('day--weekend');
   });
 
+  it('renders week headers with date range and weekly sums that are not buttons', async () => {
+    renderPage();
+
+    await screen.findByLabelText('Statistics');
+    const heads = document.querySelectorAll('.week-head');
+    expect(heads).toHaveLength(6);
+    expect(heads[1].textContent).toMatch(/^02\.11\.2026 . 08\.11\.2026/);
+    expect(screen.getByLabelText('Legend')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /â€“/ })).toBeNull();
+  });
+
+  it('marks empty future and off days as compact', async () => {
+    renderPage();
+
+    const future = await screen.findByRole('button', { name: /^16\.11\.2026/ });
+    expect(future).toHaveClass('day--empty');
+    expect(screen.getByRole('button', { name: /^07\.11\.2026/ })).toHaveClass('day--empty');
+    expect(screen.getByRole('button', { name: /^02\.11\.2026/ })).not.toHaveClass('day--empty');
+  });
+
   it('lists only the absence types present in the month in the legend', async () => {
     renderPage();
 
