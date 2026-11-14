@@ -248,6 +248,14 @@
   white-space: nowrap;
 }
 
+.day__target {
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--secondary-text-color);
+}
+
 .balance-positive {
   color: hsl(145, 75%, 55%);
   background: hsla(142, 70%, 48%, 0.12);

@@ -120,6 +120,24 @@ describe('MonthPage', () => {
     expect(within(stats).getByText('-0:26 h')).toHaveClass('is-negative');
   });
 
+  it('shows a neutral target instead of worked time and balance on future workdays', async () => {
+    renderPage();
+
+    const future = await screen.findByRole('button', { name: /^16\.11\.2026/ });
+    expect(future).toHaveAccessibleName('16.11.2026, target 7:48 h');
+    expect(within(future).getByText('Target 7:48 h')).toHaveClass('day__target');
+    expect(future.querySelector('.day__balance')).toBeNull();
+    expect(future.querySelector('.day__worked')).toBeNull();
+  });
+
+  it('keeps worked time and balance for today and past days', async () => {
+    renderPage();
+
+    const past = await screen.findByRole('button', { name: /^03\.11\.2026/ });
+    expect(past.querySelector('.day__balance')).not.toBeNull();
+    expect(within(past).queryByText(/^Target/)).not.toBeInTheDocument();
+  });
+
   it('renders the calendar cells with badges and balance chips', async () => {
     renderPage();
 

@@ -103,15 +103,19 @@ function DayCard({
   const dayNumber = Number(iso.slice(8, 10));
   const isToday = iso === today;
   const workday = day?.workday ?? false;
+  const isFuture = iso > today;
   const worked = day?.workedMinutes ?? 0;
   const balance = day?.balanceMinutes ?? 0;
-  const showWorked = !!day && (workday || worked > 0);
-  const showBalance = !!day && (workday || balance > 0);
+  const target = day?.targetMinutes ?? 0;
+  const showTarget = isFuture && workday && target > 0 && worked === 0;
+  const showWorked = !!day && !showTarget && (workday || worked > 0);
+  const showBalance = !!day && !showTarget && (workday || balance > 0);
   const hasBadge = !!day?.absenceType && !!day.absenceLabel;
 
   const label = [
     formatShortDate(iso),
     hasBadge ? day?.absenceLabel : null,
+    showTarget ? `target ${formatMinutes(target)}` : null,
     showWorked ? `${formatMinutes(worked)} worked` : null,
     showBalance ? `balance ${formatBalance(balance)}` : null,
   ]
@@ -141,6 +145,11 @@ function DayCard({
         <span className="day__num">{dayNumber}</span>
       </div>
       {hasBadge && <span className={`day__badge ${badgeClass(day?.absenceType ?? null)}`}>{day?.absenceLabel}</span>}
+      {showTarget && (
+        <div className="day__figures">
+          <span className="day__target">Target {formatMinutes(target)}</span>
+        </div>
+      )}
       {(showWorked || showBalance) && (
         <div className="day__figures">
           {showWorked && <span className="day__worked">{formatMinutes(worked)}</span>}
