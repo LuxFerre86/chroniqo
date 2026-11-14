@@ -302,7 +302,7 @@
 }
 
 .week__hours {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--tertiary-text-color);
   white-space: nowrap;
 }
@@ -334,7 +334,7 @@
   }
 
   .week__hours {
-    font-size: 10px;
+    font-size: 12px;
   }
 }
 
