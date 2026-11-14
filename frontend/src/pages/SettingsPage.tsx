@@ -292,7 +292,6 @@ function PasswordSection() {
 
 function AccountSection() {
   const { user } = useAuth();
-  const config = useAppConfig();
 
   return (
     <section className="card settings__section" aria-labelledby="settings-account">
@@ -309,10 +308,6 @@ function AccountSection() {
           <div className="settings__stat-value">{datePart(user?.lastLoginAt, 'Never')}</div>
         </div>
       </div>
-      <p className="settings__meta">
-        {user && <span>{user.email}</span>}
-        {config.version && <span>{config.version}</span>}
-      </p>
     </section>
   );
 }

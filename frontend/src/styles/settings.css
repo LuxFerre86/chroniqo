@@ -76,16 +76,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.settings__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  margin: 1rem 0 0;
-  font-size: 12px;
-  color: var(--tertiary-text-color);
-  overflow-wrap: anywhere;
-}
-
 .settings__danger {
   border-color: hsla(12, 85%, 58%, 0.3);
 }

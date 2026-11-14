@@ -304,14 +304,14 @@ describe('SettingsPage – password', () => {
 });
 
 describe('SettingsPage – account information', () => {
-  it('shows the date parts, email and version', async () => {
+  it('shows the date parts but not the email and version shown in the sidebar', () => {
     renderPage();
 
     const account = section('Account Information');
     expect(within(account).getByText('2025-03-04')).toBeInTheDocument();
     expect(within(account).getByText('Never')).toBeInTheDocument();
-    expect(within(account).getByText('ada@example.com')).toBeInTheDocument();
-    expect(await within(account).findByText('2026.10.0')).toBeInTheDocument();
+    expect(within(account).queryByText('ada@example.com')).toBeNull();
+    expect(within(account).queryByText('2026.10.0')).toBeNull();
   });
 
   it('falls back to Unknown when the creation date is missing', () => {
