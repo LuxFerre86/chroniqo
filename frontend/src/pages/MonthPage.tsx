@@ -63,11 +63,13 @@ function StatSection({
   label,
   value,
   tone,
+  sub,
 }: {
   kind: 'target' | 'worked' | 'balance';
   label: string;
   value: string;
   tone?: 'positive' | 'negative';
+  sub?: { label: string; value: string; tone: 'positive' | 'negative' };
 }) {
   return (
     <div className={`month-stat month-stat--${kind}`}>
@@ -75,6 +77,11 @@ function StatSection({
       <div className="month-stat__value">
         <span className={`month-stat__month${tone ? ` is-${tone}` : ''}`}>{value}</span>
       </div>
+      {sub && (
+        <div className="month-stat__sub">
+          {sub.label} <span className={`is-${sub.tone}`}>{sub.value}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -299,9 +306,10 @@ export function MonthPage() {
             <StatSection kind="worked" label="Worked hours" value={formatMinutes(monthTotals.worked)} />
             <StatSection
               kind="balance"
-              label={`Balance (${ym.year})`}
-              value={formatBalance(yearTotals.balance)}
-              tone={tone(yearTotals.balance)}
+              label="Balance"
+              value={formatBalance(monthTotals.balance)}
+              tone={tone(monthTotals.balance)}
+              sub={{ label: `Year ${ym.year}`, value: formatBalance(yearTotals.balance), tone: tone(yearTotals.balance) }}
             />
           </section>
 

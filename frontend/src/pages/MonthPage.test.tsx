@@ -104,18 +104,18 @@ describe('MonthPage', () => {
     expect(weekend).toEqual(['Sun', 'Sat']);
   });
 
-  it('shows month target and worked hours and the year balance up to today', async () => {
+  it('shows month target, worked and balance plus the year balance up to today', async () => {
     renderPage();
 
     const stats = await screen.findByLabelText('Statistics');
     expect(api.getSummary).toHaveBeenCalledTimes(1);
     expect(api.getSummary).toHaveBeenCalledWith('2026-01-01', '2026-12-31');
 
-    // target and worked: Nov 2 + Nov 3 only (the 16th is in the future); balance: whole year incl. Oct 30
+    // target and worked: Nov 2 + Nov 3 only (the 16th is in the future); year balance additionally includes Oct 30
     expect(within(stats).getByText('15:36 h')).toBeInTheDocument();
     expect(within(stats).getByText('14:38 h')).toBeInTheDocument();
-    expect(within(stats).getByText('Balance (2026)')).toBeInTheDocument();
-    expect(within(stats).queryByText('-0:58 h')).toBeNull();
+    expect(within(stats).getByText('-0:58 h')).toHaveClass('is-negative');
+    expect(within(stats).getByText(/^Year 2026/)).toBeInTheDocument();
     expect(within(stats).getByText('-0:26 h')).toHaveClass('is-negative');
   });
 
