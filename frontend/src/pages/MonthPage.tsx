@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
 import { useAuth } from '../auth/AuthContext';
@@ -32,6 +32,12 @@ const WEEKEND_INDICES = [5, 6];
 const SHORT_MONTHS = Array.from({ length: 12 }, (_, i) =>
   new Date(2000, i, 1).toLocaleDateString('en-US', { month: 'short' }),
 );
+const HEAT_FALLBACK_MINUTES = 480;
+const ABSENCE_LEGEND: { type: DaySummary['absenceType']; label: string }[] = [
+  { type: 'HOLIDAY', label: 'Public holiday' },
+  { type: 'VACATION', label: 'Vacation' },
+  { type: 'SICK', label: 'Sick leave' },
+];
 const MIN_YEAR = 2000;
 const MAX_YEAR = 2050;
 
@@ -105,7 +111,7 @@ function DayCard({
   const balance = day?.balanceMinutes ?? 0;
   const target = day?.targetMinutes ?? 0;
   const showTarget = isFuture && workday && target > 0 && worked === 0;
-  const showWorked = !!day && !showTarget && (workday || worked > 0);
+  const showWorked = !showTarget && worked > 0;
   const showBalance = !!day && !showTarget && (workday || balance > 0);
   const hasBadge = !!day?.absenceType && !!day.absenceLabel;
 
@@ -120,6 +126,7 @@ function DayCard({
     .join(', ');
 
   const classes = ['day', isToday ? 'day--today' : '', workday ? '' : 'day--off'].filter(Boolean).join(' ');
+  const heat = !isFuture && worked > 0 ? Math.min(1, worked / (target > 0 ? target : HEAT_FALLBACK_MINUTES)) : 0;
 
   return (
     <div
@@ -129,6 +136,7 @@ function DayCard({
       aria-label={label}
       aria-current={isToday ? 'date' : undefined}
       data-date={iso}
+      style={heat > 0 ? ({ '--heat': heat.toFixed(2) } as CSSProperties) : undefined}
       onClick={() => onOpen(iso)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -141,7 +149,11 @@ function DayCard({
         <span className="day__weekday">{WEEKDAYS[weekdayIndex(parseIsoDate(iso))]}</span>
         <span className="day__num">{dayNumber}</span>
       </div>
-      {hasBadge && <span className={`day__badge ${badgeClass(day?.absenceType ?? null)}`}>{day?.absenceLabel}</span>}
+      {hasBadge && (
+        <span className={`day__badge ${badgeClass(day?.absenceType ?? null)}`} title={day?.absenceLabel ?? undefined}>
+          {day?.absenceLabel}
+        </span>
+      )}
       {showTarget && (
         <div className="day__figures">
           <span className="day__target">Target {formatMinutes(target)}</span>
@@ -250,6 +262,12 @@ export function MonthPage() {
   const monthTotals = useMemo(() => totalsFor(data ?? [], today, ym.month), [data, today, ym.month]);
   const yearTotals = useMemo(() => totalsFor(data ?? [], today), [data, today]);
 
+  const legend = useMemo(() => {
+    const prefix = `0${ym.month}`.slice(-2);
+    const present = new Set((data ?? []).filter((d) => d.date.slice(5, 7) === prefix).map((d) => d.absenceType));
+    return ABSENCE_LEGEND.filter((item) => present.has(item.type));
+  }, [data, ym.month]);
+
   const total = daysInMonth(ym);
   const firstDay = user?.firstDayOfWeek ?? 'MONDAY';
   const leading = firstWeekdayIndex(ym, firstDay);
@@ -339,6 +357,17 @@ export function MonthPage() {
               );
             })}
           </div>
+
+          {legend.length > 0 && (
+            <ul className="cal-legend" aria-label="Legend">
+              {legend.map((item) => (
+                <li key={item.type} className="cal-legend__item">
+                  <span className={`cal-legend__dot badge--${(item.type ?? 'holiday').toLowerCase()}`} aria-hidden="true" />
+                  {item.label}
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       )}
 

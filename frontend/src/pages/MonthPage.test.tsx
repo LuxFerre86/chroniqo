@@ -153,6 +153,27 @@ describe('MonthPage', () => {
     expect(screen.getAllByRole('button', { name: /^\d\d\.11\.2026/ })).toHaveLength(30);
   });
 
+  it('colors worked days by intensity and hides empty 0:00 figures', async () => {
+    vi.mocked(api.getSummary).mockResolvedValue([...SUMMARIES, day('2026-11-04')]);
+    renderPage();
+
+    const worked = await screen.findByRole('button', { name: /^02\.11\.2026/ });
+    expect(worked.style.getPropertyValue('--heat')).toBe('0.88');
+
+    const empty = screen.getByRole('button', { name: /^04\.11\.2026/ });
+    expect(empty.style.getPropertyValue('--heat')).toBe('');
+    expect(within(empty).queryByText('0:00 h')).not.toBeInTheDocument();
+    expect(within(empty).getByText('-7:48 h')).toHaveClass('balance-negative');
+  });
+
+  it('lists only the absence types present in the month in the legend', async () => {
+    renderPage();
+
+    const legend = await screen.findByRole('list', { name: 'Legend' });
+    expect(within(legend).getByText('Public holiday')).toBeInTheDocument();
+    expect(within(legend).queryByText('Vacation')).not.toBeInTheDocument();
+  });
+
   it('navigates between months without refetching the year and offers a Today shortcut', async () => {
     const user = userEvent.setup();
     renderPage();
