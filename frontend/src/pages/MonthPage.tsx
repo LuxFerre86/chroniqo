@@ -70,12 +70,14 @@ function StatSection({
   value,
   tone,
   sub,
+  hint,
 }: {
   kind: 'target' | 'worked' | 'balance';
   label: string;
   value: string;
   tone?: 'positive' | 'negative';
   sub?: { label: string; value: string; tone: 'positive' | 'negative' };
+  hint?: string;
 }) {
   return (
     <div className={`month-stat month-stat--${kind}`}>
@@ -83,6 +85,7 @@ function StatSection({
       <div className="month-stat__value">
         <span className={`month-stat__month${tone ? ` is-${tone}` : ''}`}>{value}</span>
       </div>
+      {hint && <div className="month-stat__sub">{hint}</div>}
       {sub && (
         <div className="month-stat__sub">
           {sub.label} <span className={`is-${sub.tone}`}>{sub.value}</span>
@@ -217,7 +220,12 @@ function MonthPicker({
       }
     >
       <div className="month-picker">
-        <SelectField label="Year" value={String(year)} options={years} onChange={(e) => setYear(Number(e.target.value))} />
+        <SelectField
+          label="Year"
+          value={String(year)}
+          options={years}
+          onChange={(e) => setYear(Number(e.target.value))}
+        />
         <div className="month-picker__grid">
           {SHORT_MONTHS.map((name, i) => {
             const ym = { year, month: i + 1 };
@@ -275,6 +283,8 @@ export function MonthPage() {
   const firstDay = user?.firstDayOfWeek ?? 'MONDAY';
   const leading = firstWeekdayIndex(ym, firstDay);
   const headerOrder = weekdayOrder(firstDay);
+  const isFutureMonth = ym.year * 12 + ym.month > current.year * 12 + current.month;
+  const hint = sameMonth(ym, current) ? 'up to today' : isFutureMonth ? 'not started yet' : 'full month';
   const tone = (n: number) => (n >= 0 ? 'positive' : 'negative');
 
   const selectMonth = (next: YearMonth) => {
@@ -323,14 +333,18 @@ export function MonthPage() {
       ) : (
         <>
           <section className="card month-stats" aria-label="Statistics">
-            <StatSection kind="target" label="Target hours" value={formatMinutes(monthTotals.target)} />
-            <StatSection kind="worked" label="Worked hours" value={formatMinutes(monthTotals.worked)} />
+            <StatSection kind="target" label="Target hours" value={formatMinutes(monthTotals.target)} hint={hint} />
+            <StatSection kind="worked" label="Worked hours" value={formatMinutes(monthTotals.worked)} hint={hint} />
             <StatSection
               kind="balance"
               label="Balance"
               value={formatBalance(monthTotals.balance)}
               tone={tone(monthTotals.balance)}
-              sub={{ label: `Year ${ym.year}`, value: formatBalance(yearTotals.balance), tone: tone(yearTotals.balance) }}
+              sub={{
+                label: `Year ${ym.year}`,
+                value: formatBalance(yearTotals.balance),
+                tone: tone(yearTotals.balance),
+              }}
             />
           </section>
 
@@ -349,15 +363,7 @@ export function MonthPage() {
             ))}
             {Array.from({ length: total }, (_, i) => {
               const iso = isoOf(ym, i + 1);
-              return (
-                <DayCard
-                  key={iso}
-                  iso={iso}
-                  day={byDate.get(iso)}
-                  today={today}
-                  onOpen={setDialogDate}
-                />
-              );
+              return <DayCard key={iso} iso={iso} day={byDate.get(iso)} today={today} onOpen={setDialogDate} />;
             })}
           </div>
 
@@ -365,7 +371,10 @@ export function MonthPage() {
             <ul className="cal-legend" aria-label="Legend">
               {legend.map((item) => (
                 <li key={item.type} className="cal-legend__item">
-                  <span className={`cal-legend__dot badge--${(item.type ?? 'holiday').toLowerCase()}`} aria-hidden="true" />
+                  <span
+                    className={`cal-legend__dot badge--${(item.type ?? 'holiday').toLowerCase()}`}
+                    aria-hidden="true"
+                  />
                   {item.label}
                 </li>
               ))}

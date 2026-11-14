@@ -112,6 +112,7 @@ describe('MonthPage', () => {
     expect(api.getSummary).toHaveBeenCalledWith('2026-01-01', '2026-12-31');
 
     // target and worked: Nov 2 + Nov 3 only (the 16th is in the future); year balance additionally includes Oct 30
+    expect(within(stats).getAllByText('up to today')).toHaveLength(2);
     expect(within(stats).getByText('15:36 h')).toBeInTheDocument();
     expect(within(stats).getByText('14:38 h')).toBeInTheDocument();
     expect(within(stats).getByText('-0:58 h')).toHaveClass('is-negative');
