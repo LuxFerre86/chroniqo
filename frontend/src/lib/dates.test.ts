@@ -13,6 +13,8 @@ import {
   sameMonth,
   toIsoDate,
   todayIso,
+  weekdayIndex,
+  weekdayOrder,
   weekdayShort,
 } from './dates';
 
@@ -99,6 +101,33 @@ describe('firstWeekdayIndex', () => {
   it('handles a Wednesday start', () => {
     // 1 Jan 2025 is a Wednesday.
     expect(firstWeekdayIndex({ year: 2025, month: 1 })).toBe(2);
+  });
+
+  it('counts from the given first day of the week', () => {
+    // 1 Nov 2026 is a Sunday: first cell for Sunday-start weeks, last for Monday-start weeks.
+    expect(firstWeekdayIndex({ year: 2026, month: 11 }, 'SUNDAY')).toBe(0);
+    expect(firstWeekdayIndex({ year: 2026, month: 11 }, 'MONDAY')).toBe(6);
+    // 1 Jun 2026 is a Monday.
+    expect(firstWeekdayIndex({ year: 2026, month: 6 }, 'SUNDAY')).toBe(1);
+    expect(firstWeekdayIndex({ year: 2026, month: 6 }, 'SATURDAY')).toBe(2);
+  });
+});
+
+describe('weekdayOrder', () => {
+  it('defaults to Monday first', () => {
+    expect(weekdayOrder()).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it('rotates to the given first day', () => {
+    expect(weekdayOrder('SUNDAY')).toEqual([6, 0, 1, 2, 3, 4, 5]);
+    expect(weekdayOrder('SATURDAY')).toEqual([5, 6, 0, 1, 2, 3, 4]);
+  });
+});
+
+describe('weekdayIndex', () => {
+  it('is Monday based', () => {
+    expect(weekdayIndex(new Date(2026, 10, 16))).toBe(0);
+    expect(weekdayIndex(new Date(2026, 10, 15))).toBe(6);
   });
 });
 

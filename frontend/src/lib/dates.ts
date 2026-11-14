@@ -1,5 +1,7 @@
 /** Local-calendar date helpers. ISO dates are always "YYYY-MM-DD" in local time (never UTC). */
 
+import { DAYS_OF_WEEK, type DayOfWeekName } from '../api/types';
+
 const pad = (n: number) => String(n).padStart(2, '0');
 
 export function toIsoDate(date: Date): string {
@@ -43,9 +45,26 @@ export function isoOf(ym: YearMonth, day: number): string {
   return `${ym.year}-${pad(ym.month)}-${pad(day)}`;
 }
 
-/** 0 = Monday … 6 = Sunday weekday index of the first day of the month. */
-export function firstWeekdayIndex(ym: YearMonth): number {
-  return (new Date(ym.year, ym.month - 1, 1).getDay() + 6) % 7;
+/** Monday-based weekday index (0 = Monday … 6 = Sunday) of a date. */
+export function weekdayIndex(date: Date): number {
+  return (date.getDay() + 6) % 7;
+}
+
+/** Monday-based index (0 = Monday … 6 = Sunday) for a weekday name. */
+export function weekdayIndexOf(day: DayOfWeekName): number {
+  return DAYS_OF_WEEK.indexOf(day);
+}
+
+/** Monday-based weekday indices in display order, starting with the given first day of the week. */
+export function weekdayOrder(firstDay: DayOfWeekName = 'MONDAY'): number[] {
+  const start = weekdayIndexOf(firstDay);
+  return Array.from({ length: 7 }, (_, i) => (start + i) % 7);
+}
+
+/** Number of empty cells before the first of the month when weeks start on `firstDay`. */
+export function firstWeekdayIndex(ym: YearMonth, firstDay: DayOfWeekName = 'MONDAY'): number {
+  const monthStart = weekdayIndex(new Date(ym.year, ym.month - 1, 1));
+  return (monthStart - weekdayIndexOf(firstDay) + 7) % 7;
 }
 
 /** "November 2026" */

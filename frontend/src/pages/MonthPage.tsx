@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
+import { useAuth } from '../auth/AuthContext';
 import { Button } from '../components/Button';
 import { SelectField } from '../components/fields';
 import { Icon } from '../components/Icon';
@@ -14,8 +15,11 @@ import {
   formatMonthLabel,
   formatShortDate,
   isoOf,
+  parseIsoDate,
   sameMonth,
   todayIso,
+  weekdayIndex,
+  weekdayOrder,
   type YearMonth,
 } from '../lib/dates';
 import { formatBalance, formatMinutes } from '../lib/format';
@@ -24,6 +28,7 @@ import type { DaySummary } from '../api/types';
 import '../styles/month.css';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKEND_INDICES = [5, 6];
 const SHORT_MONTHS = Array.from({ length: 12 }, (_, i) =>
   new Date(2000, i, 1).toLocaleDateString('en-US', { month: 'short' }),
 );
@@ -87,13 +92,11 @@ function StatSection({
 function DayCard({
   iso,
   day,
-  index,
   today,
   onOpen,
 }: {
   iso: string;
   day: DaySummary | undefined;
-  index: number;
   today: string;
   onOpen: (iso: string) => void;
 }) {
@@ -134,7 +137,7 @@ function DayCard({
       }}
     >
       <div className="day__date">
-        <span className="day__weekday">{WEEKDAYS[index]}</span>
+        <span className="day__weekday">{WEEKDAYS[weekdayIndex(parseIsoDate(iso))]}</span>
         <span className="day__num">{dayNumber}</span>
       </div>
       {hasBadge && <span className={`day__badge ${badgeClass(day?.absenceType ?? null)}`}>{day?.absenceLabel}</span>}
@@ -218,6 +221,7 @@ function MonthPicker({
 }
 
 export function MonthPage() {
+  const { user } = useAuth();
   const [ym, setYm] = useState<YearMonth>(currentYearMonth);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [dialogDate, setDialogDate] = useState<string | null>(null);
@@ -241,7 +245,9 @@ export function MonthPage() {
   const yearTotals = useMemo(() => totalsFor(data ?? [], today), [data, today]);
 
   const total = daysInMonth(ym);
-  const leading = firstWeekdayIndex(ym);
+  const firstDay = user?.firstDayOfWeek ?? 'MONDAY';
+  const leading = firstWeekdayIndex(ym, firstDay);
+  const headerOrder = weekdayOrder(firstDay);
   const tone = (n: number) => (n >= 0 ? 'positive' : 'negative');
 
   const selectMonth = (next: YearMonth) => {
@@ -312,9 +318,13 @@ export function MonthPage() {
           </section>
 
           <div className="cal" aria-label={formatMonthLabel(ym)}>
-            {WEEKDAYS.map((name, i) => (
-              <div key={name} className={`cal__head${i >= 5 ? ' cal__head--weekend' : ''}`} aria-hidden="true">
-                {name}
+            {headerOrder.map((weekday) => (
+              <div
+                key={weekday}
+                className={`cal__head${WEEKEND_INDICES.includes(weekday) ? ' cal__head--weekend' : ''}`}
+                aria-hidden="true"
+              >
+                {WEEKDAYS[weekday]}
               </div>
             ))}
             {Array.from({ length: leading }, (_, i) => (
@@ -327,7 +337,6 @@ export function MonthPage() {
                   key={iso}
                   iso={iso}
                   day={byDate.get(iso)}
-                  index={(leading + i) % 7}
                   today={today}
                   onOpen={setDialogDate}
                 />

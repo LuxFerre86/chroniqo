@@ -43,6 +43,7 @@ export interface UserProfile {
   lastName: string;
   weeklyTargetHours: number;
   workingDays: DayOfWeekName[];
+  firstDayOfWeek: DayOfWeekName;
   countryCode: string | null;
   subdivisionCode: string | null;
   createdAt: string | null;
