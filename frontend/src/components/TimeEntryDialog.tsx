@@ -115,10 +115,12 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   });
 
   const entries = useMemo(
-    () => [...(entriesQuery.data ?? [])].sort((a, b) => trimSeconds(a.startTime).localeCompare(trimSeconds(b.startTime))),
+    () =>
+      [...(entriesQuery.data ?? [])].sort((a, b) => trimSeconds(a.startTime).localeCompare(trimSeconds(b.startTime))),
     [entriesQuery.data],
   );
 
+  const showList = entriesQuery.isError || entries.length > 0;
   const initiallyLoaded = !entriesQuery.isPending && !absencesQuery.isPending;
   useEffect(() => {
     if (mode !== null || !initiallyLoaded) return;
@@ -300,78 +302,80 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
           )}
 
           {mode === 'WORKING' ? (
-            <div className="dialog-panels dialog-panels--working">
-              <section className="dialog-panel" aria-label="Bookings">
-                <h3 className="dialog-panel__title">Bookings</h3>
-                <p className="dialog-panel__hint">{summarize(entries)}</p>
-                {entriesQuery.isPending ? (
-                  <div className="dialog-loading" role="status">
-                    <span className="spinner" aria-hidden="true" />
-                    Loading…
-                  </div>
-                ) : entriesQuery.isError ? (
-                  <div className="notice notice--error" role="alert">
-                    The bookings could not be loaded.
-                  </div>
-                ) : entries.length === 0 ? (
-                  <p className="dialog-empty">No bookings yet for this day. Use Add booking to create the first one.</p>
-                ) : (
-                  <ul className="bookings">
-                    {entries.map((entry) => {
-                      const selected = editor.id === entry.id;
-                      return (
-                        <li key={entry.id} className={`booking${selected ? ' booking--selected' : ''}`}>
-                          <button
-                            type="button"
-                            className="booking__main"
-                            aria-pressed={selected}
-                            onClick={() => selectEntry(entry)}
-                          >
-                            <span className="booking__time">{bookingHeadline(entry)}</span>
-                            <span className="booking__details">{bookingDetails(entry)}</span>
-                          </button>
-                          <div className="booking__actions">
-                            <Button
-                              icon
-                              variant="tertiary"
-                              aria-label={`Edit booking ${bookingHeadline(entry)}`}
+            <div className={`dialog-panels`}>
+              {showList && (
+                <section className="dialog-panel" aria-label="Bookings">
+                  <h3 className="dialog-panel__title">Bookings</h3>
+                  <p className="dialog-panel__hint">{summarize(entries)}</p>
+                  {entriesQuery.isPending ? (
+                    <div className="dialog-loading" role="status">
+                      <span className="spinner" aria-hidden="true" />
+                      Loading…
+                    </div>
+                  ) : entriesQuery.isError ? (
+                    <div className="notice notice--error" role="alert">
+                      The bookings could not be loaded.
+                    </div>
+                  ) : (
+                    <ul className="bookings">
+                      {entries.map((entry) => {
+                        const selected = editor.id === entry.id;
+                        return (
+                          <li key={entry.id} className={`booking${selected ? ' booking--selected' : ''}`}>
+                            <button
+                              type="button"
+                              className="booking__main"
+                              aria-pressed={selected}
                               onClick={() => selectEntry(entry)}
                             >
-                              <Icon name="edit" />
-                            </Button>
-                            <Button
-                              icon
-                              variant="tertiary"
-                              className="btn--danger-text"
-                              aria-label={`Delete booking ${bookingHeadline(entry)}`}
-                              disabled={busy}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                void deleteBooking(entry.id);
-                              }}
-                            >
-                              <Icon name="trash" />
-                            </Button>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-                <div>
-                  <Button variant="tertiary" onClick={() => startNewBooking()}>
-                    <Icon name="plus" />
-                    Add booking
-                  </Button>
-                </div>
-              </section>
+                              <span className="booking__time">{bookingHeadline(entry)}</span>
+                              <span className="booking__details">{bookingDetails(entry)}</span>
+                            </button>
+                            <div className="booking__actions">
+                              <Button
+                                icon
+                                variant="tertiary"
+                                aria-label={`Edit booking ${bookingHeadline(entry)}`}
+                                onClick={() => selectEntry(entry)}
+                              >
+                                <Icon name="edit" />
+                              </Button>
+                              <Button
+                                icon
+                                variant="tertiary"
+                                className="btn--danger-text"
+                                aria-label={`Delete booking ${bookingHeadline(entry)}`}
+                                disabled={busy}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void deleteBooking(entry.id);
+                                }}
+                              >
+                                <Icon name="trash" />
+                              </Button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <div>
+                    <Button variant="tertiary" onClick={() => startNewBooking()}>
+                      <Icon name="plus" />
+                      Add booking
+                    </Button>
+                  </div>
+                </section>
+              )}
 
               <section className="dialog-panel dialog-panel--editor" aria-label="Booking editor">
                 <h3 className="dialog-panel__title">{editor.id ? 'Editing booking' : 'New booking'}</h3>
                 <p className="dialog-panel__hint">
                   {editor.id
                     ? 'Update the selected booking or delete it if it is no longer needed.'
-                    : 'Create a new booking for the selected day.'}
+                    : showList
+                      ? 'Create a new booking for the selected day.'
+                      : 'No bookings yet for this day. Add the first one below.'}
                 </p>
                 <div className="dialog-grid">
                   <TextField
