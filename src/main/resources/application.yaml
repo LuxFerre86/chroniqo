@@ -32,6 +32,16 @@ spring:
       validity: P30D
       cookie-domain: ${REMEMBER_ME_COOKIE_DOMAIN:}
 
+server:
+  # Set to "framework" when running behind a reverse proxy that sends X-Forwarded-* headers,
+  # so that cookies get the Secure flag and generated URLs use https.
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+
 management:
   endpoints:
     web:

@@ -79,8 +79,8 @@ chroniqo includes the following security measures:
 - ✅ **Password reset tokens** with 1-hour expiry
 - ✅ **Remember-me tokens** with SHA-256 hashing
 - ✅ **SQL injection protection** via JPA/Hibernate
-- ✅ **XSS protection** via Vaadin framework
-- ✅ **CSRF protection** via Spring Security
+- ✅ **XSS protection** via React's output escaping and a strict Content-Security-Policy
+- ✅ **CSRF protection** via Spring Security (double-submit cookie token for the single-page app)
 
 ## Security Hardening Checklist
 

@@ -1,0 +1,218 @@
+/* =====================================================
+   Time entry dialog
+   ===================================================== */
+
+.dialog-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.dialog-head__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.9rem;
+}
+
+.dialog-head__date {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.dialog-head__pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--primary-text-color);
+  background: var(--primary-color-10pct);
+  border: 1px solid hsla(38, 92%, 58%, 0.35);
+}
+
+.dialog-head__summary {
+  font-size: 13px;
+  color: var(--secondary-text-color);
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  container-type: inline-size;
+}
+
+.dialog-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.dialog-modes .btn {
+  min-height: 44px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.dialog-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+@container (min-width: 640px) {
+  .dialog-panels--working {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.dialog-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid hsla(32, 30%, 50%, 0.12);
+  border-radius: var(--radius-l);
+  background: hsla(220, 20%, 10%, 0.5);
+}
+
+.dialog-panel--editor {
+  background: linear-gradient(145deg, hsla(38, 92%, 58%, 0.06) 0%, hsla(220, 20%, 12%, 0.6) 100%);
+  border-color: hsla(38, 92%, 58%, 0.18);
+}
+
+.dialog-panel__title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.dialog-panel__hint {
+  margin-top: -0.5rem;
+  font-size: 13px;
+  color: var(--secondary-text-color);
+}
+
+.dialog-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.85rem;
+}
+
+@container (max-width: 520px) {
+  .dialog-grid--absence {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dialog-grid__full {
+  grid-column: 1 / -1;
+}
+
+.dialog-body input[type='date'].field__input,
+.dialog-body input[type='time'].field__input {
+  min-height: 42px;
+  text-align: left;
+}
+
+.dialog-body input[type='date']::-webkit-calendar-picker-indicator,
+.dialog-body input[type='time']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+/* ===== Bookings list ===== */
+.bookings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.booking {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid hsla(32, 30%, 50%, 0.12);
+  border-radius: var(--radius-m);
+  background: var(--contrast-5pct);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.booking--selected {
+  background: hsla(38, 92%, 58%, 0.12);
+  border-color: hsla(38, 92%, 58%, 0.5);
+}
+
+.booking__main {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: transparent;
+  text-align: left;
+}
+
+.booking__time {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--header-text-color);
+}
+
+.booking__details {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--secondary-text-color);
+}
+
+.booking__actions {
+  display: flex;
+  align-items: center;
+  padding-right: 0.25rem;
+}
+
+.booking__actions .btn--icon {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.dialog-empty {
+  font-size: 14px;
+  color: var(--secondary-text-color);
+}
+
+.dialog-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 160px;
+  color: var(--secondary-text-color);
+}
+
+@media (max-width: 700px) {
+  .dialog-head__date {
+    font-size: 22px;
+  }
+
+  .dialog-panel {
+    padding: 0.85rem;
+  }
+}

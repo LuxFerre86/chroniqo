@@ -4,14 +4,15 @@ import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.TimeEntryStatus;
 import com.luxferre.chroniqo.model.User;
-import com.vaadin.flow.component.UI;
 import de.focus_shift.jollyday.core.Holiday;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jpa.test.autoconfigure.AutoConfigureTestEntityManager;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,9 +47,12 @@ public class SummaryServiceIntegrationTest {
     @BeforeEach
     public void setup() {
         testUser = entityManager.find(User.class, "a0000000-0000-0000-0000-000000000001");
-        UI ui = new UI();
-        ui.setLocale(Locale.GERMANY);
-        UI.setCurrent(ui);
+        LocaleContextHolder.setLocale(Locale.GERMANY);
+    }
+
+    @AfterEach
+    public void resetLocale() {
+        LocaleContextHolder.resetLocaleContext();
     }
 
     @Test

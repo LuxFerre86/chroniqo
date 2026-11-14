@@ -13,7 +13,7 @@
     <artifactId>chroniqo</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>chroniqo</name>
-    <description>A self-hosted time-tracking web application built with Spring Boot and Vaadin.</description>
+    <description>A self-hosted time-tracking web application built with Spring Boot and React.</description>
     <url>https://github.com/luxferre86/chroniqo</url>
 
     <scm>
@@ -36,34 +36,19 @@
         <java.version>21</java.version>
         <jollyday.version>2.21.0</jollyday.version>
         <lombok.version>1.18.48</lombok.version>
+        <node.version>v24.22.3</node.version>
+        <!-- -Dskip.frontend=true skips the whole frontend build (backend-only builds); -DskipTests skips the Vitest run -->
+        <skip.frontend>false</skip.frontend>
+        <frontend.tests.skip>${skip.frontend}</frontend.tests.skip>
         <spring-boot.version>4.1.1</spring-boot.version> <!-- needed implicitly for plugin section / do NOT remove -->
         <tomcat.version>11.0.26</tomcat.version>
-        <vaadin.version>25.3.0</vaadin.version>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.vaadin</groupId>
-                <artifactId>vaadin-bom</artifactId>
-                <version>${vaadin.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <!-- compile dependencies -->
         <dependency>
-            <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-core</artifactId>
-            <version>${vaadin.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-spring-boot-starter</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
         <dependency>
@@ -147,12 +132,6 @@
             <optional>true</optional>
         </dependency>
 
-        <dependency>
-            <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-dev</artifactId>
-            <optional>true</optional>
-        </dependency>
-
         <!-- provided dependencies -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -171,6 +150,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -195,6 +180,17 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <!-- React single-page app, built by the frontend-maven-plugin below -->
+            <resource>
+                <directory>frontend/dist</directory>
+                <targetPath>static</targetPath>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -203,14 +199,52 @@
             </plugin>
 
             <plugin>
-                <groupId>com.vaadin</groupId>
-                <artifactId>vaadin-maven-plugin</artifactId>
-                <version>${vaadin.version}</version>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>2.0.2</version>
+                <configuration>
+                    <workingDirectory>frontend</workingDirectory>
+                    <nodeVersion>${node.version}</nodeVersion>
+                    <skip>${skip.frontend}</skip>
+                </configuration>
                 <executions>
                     <execution>
+                        <id>install-node-and-npm</id>
                         <goals>
-                            <goal>prepare-frontend</goal>
+                            <goal>install-node-and-npm</goal>
                         </goals>
+                        <phase>generate-resources</phase>
+                    </execution>
+                    <execution>
+                        <id>npm-ci</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <arguments>ci</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm-test</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <arguments>run test</arguments>
+                            <skip>${frontend.tests.skip}</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm-build</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -231,33 +265,15 @@
 
     <profiles>
         <profile>
-            <id>production</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.vaadin</groupId>
-                        <artifactId>vaadin-maven-plugin</artifactId>
-                        <version>${vaadin.version}</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>build-frontend</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <!-- To always force an optimized production bundle build set this configuration to 'true' -->
-                            <!-- To possibly use the pre-compiled production bundle remove or set to 'false' -->
-                            <forceProductionBuild>true</forceProductionBuild>
-                            <!-- To have reproducible build by running 'npm ci' -->
-                            <ciBuild>true</ciBuild>
-                        </configuration>
-                    </plugin>
-                    <!--
-                    .. more plugins ..
-                    -->
-                </plugins>
-            </build>
+            <id>skip-frontend-tests</id>
+            <activation>
+                <property>
+                    <name>skipTests</name>
+                </property>
+            </activation>
+            <properties>
+                <frontend.tests.skip>true</frontend.tests.skip>
+            </properties>
         </profile>
 
         <profile>

@@ -4,7 +4,6 @@ import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
-import com.luxferre.chroniqo.service.event.TimeEntryChangedEvent;
 import com.luxferre.chroniqo.service.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -34,8 +32,6 @@ class TimeEntryServiceValidationTest {
     private TimeEntryRepository timeEntryRepository;
     @Mock
     private UserService userService;
-    @Mock
-    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private TimeEntryService timeEntryService;
@@ -68,7 +64,6 @@ class TimeEntryServiceValidationTest {
                     .isEqualTo(ValidationErrorType.NULL_VALUE);
 
             verify(timeEntryRepository, never()).save(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -86,7 +81,6 @@ class TimeEntryServiceValidationTest {
                     });
 
             verify(timeEntryRepository, never()).save(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -106,22 +100,20 @@ class TimeEntryServiceValidationTest {
                     });
 
             verify(timeEntryRepository, never()).save(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
-        @DisplayName("Should accept today's date and publish event")
+        @DisplayName("Should accept today's date")
         void shouldAcceptTodaysDate() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
 
             timeEntryService.saveEntry(dto);
 
             verify(timeEntryRepository).save(any(TimeEntry.class));
-            verify(eventPublisher).publishEvent(any(TimeEntryChangedEvent.class));
         }
 
         @Test
-        @DisplayName("Should accept past date and publish event")
+        @DisplayName("Should accept past date")
         void shouldAcceptPastDate() {
             TimeEntryDTO dto = new TimeEntryDTO(
                     LocalDate.now().minusDays(5), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
@@ -129,7 +121,6 @@ class TimeEntryServiceValidationTest {
             timeEntryService.saveEntry(dto);
 
             verify(timeEntryRepository).save(any(TimeEntry.class));
-            verify(eventPublisher).publishEvent(any(TimeEntryChangedEvent.class));
         }
     }
 
@@ -156,7 +147,6 @@ class TimeEntryServiceValidationTest {
                     });
 
             verify(timeEntryRepository, never()).save(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -175,7 +165,6 @@ class TimeEntryServiceValidationTest {
                     });
 
             verify(timeEntryRepository, never()).save(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -232,7 +221,6 @@ class TimeEntryServiceValidationTest {
                     });
 
             verify(timeEntryRepository, never()).save(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -249,7 +237,6 @@ class TimeEntryServiceValidationTest {
                     });
 
             verify(timeEntryRepository, never()).save(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -296,7 +283,6 @@ class TimeEntryServiceValidationTest {
                     });
 
             verify(timeEntryRepository, never()).save(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -364,7 +350,6 @@ class TimeEntryServiceValidationTest {
                     });
 
             verify(timeEntryRepository, never()).save(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
     }
 
@@ -419,58 +404,6 @@ class TimeEntryServiceValidationTest {
     }
 
     // =========================================================================
-    // Event Publishing
-    // =========================================================================
-
-    @Nested
-    @DisplayName("Event Publishing")
-    class EventPublishing {
-
-        @Test
-        @DisplayName("saveEntry publishes event after successful save")
-        void saveEntry_publishesEventAfterSave() {
-            TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
-
-            timeEntryService.saveEntry(dto);
-
-            verify(eventPublisher).publishEvent(any(TimeEntryChangedEvent.class));
-        }
-
-        @Test
-        @DisplayName("deleteEntries does not publish event when no entries exist")
-        void deleteEntries_doesNotPublishWhenNoEntries() {
-            when(timeEntryRepository.findByUserAndDateBetween(any(), any(), any())).thenReturn(List.of());
-
-            timeEntryService.deleteEntries(LocalDate.now(), LocalDate.now());
-
-            verify(eventPublisher, never()).publishEvent(any());
-        }
-
-        @Test
-        @DisplayName("deleteEntries publishes event when entries were deleted")
-        void deleteEntries_publishesEventWhenEntriesDeleted() {
-            when(timeEntryRepository.findByUserAndDateBetween(any(), any(), any()))
-                    .thenReturn(List.of(new TimeEntry()));
-
-            timeEntryService.deleteEntries(LocalDate.now(), LocalDate.now());
-
-            verify(eventPublisher).publishEvent(any(TimeEntryChangedEvent.class));
-        }
-
-        @Test
-        @DisplayName("saveEntry does not publish event on validation failure")
-        void saveEntry_doesNotPublishOnValidationFailure() {
-            TimeEntryDTO dto = new TimeEntryDTO(
-                    LocalDate.now().plusDays(1), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
-
-            assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
-                    .isInstanceOf(TimeEntryValidationException.class);
-
-            verify(eventPublisher, never()).publishEvent(any());
-        }
-    }
-
-    // =========================================================================
     // Real-World Scenarios
     // =========================================================================
 
@@ -486,11 +419,10 @@ class TimeEntryServiceValidationTest {
             timeEntryService.saveEntry(dto);
 
             verify(timeEntryRepository).save(any(TimeEntry.class));
-            verify(eventPublisher).publishEvent(any(TimeEntryChangedEvent.class));
         }
 
         @Test
-        @DisplayName("User tries to log tomorrow's hours — fails, no event")
+        @DisplayName("User tries to log tomorrow's hours — fails, nothing saved")
         void cannotLogFutureHours() {
             TimeEntryDTO dto = new TimeEntryDTO(
                     LocalDate.now().plusDays(1), LocalTime.of(9, 0), LocalTime.of(17, 0), 60, null);
@@ -500,11 +432,11 @@ class TimeEntryServiceValidationTest {
                     .satisfies(e -> assertThat(((TimeEntryValidationException) e).getErrorType())
                             .isEqualTo(ValidationErrorType.FUTURE_DATE));
 
-            verify(eventPublisher, never()).publishEvent(any());
+            verify(timeEntryRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("User enters end time before start time — fails, no event")
+        @DisplayName("User enters end time before start time — fails, nothing saved")
         void endTimeBeforeStartTime() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(17, 0), LocalTime.of(9, 0), 60, null);
 
@@ -513,11 +445,11 @@ class TimeEntryServiceValidationTest {
                     .satisfies(e -> assertThat(((TimeEntryValidationException) e).getErrorType())
                             .isEqualTo(ValidationErrorType.INVALID_RANGE));
 
-            verify(eventPublisher, never()).publishEvent(any());
+            verify(timeEntryRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("10-hour break for 8-hour shift — fails, no event")
+        @DisplayName("10-hour break for 8-hour shift — fails, nothing saved")
         void breakExceedsTotalTime() {
             TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 600, null);
 
@@ -526,7 +458,7 @@ class TimeEntryServiceValidationTest {
                     .satisfies(e -> assertThat(((TimeEntryValidationException) e).getErrorType())
                             .isIn(ValidationErrorType.VALUE_TOO_LARGE, ValidationErrorType.INCONSISTENT_DATA));
 
-            verify(eventPublisher, never()).publishEvent(any());
+                                        verify(timeEntryRepository, never()).save(any());
         }
     }
 }

@@ -9,12 +9,10 @@ import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.service.EmailService;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
-import com.luxferre.chroniqo.service.event.UserChangedEvent;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -59,7 +57,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final TimeEntryRepository timeEntryRepository;
     private final AbsenceRepository absenceRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final AppProperties appProperties;
 
     /**
@@ -87,8 +84,8 @@ public class UserService {
      *                optional holiday-configuration fields
      * @return the persisted, not-yet-enabled {@link User}
      * @throws RegistrationDisabledException if registration is globally disabled
-     * @throws IllegalArgumentException      if the email address is already
-     *                                       registered
+     * @throws EmailAlreadyRegisteredException if the email address is already
+     *                                         registered
      */
     @Transactional
     public User register(UserRegistrationRequest request) {
@@ -100,7 +97,9 @@ public class UserService {
 
         if (userRepository.findByEmail(request.email()).isPresent()) {
             log.warn("User registration rejected: email already registered: {}", request.email());
-            throw new IllegalArgumentException("Email already registered");
+            // Hash anyway so the response time does not reveal that the email exists.
+            passwordEncoder.encode(request.password());
+            throw new EmailAlreadyRegisteredException("Email already registered");
         }
 
         log.info("User registration initiated for email: {}", request.email());
@@ -243,7 +242,6 @@ public class UserService {
         user.setSubdivisionCode(subdivisionCode);
         userRepository.save(user);
 
-        eventPublisher.publishEvent(new UserChangedEvent(user, getClass()));
         log.info("User profile updated");
     }
 
@@ -328,8 +326,8 @@ public class UserService {
         UserDetails userDetails = userDetailsService.loadUserByUsername(
                 user.getEmail());
         UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(
-                        userDetails, user.getPasswordHash(),
+                UsernamePasswordAuthenticationToken.authenticated(
+                        userDetails, null,
                         userDetails.getAuthorities());
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
@@ -339,6 +337,10 @@ public class UserService {
         if (attr != null) {
             HttpServletRequest request = attr.getRequest();
             HttpSession session = request.getSession(true);
+            if (!session.isNew()) {
+                // Prevent session fixation: never keep a pre-existing session id after logging in.
+                request.changeSessionId();
+            }
             session.setAttribute(
                     HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                     context);
