@@ -84,12 +84,28 @@ describe('DashboardPage', () => {
 
     expect(await screen.findByTestId('today-worked')).toHaveTextContent('7:48');
     expect(screen.getByText('Saturday, November 14, 2026')).toBeInTheDocument();
+    expect(screen.getByText('of 7:48 h target')).toBeInTheDocument();
     expect(screen.getByTestId('today-balance')).toHaveTextContent('+0:00');
     expect(screen.getByTestId('current-balance')).toHaveTextContent('+17 h 21 min');
     expect(screen.getByTestId('weekly-percentage')).toHaveTextContent('101%');
     expect(screen.getByText('39:25h / 39h')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Mon 8:10h' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Sat 0h' })).toBeInTheDocument();
+  });
+
+  it('shows the daily target legend when time was logged', async () => {
+    vi.mocked(api.getDashboard).mockResolvedValue(dashboard());
+    renderPage();
+
+    expect(await screen.findByText('Daily target')).toBeInTheDocument();
+    expect(screen.queryByText(/Nothing logged this week yet/)).not.toBeInTheDocument();
+  });
+
+  it('shows an empty state when nothing was logged this week', async () => {
+    vi.mocked(api.getDashboard).mockResolvedValue(dashboard({ week: [day('2026-11-09', 0), day('2026-11-10', 0)] }));
+    renderPage();
+
+    expect(await screen.findByText(/Nothing logged this week yet/)).toBeInTheDocument();
   });
 
   it('shows negative values and a missing target', async () => {

@@ -19,16 +19,41 @@ function progressTone(percentage: number): 'green' | 'amber' | 'red' {
   return 'red';
 }
 
+const RING_RADIUS = 84;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
 function TodayCard({ today }: { today: DaySummary | null }) {
   const workedMinutes = today?.workedMinutes ?? 0;
+  const targetMinutes = today?.targetMinutes ?? 0;
   const balance = today?.balanceMinutes ?? 0;
+  const hasTarget = targetMinutes > 0;
+  const ratio = hasTarget ? Math.min(1, workedMinutes / targetMinutes) : 0;
   return (
     <section className="card dash-today" aria-label="Today">
       <div className="dash-today__label">Today</div>
-      <div className="dash-today__value" data-testid="today-worked">
-        {formatClock(workedMinutes)}
+      <div className="dash-ring">
+        <svg className="dash-ring__svg" viewBox="0 0 200 200" aria-hidden="true">
+          <circle className="dash-ring__track" cx="100" cy="100" r={RING_RADIUS} />
+          {ratio > 0 && (
+            <circle
+              className={`dash-ring__arc${ratio >= 1 ? ' dash-ring__arc--done' : ''}`}
+              cx="100"
+              cy="100"
+              r={RING_RADIUS}
+              strokeDasharray={RING_CIRCUMFERENCE}
+              strokeDashoffset={RING_CIRCUMFERENCE * (1 - ratio)}
+            />
+          )}
+        </svg>
+        <div className="dash-ring__center">
+          <div className="dash-today__value" data-testid="today-worked">
+            {formatClock(workedMinutes)}
+          </div>
+          <div className="dash-today__caption">
+            {hasTarget ? `of ${formatClock(targetMinutes)} h target` : 'hours worked'}
+          </div>
+        </div>
       </div>
-      <div className="dash-today__caption">hours worked</div>
       <div
         className={`dash-today__balance dash-today__balance--${balance >= 0 ? 'positive' : 'negative'}`}
         data-testid="today-balance"
@@ -38,7 +63,6 @@ function TodayCard({ today }: { today: DaySummary | null }) {
     </section>
   );
 }
-
 function BalanceCard({ minutes, year }: { minutes: number; year: string }) {
   return (
     <section className="card dash-stat" aria-label="Current balance">
@@ -89,34 +113,65 @@ function WeeklyProgressCard({ progress }: { progress: Dashboard['weeklyProgress'
 }
 
 function WeekChart({ week, todayDate }: { week: DaySummary[]; todayDate: string }) {
-  const maxMinutes = Math.max(MIN_CHART_SCALE_MINUTES, ...week.map((d) => d.workedMinutes));
+  const maxMinutes = Math.max(MIN_CHART_SCALE_MINUTES, ...week.map((d) => Math.max(d.workedMinutes, d.targetMinutes)));
+  const nothingLogged = week.every((d) => d.workedMinutes === 0);
   return (
     <section className="card" aria-label="Current week">
       <h3 className="week__title">Current Week</h3>
       <div className="week__chart">
         {week.map((day) => {
           const label = weekdayShort(parseIsoDate(day.date));
+          const isToday = day.date === todayDate;
+          const hasTarget = day.targetMinutes > 0;
           return (
             <div
               key={day.date}
-              className="week__col"
+              className={`week__col${isToday ? ' week__col--today' : ''}`}
               role="img"
               aria-label={`${label} ${formatHours(day.workedMinutes)}`}
+              title={`${label}: ${formatHours(day.workedMinutes)}${hasTarget ? ` of ${formatHours(day.targetMinutes)}` : ''}`}
             >
               <div className="week__bar-area">
+                {hasTarget && (
+                  <div className="week__target" style={{ bottom: `${(day.targetMinutes / maxMinutes) * 100}%` }} />
+                )}
                 {day.workedMinutes > 0 ? (
                   <div className="week__bar" style={{ height: `${(day.workedMinutes / maxMinutes) * 100}%` }} />
                 ) : (
                   <div className="week__bar week__bar--empty" />
                 )}
               </div>
-              <span className={`week__day${day.date === todayDate ? ' week__day--today' : ''}`}>{label}</span>
+              <span className={`week__day${isToday ? ' week__day--today' : ''}`}>{label}</span>
               <span className="week__hours">{formatHours(day.workedMinutes)}</span>
             </div>
           );
         })}
       </div>
+      <p className="week__legend">
+        {nothingLogged ? 'Nothing logged this week yet – use Log Time to add your first booking.' : (
+          <>
+            <span className="week__legend-line" aria-hidden="true" /> Daily target
+          </>
+        )}
+      </p>
     </section>
+  );
+}
+function DashboardSkeleton() {
+  return (
+    <div className="dash" role="status" aria-label="Loading dashboard">
+      <div className="dash-hero">
+        <div className="dash-hero__main">
+          <div className="card skeleton dash-skeleton__today" />
+          <div className="skeleton dash-skeleton__action" />
+        </div>
+        <div className="dash-hero__side">
+          <div className="card skeleton dash-skeleton__stat" />
+          <div className="card skeleton dash-skeleton__stat" />
+        </div>
+      </div>
+      <div className="card skeleton dash-skeleton__week" />
+    </div>
   );
 }
 
@@ -135,7 +190,7 @@ export function DashboardPage() {
   const today = todayIso();
 
   return (
-    <div className="page">
+    <div className="page dash-page">
       <div className="page__header">
         <div>
           <h2 className="page__title">Dashboard</h2>
@@ -153,10 +208,7 @@ export function DashboardPage() {
       </div>
 
       {isPending ? (
-        <div className="centered-state" role="status">
-          <span className="spinner" aria-hidden="true" />
-          Loading…
-        </div>
+        <DashboardSkeleton />
       ) : isError || !data ? (
         <div className="dash">
           <div className="notice notice--error" role="alert">
@@ -168,24 +220,27 @@ export function DashboardPage() {
         </div>
       ) : (
         <div className="dash">
-          <TodayCard today={data.today} />
+          <div className="dash-hero">
+            <div className="dash-hero__main">
+              <TodayCard today={data.today} />
 
-          <div className="dash-actions">
-            <Button variant="primary" onClick={() => setDialogDate(today)}>
-              <Icon name="clock" />
-              Log Time
-            </Button>
-            <Button onClick={() => navigate('/month')}>
-              <Icon name="calendar" />
-              View Month
-            </Button>
+              <div className="dash-actions">
+                <Button variant="primary" onClick={() => setDialogDate(today)}>
+                  <Icon name="clock" />
+                  Log Time
+                </Button>
+                <Button variant="tertiary" onClick={() => navigate('/month')}>
+                  <Icon name="calendar" />
+                  View Month
+                </Button>
+              </div>
+            </div>
+
+            <div className="dash-hero__side">
+              <BalanceCard minutes={data.currentBalanceMinutes} year={today.slice(0, 4)} />
+              <WeeklyProgressCard progress={data.weeklyProgress} />
+            </div>
           </div>
-
-          <div className="dash-stats">
-            <BalanceCard minutes={data.currentBalanceMinutes} year={today.slice(0, 4)} />
-            <WeeklyProgressCard progress={data.weeklyProgress} />
-          </div>
-
           <WeekChart week={data.week} todayDate={today} />
         </div>
       )}
