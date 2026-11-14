@@ -4,7 +4,7 @@ A self-hosted time tracking web application built with Spring Boot and React.
 
 Track your working hours, manage absences, and monitor your work-time balance â€” all in a clean, privacy-friendly interface you host yourself.
 
-![Java](https://img.shields.io/badge/Java-21-orange)
+![Java](https://img.shields.io/badge/Java-25-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.5-green)
 ![React](https://img.shields.io/badge/React-19-blue)
 ![License](https://img.shields.io/badge/License-AGPL%20v3-blue)
@@ -25,7 +25,7 @@ Track your working hours, manage absences, and monitor your work-time balance â€
 
 | Layer      | Technology                                               |
 |------------|----------------------------------------------------------|
-| Backend    | Java 21, Spring Boot 4, Spring Security, Spring Data JPA |
+| Backend    | Java 25, Spring Boot 4, Spring Security, Spring Data JPA |
 | Frontend   | React 19, TypeScript, Vite (installable PWA)             |
 | API        | REST/JSON (`/api`), session cookie + CSRF protection     |
 | Database   | MariaDB 11.6                                             |
@@ -80,7 +80,7 @@ docker compose logs -f chroniqo
 ### Option 2: Manual Setup (Development)
 
 **Prerequisites:**
-- Java 21+
+- Java 25+
 - Maven 3.9+
 - MariaDB 11.6+
 - Node.js 24+ (only for frontend development; `mvn verify` downloads its own Node)
