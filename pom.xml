@@ -33,7 +33,7 @@
         <jackson-2-bom.version>2.23.0</jackson-2-bom.version>
         <jackson-bom.version>3.3.0</jackson-bom.version>
         <jacoco.version>0.8.16</jacoco.version>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
         <jollyday.version>2.24.0</jollyday.version>
         <lombok.version>1.18.48</lombok.version>
         <node.version>v24.22.3</node.version>
@@ -192,6 +192,21 @@
         </resources>
 
         <plugins>
+            <!-- JDK 23+ no longer runs annotation processors found on the classpath by default; Lombok must be declared explicitly -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

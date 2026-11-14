@@ -6,7 +6,7 @@ Thank you for your interest in contributing! By participating you agree to abide
 
 ### Prerequisites
 
-- Java 21
+- Java 25
 - Maven 3.9+
 - Docker & Docker Compose (for running MariaDB locally)
 - Node.js 24+ (only needed for working on the frontend with `npm`; the Maven build downloads its own Node for `mvn verify`)
