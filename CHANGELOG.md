@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026.11.10] - 2026-11-14
+
+### Maintenance
+- Merge pull request #90 from LuxFerre86/feature/time-dialog-polish
+- Put the primary dialog action on the right, Close on the left (Z-05)
+- Use 24-hour HH:MM time fields independent of browser locale (Z-04)
+- Show the date as text and make it editable on demand (Z-03)
+- Make the entry type tabs a bordered segmented control (Z-02)
+- Use full width for the editor when a day has no bookings (Z-01)
+
 ## [2026.11.9] - 2026-11-14
 
 ### Maintenance
