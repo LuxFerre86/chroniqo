@@ -102,11 +102,11 @@
 }
 
 .month-stat .is-positive {
-  color: hsl(145, 75%, 55%);
+  color: var(--positive);
 }
 
 .month-stat .is-negative {
-  color: hsl(8, 85%, 65%);
+  color: var(--negative);
 }
 
 /* ===== Calendar grid (desktop / tablet) ===== */
@@ -262,15 +262,15 @@
 }
 
 .balance-positive {
-  color: hsl(145, 75%, 55%);
-  background: hsla(142, 70%, 48%, 0.12);
-  box-shadow: inset 0 0 0 1px hsla(142, 70%, 48%, 0.4);
+  color: var(--positive);
+  background: var(--positive-bg);
+  box-shadow: inset 0 0 0 1px var(--positive-border);
 }
 
 .balance-negative {
-  color: hsl(8, 85%, 65%);
-  background: hsla(8, 85%, 58%, 0.12);
-  box-shadow: inset 0 0 0 1px hsla(8, 85%, 58%, 0.4);
+  color: var(--negative);
+  background: var(--negative-bg);
+  box-shadow: inset 0 0 0 1px var(--negative-border);
 }
 
 /* Desktop: absences are shown as a colored dot, the label is kept for assistive tech and the tooltip */

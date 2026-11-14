@@ -70,15 +70,15 @@
 }
 
 .dash-today__balance--positive {
-  color: hsl(145, 75%, 55%);
-  background: hsla(142, 70%, 48%, 0.12);
-  border: 1px solid hsla(142, 70%, 48%, 0.4);
+  color: var(--positive);
+  background: var(--positive-bg);
+  border: 1px solid var(--positive-border);
 }
 
 .dash-today__balance--negative {
-  color: hsl(8, 85%, 65%);
-  background: hsla(8, 85%, 58%, 0.12);
-  border: 1px solid hsla(8, 85%, 58%, 0.4);
+  color: var(--negative);
+  background: var(--negative-bg);
+  border: 1px solid var(--negative-border);
 }
 
 /* ===== Today ring ===== */
@@ -192,11 +192,11 @@
 }
 
 .dash-stat__value--positive {
-  color: hsl(145, 75%, 55%);
+  color: var(--positive);
 }
 
 .dash-stat__value--negative {
-  color: hsl(8, 85%, 65%);
+  color: var(--negative);
 }
 
 /* Colour is never the only signal: a direction marker accompanies the sign (G-03) */
