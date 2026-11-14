@@ -409,3 +409,14 @@ describe('SettingsPage – delete account', () => {
     expect(assign).not.toHaveBeenCalled();
   });
 });
+
+describe('SettingsPage – working day chips', () => {
+  it('orders the days by the regional week start', () => {
+    currentUser = { ...profile, firstDayOfWeek: 'SUNDAY' };
+    renderPage();
+
+    const group = screen.getByRole('group', { name: 'Working Days' });
+    const names = within(group).getAllByRole('checkbox').map((c) => c.getAttribute('aria-label'));
+    expect(names).toEqual(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']);
+  });
+});

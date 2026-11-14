@@ -7,9 +7,10 @@ import { DAYS_OF_WEEK } from '../api/types';
 import type { DayOfWeekName } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../components/Button';
-import { Checkbox, NumberField, PasswordField, SelectField, TextField } from '../components/fields';
+import { NumberField, PasswordField, SelectField, TextField } from '../components/fields';
 import { Modal } from '../components/Modal';
 import { useToast } from '../components/Toast';
+import { weekdayOrder } from '../lib/dates';
 import { passwordHelperText, validatePassword } from '../lib/password';
 import { invalidateTimeData, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
 import '../styles/settings.css';
@@ -185,15 +186,21 @@ function ProfileSection() {
           <span className="field__label" id={workingDaysId}>
             Working Days
           </span>
-          <div className="checkbox-group">
-            {DAYS_OF_WEEK.map((day) => (
-              <Checkbox
-                key={day}
-                label={DAY_LABELS[day]}
-                checked={workingDays.includes(day)}
-                onChange={(e) => toggleDay(day, e.target.checked)}
-              />
-            ))}
+          <div className="day-chips">
+            {weekdayOrder(user?.firstDayOfWeek).map((i) => {
+              const day = DAYS_OF_WEEK[i];
+              return (
+                <label key={day} className="day-chip">
+                  <input
+                    type="checkbox"
+                    aria-label={DAY_LABELS[day]}
+                    checked={workingDays.includes(day)}
+                    onChange={(e) => toggleDay(day, e.target.checked)}
+                  />
+                  <span aria-hidden="true">{DAY_LABELS[day].slice(0, 3)}</span>
+                </label>
+              );
+            })}
           </div>
           <span className="field__helper">Select the days you are scheduled to work</span>
         </div>
