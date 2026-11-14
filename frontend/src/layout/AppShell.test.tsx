@@ -73,6 +73,7 @@ describe('AppShell', () => {
     renderShell();
 
     expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
+    expect(screen.getByText('AL')).toBeInTheDocument();
     expect(screen.getByText('ada@example.com')).toBeInTheDocument();
     expect(screen.getByText('2026.10.0')).toBeInTheDocument();
     expect(screen.getByText('chroniqo')).toBeInTheDocument();
@@ -87,12 +88,24 @@ describe('AppShell', () => {
     expect(within(sidebar).getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current');
   });
 
-  it('calls logout when clicking Logout', async () => {
+  it('calls logout from the account menu', async () => {
     renderShell();
 
-    await userEvent.click(screen.getByRole('button', { name: /Logout/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    expect(screen.getByRole('menuitem', { name: 'Settings' })).toHaveAttribute('href', '/settings');
+    await userEvent.click(screen.getByRole('menuitem', { name: /Logout/ }));
 
     expect(logout).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('closes the account menu with Escape', async () => {
+    renderShell();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 
   it('toggles and persists the collapsed sidebar', async () => {
@@ -109,6 +122,6 @@ describe('AppShell', () => {
     renderShell();
 
     expect(screen.queryByText('Ada Lovelace')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Logout/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Account menu' })).toBeInTheDocument();
   });
 });

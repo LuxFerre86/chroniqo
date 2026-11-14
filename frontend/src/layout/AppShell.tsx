@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import type { IconName } from '../components/Icon';
+import { UserMenu } from './UserMenu';
 import { useAuth } from '../auth/AuthContext';
 import { useAppConfig } from '../lib/queries';
 
@@ -32,7 +33,6 @@ export function AppShell() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
 
   return (
     <div className={collapsed ? 'shell shell--collapsed' : 'shell'}>
@@ -51,13 +51,7 @@ export function AppShell() {
           <img className="navbar__logo" src="/icons/icon-48x48.png" alt="" width={32} height={32} />
           <span className="navbar__title">{config.appName}</span>
         </Link>
-        <div className="navbar__user">
-          <span className="navbar__name">{fullName}</span>
-          <Button variant="tertiary" small className="btn--danger-text" onClick={() => void logout()}>
-            <Icon name="logout" />
-            Logout
-          </Button>
-        </div>
+        <UserMenu user={user ?? null} onLogout={() => void logout()} />
       </header>
 
       <aside className="sidebar" aria-label="Main navigation">
