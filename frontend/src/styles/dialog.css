@@ -49,13 +49,27 @@
 .dialog-modes {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid hsla(32, 30%, 50%, 0.28);
+  border-radius: var(--radius-m);
+  background: hsla(220, 20%, 8%, 0.6);
 }
 
 .dialog-modes .btn {
-  min-height: 44px;
+  min-height: 40px;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+  box-shadow: none;
+}
+
+.dialog-modes .btn[aria-pressed='false'] {
+  background: transparent;
+  border-color: transparent;
+}
+
+.dialog-modes .btn[aria-pressed='false']:hover {
+  background: var(--contrast-5pct);
 }
 
 .dialog-panels {
