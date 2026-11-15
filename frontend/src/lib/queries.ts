@@ -12,6 +12,7 @@ export const queryKeys = {
   summary: (from: string, to: string) => ['summary', from, to] as const,
   timeEntries: (from: string, to: string) => ['time-entries', from, to] as const,
   absences: (from: string, to: string) => ['absences', from, to] as const,
+  vacation: (year: number) => ['vacation', year] as const,
 };
 
 /** Call after any mutation of time entries, absences or the user profile. */
@@ -21,6 +22,7 @@ export function invalidateTimeData(queryClient: QueryClient): Promise<unknown> {
     queryClient.invalidateQueries({ queryKey: ['summary'] }),
     queryClient.invalidateQueries({ queryKey: ['time-entries'] }),
     queryClient.invalidateQueries({ queryKey: ['absences'] }),
+    queryClient.invalidateQueries({ queryKey: ['vacation'] }),
   ]);
 }
 

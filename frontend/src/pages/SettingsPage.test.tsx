@@ -23,6 +23,8 @@ vi.mock('../api/endpoints', () => ({
     updateProfile: vi.fn(),
     changePassword: vi.fn(),
     deleteAccount: vi.fn(),
+    getVacationAccount: vi.fn(),
+    setVacationEntitlement: vi.fn(),
   },
 }));
 
@@ -86,6 +88,31 @@ beforeEach(() => {
   mocked.updateProfile.mockResolvedValue(profile);
   mocked.changePassword.mockResolvedValue(undefined);
   mocked.deleteAccount.mockResolvedValue(undefined);
+  mocked.getVacationAccount.mockImplementation(async (year: number) => ({
+    year,
+    entitlement: 30,
+    taken: 0,
+    planned: 0,
+    remaining: 30,
+  }));
+  mocked.setVacationEntitlement.mockResolvedValue(undefined);
+});
+
+describe('SettingsPage – vacation', () => {
+  it('loads and saves the annual entitlement', async () => {
+    renderPage();
+    const vacation = section('Vacation');
+    const input = await within(vacation).findByLabelText(/^Annual Entitlement/);
+    await waitFor(() => expect(input).toHaveValue(30));
+
+    await userEvent.clear(input);
+    await userEvent.type(input, '28');
+    await userEvent.click(within(vacation).getByRole('button', { name: 'Save Vacation' }));
+
+    await waitFor(() =>
+      expect(mocked.setVacationEntitlement).toHaveBeenCalledWith(new Date().getFullYear(), 28),
+    );
+  });
 });
 
 describe('SettingsPage – profile', () => {

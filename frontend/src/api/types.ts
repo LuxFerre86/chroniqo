@@ -1,4 +1,10 @@
-export type AbsenceType = 'VACATION' | 'SICK';
+export type AbsenceType =
+  | 'VACATION'
+  | 'SICK'
+  | 'FLEX_DAY'
+  | 'PARENTAL_LEAVE'
+  | 'BUSINESS_TRIP'
+  | 'SPECIAL_LEAVE';
 export type DayAbsenceType = AbsenceType | 'HOLIDAY';
 export type DayOfWeekName =
   | 'MONDAY'
@@ -107,6 +113,14 @@ export interface WeeklyProgress {
   targetMinutes: number;
   percentage: number;
   hasTarget: boolean;
+}
+
+export interface VacationAccount {
+  year: number;
+  entitlement: number;
+  taken: number;
+  planned: number;
+  remaining: number;
 }
 
 export interface Dashboard {

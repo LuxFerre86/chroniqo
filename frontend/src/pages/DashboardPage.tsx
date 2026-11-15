@@ -101,6 +101,25 @@ function BalanceCard({ minutes, year }: { minutes: number; year: string }) {
   );
 }
 
+function VacationCard({ year }: { year: number }) {
+  const { data } = useQuery({ queryKey: queryKeys.vacation(year), queryFn: () => api.getVacationAccount(year) });
+  if (!data) return null;
+  return (
+    <section className="card dash-stat" aria-label="Vacation">
+      <div className="dash__label">Vacation ({year})</div>
+      <div
+        className={`dash-stat__value dash-stat__value--${data.remaining >= 0 ? 'positive' : 'negative'}`}
+        data-testid="vacation-remaining"
+      >
+        {data.remaining} {Math.abs(data.remaining) === 1 ? 'day' : 'days'} left
+      </div>
+      <p className="dash-stat__detail">
+        {data.taken} taken · {data.planned} planned · {data.entitlement} total
+      </p>
+    </section>
+  );
+}
+
 function WeeklyProgressCard({ progress }: { progress: Dashboard['weeklyProgress'] }) {
   const tone = progress.hasTarget ? progressTone(progress.percentage) : null;
   const colorClass = tone === 'green' ? 'positive' : tone === 'red' ? 'negative' : 'amber';
@@ -299,6 +318,7 @@ export function DashboardPage() {
             <div className="dash-hero__side">
               <BalanceCard minutes={data.currentBalanceMinutes} year={today.slice(0, 4)} />
               <WeeklyProgressCard progress={data.weeklyProgress} />
+              <VacationCard year={Number(today.slice(0, 4))} />
             </div>
           </div>
           <WeekChart week={data.week} todayDate={today} />

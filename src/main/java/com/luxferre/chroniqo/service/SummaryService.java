@@ -11,7 +11,6 @@ import com.luxferre.chroniqo.util.WeekStart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -209,11 +208,18 @@ public class SummaryService {
         boolean isConfiguredWorkday = workingDays.contains(date.getDayOfWeek());
         boolean isWorkday = isConfiguredWorkday && absence == null && !isPublicHoliday;
 
+        // Flextime days and business trips keep the daily target on regular workdays
+        boolean targetApplies = isConfiguredWorkday && !holidays.contains(date)
+                && (absence == null || absence.getType().keepsTarget());
+
         int workedMinutes = entries.stream()
                 .mapToInt(this::calculateWorkedMinutes)
                 .sum();
+        if (targetApplies && absence != null && absence.getType().creditsTarget()) {
+            workedMinutes += dailyTargetMinutes;
+        }
 
-        int targetMinutes = isWorkday ? dailyTargetMinutes : 0;
+        int targetMinutes = targetApplies ? dailyTargetMinutes : 0;
         // On non-configured workdays or public holidays, any time worked is surplus
         int balance = (isConfiguredWorkday && !isPublicHoliday)
                 ? workedMinutes - targetMinutes
@@ -312,7 +318,7 @@ public class SummaryService {
                                   String countryCode,
                                   String subdivisionCode) {
         if (absence != null) {
-            return StringUtils.capitalize(absence.getType().name().toLowerCase());
+            return absence.getType().getLabel();
         } else if (isPublicHoliday) {
             return publicHolidayService
                     .getHoliday(date, countryCode, subdivisionCode)

@@ -7,6 +7,7 @@ import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.repository.UserRepository;
+import com.luxferre.chroniqo.repository.VacationEntitlementRepository;
 import com.luxferre.chroniqo.service.EmailService;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,6 +62,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final TimeEntryRepository timeEntryRepository;
     private final AbsenceRepository absenceRepository;
+    private final VacationEntitlementRepository vacationEntitlementRepository;
     private final AppProperties appProperties;
 
     /**
@@ -330,6 +332,7 @@ public class UserService {
 
         timeEntryRepository.deleteByUser(user);
         absenceRepository.deleteByUser(user);
+        vacationEntitlementRepository.deleteByUser(user);
         userRepository.delete(user);
         userRepository.flush();
         log.info("User account deleted");

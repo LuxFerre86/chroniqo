@@ -17,6 +17,18 @@ public enum AbsenceTypeDTO {
     /** Leave caused by illness or medical reasons. */
     SICK,
 
+    /** Day off to reduce overtime; the daily target stays. */
+    FLEX_DAY,
+
+    /** Parental leave. */
+    PARENTAL_LEAVE,
+
+    /** Business trip; the daily target counts as worked. */
+    BUSINESS_TRIP,
+
+    /** Special leave, e.g. wedding or moving. */
+    SPECIAL_LEAVE,
+
     /** Public holiday on which the user is not expected to work. */
     HOLIDAY;
 
@@ -30,6 +42,10 @@ public enum AbsenceTypeDTO {
         return switch (absenceType) {
             case VACATION -> VACATION;
             case SICK -> SICK;
+            case FLEX_DAY -> FLEX_DAY;
+            case PARENTAL_LEAVE -> PARENTAL_LEAVE;
+            case BUSINESS_TRIP -> BUSINESS_TRIP;
+            case SPECIAL_LEAVE -> SPECIAL_LEAVE;
         };
     }
 }

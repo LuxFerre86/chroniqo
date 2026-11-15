@@ -36,6 +36,7 @@ public class AbsenceService {
     private final AbsenceRepository repository;
     private final TimeEntryRepository timeEntryRepository;
     private final UserService userService;
+    private final VacationService vacationService;
 
     /**
      * Saves absences for every working day in the requested date range,
@@ -58,6 +59,10 @@ public class AbsenceService {
             throw TimeEntryValidationException.inconsistentData(String.format(
                     "Cannot record an absence: working time is already booked on %s. Remove the time entries first.",
                     bookedDates.stream().map(LocalDate::toString).collect(Collectors.joining(", "))));
+        }
+
+        if (absenceRequest.absenceType() == AbsenceType.VACATION) {
+            vacationService.validateBooking(user, absenceRequest.startDate(), absenceRequest.endDate());
         }
 
         List<Absence> existingAbsence = repository.findByUserAndDateBetween(user, absenceRequest.startDate(), absenceRequest.endDate());

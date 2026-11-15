@@ -22,6 +22,7 @@ import {
   weekdayOrder,
   type YearMonth,
 } from '../lib/dates';
+import { absenceCssKey, ABSENCE_TYPES } from '../lib/absence';
 import { formatBalance, formatMinutes } from '../lib/format';
 import { queryKeys } from '../lib/queries';
 import type { DaySummary } from '../api/types';
@@ -35,8 +36,7 @@ const SHORT_MONTHS = Array.from({ length: 12 }, (_, i) =>
 const HEAT_FALLBACK_MINUTES = 480;
 const ABSENCE_LEGEND: { type: DaySummary['absenceType']; label: string }[] = [
   { type: 'HOLIDAY', label: 'Public holiday' },
-  { type: 'VACATION', label: 'Vacation' },
-  { type: 'SICK', label: 'Sick leave' },
+  ...ABSENCE_TYPES.map(({ type, label }) => ({ type, label })),
 ];
 const MIN_YEAR = 2000;
 const MAX_YEAR = 2050;
@@ -61,7 +61,7 @@ function totalsFor(days: DaySummary[], today: string, month?: number): Totals {
 }
 
 function badgeClass(type: DaySummary['absenceType']): string {
-  return `badge badge--${(type ?? 'holiday').toLowerCase()}`;
+  return `badge badge--${absenceCssKey(type)}`;
 }
 
 function StatSection({
@@ -425,7 +425,7 @@ export function MonthPage() {
               {legend.map((item) => (
                 <li key={item.type} className="cal-legend__item">
                   <span
-                    className={`cal-legend__dot badge--${(item.type ?? 'holiday').toLowerCase()}`}
+                    className={`cal-legend__dot badge--${absenceCssKey(item.type)}`}
                     aria-hidden="true"
                   />
                   {item.label}
