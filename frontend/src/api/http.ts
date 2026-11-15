@@ -7,6 +7,8 @@
  * - reports 401 responses of protected endpoints through a global handler.
  */
 
+import { getLanguage, translate } from '../i18n';
+
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string | undefined;
@@ -67,7 +69,7 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
 }
 
 async function toError(response: Response): Promise<ApiError> {
-  let detail = `Request failed (${response.status})`;
+  let detail = translate('error.requestFailed', { status: response.status });
   let code: string | undefined;
   let field: string | undefined;
   let errors: Record<string, string> | undefined;
@@ -124,7 +126,7 @@ export async function request<T = void>(
 }
 
 async function send(method: string, path: string, options: RequestOptions): Promise<Response> {
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': getLanguage() };
   let body: BodyInit | undefined;
 
   if (options.form) {
@@ -148,7 +150,7 @@ async function send(method: string, path: string, options: RequestOptions): Prom
       credentials: 'same-origin',
     });
   } catch {
-    throw new ApiError(0, 'The server could not be reached. Please check your connection.', 'NETWORK');
+    throw new ApiError(0, translate('error.network'), 'NETWORK');
   }
 }
 

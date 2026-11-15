@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.service.push;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.api.dto.ReminderSettingsDto;
 import com.luxferre.chroniqo.model.PushSubscription;
 import com.luxferre.chroniqo.model.ReminderSettings;
@@ -40,7 +41,7 @@ public class PushSubscriptionService {
         PushSubscription subscription = subscriptionRepository.findByEndpoint(endpoint).orElse(null);
         if (subscription == null) {
             if (subscriptionRepository.findByUser(user).size() >= MAX_SUBSCRIPTIONS_PER_USER) {
-                throw new IllegalArgumentException("Too many registered devices");
+                throw new IllegalArgumentException(Messages.get("error.push.tooManyDevices"));
             }
             subscription = new PushSubscription();
             subscription.setEndpoint(endpoint);
@@ -74,7 +75,7 @@ public class PushSubscriptionService {
     @Transactional
     public ReminderSettingsDto updateSettings(ReminderSettingsDto dto) {
         if (dto.endAfterHours() < 1 || dto.endAfterHours() > 24) {
-            throw new IllegalArgumentException("endAfterHours must be between 1 and 24");
+            throw new IllegalArgumentException(Messages.get("error.push.endAfterHours"));
         }
         User user = userService.getCurrentUser();
         ReminderSettings settings = settingsRepository.findByUser(user).orElseGet(() -> {

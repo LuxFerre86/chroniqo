@@ -1,6 +1,7 @@
 /** Local-calendar date helpers. ISO dates are always "YYYY-MM-DD" in local time (never UTC). */
 
 import { DAYS_OF_WEEK, type DayOfWeekName } from '../api/types';
+import { getLanguage, getLocale } from '../i18n';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -69,19 +70,19 @@ export function firstWeekdayIndex(ym: YearMonth, firstDay: DayOfWeekName = 'MOND
 
 /** "November 2026" */
 export function formatMonthLabel(ym: YearMonth): string {
-  return new Date(ym.year, ym.month - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  return new Date(ym.year, ym.month - 1, 1).toLocaleDateString(getLocale(), { month: 'long', year: 'numeric' });
 }
 
 /** "Saturday, 14.11.2026" (dashboard header) */
 export function formatLongDate(date: Date): string {
-  const weekday = date.toLocaleDateString('en-GB', { weekday: 'long' });
+  const weekday = date.toLocaleDateString(getLocale(), { weekday: 'long' });
   return `${weekday}, ${formatShortDate(toIsoDate(date))}`;
 }
 
 /** "14.11.2026" – the one date format used throughout the app. */
 export function formatShortDate(iso: string): string {
   const [y, m, d] = iso.split('-');
-  return `${d}.${m}.${y}`;
+  return getLanguage() === 'de' ? `${d}.${m}.${y}` : `${d}/${m}/${y}`;
 }
 
 /** "14.11.2026, 09:30" from a server timestamp ("2026-11-14T09:30:00"); date-only values lose the time part. */
@@ -94,7 +95,7 @@ export function formatDateTime(value: string | null | undefined, fallback = ''):
 }
 
 export function weekdayShort(date: Date): string {
-  return date.toLocaleDateString('en-GB', { weekday: 'short' });
+  return date.toLocaleDateString(getLocale(), { weekday: 'short' });
 }
 
 export function isWeekend(iso: string): boolean {

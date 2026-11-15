@@ -7,6 +7,7 @@ import { api } from '../api/endpoints';
 import type { DayOfWeekName, DaySummary } from '../api/types';
 import { ToastProvider } from '../components/Toast';
 import { MonthPage } from './MonthPage';
+import { setActiveLanguage } from '../i18n';
 
 const auth = vi.hoisted(() => ({ firstDayOfWeek: 'MONDAY' as DayOfWeekName }));
 
@@ -79,6 +80,20 @@ describe('MonthPage', () => {
     vi.useRealTimers();
     vi.clearAllMocks();
     auth.firstDayOfWeek = 'MONDAY';
+    setActiveLanguage('en');
+  });
+
+  it('renders weekdays, hints and legend in German', async () => {
+    setActiveLanguage('de');
+    renderPage();
+
+    const cell = await screen.findByRole('button', { name: /^02\.11\.2026/ });
+    expect(cell).toHaveAccessibleName('02.11.2026, 6:50 h gearbeitet, Saldo -0:58 h');
+    expect(headerLabels()).toEqual(['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']);
+    expect(screen.getAllByText('bis heute', { selector: '.month-stat__sub' })).toHaveLength(2);
+    expect(screen.getByRole('list', { name: 'Legende' })).toHaveTextContent('Feiertag');
+    expect(screen.getByRole('button', { name: 'Nächster Monat' })).toBeInTheDocument();
+    expect(document.title).toBe('Monat | chroniqo');
   });
 
   const headerLabels = () =>
@@ -87,7 +102,7 @@ describe('MonthPage', () => {
   it('starts the calendar on Monday by default', async () => {
     renderPage();
 
-    await screen.findByRole('button', { name: /^02\.11\.2026/ });
+    await screen.findByRole('button', { name: /^02\/11\/2026/ });
     expect(headerLabels()).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
     // 1 Nov 2026 is a Sunday: six empty cells precede it
     expect(document.querySelectorAll('.cal__pad')).toHaveLength(6);
@@ -97,7 +112,7 @@ describe('MonthPage', () => {
     auth.firstDayOfWeek = 'SUNDAY';
     renderPage();
 
-    await screen.findByRole('button', { name: /^02\.11\.2026/ });
+    await screen.findByRole('button', { name: /^02\/11\/2026/ });
     expect(headerLabels()).toEqual(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
     expect(document.querySelectorAll('.cal__pad')).toHaveLength(0);
     const weekend = Array.from(document.querySelectorAll('.cal__head--weekend')).map((el) => el.textContent);
@@ -123,8 +138,8 @@ describe('MonthPage', () => {
   it('shows a neutral target instead of worked time and balance on future workdays', async () => {
     renderPage();
 
-    const future = await screen.findByRole('button', { name: /^16\.11\.2026/ });
-    expect(future).toHaveAccessibleName('16.11.2026, target 7:48 h');
+    const future = await screen.findByRole('button', { name: /^16\/11\/2026/ });
+    expect(future).toHaveAccessibleName('16/11/2026, target 7:48 h');
     expect(within(future).getByText('Target 7:48 h')).toHaveClass('day__target');
     expect(future.querySelector('.day__balance')).toBeNull();
     expect(future.querySelector('.day__worked')).toBeNull();
@@ -133,7 +148,7 @@ describe('MonthPage', () => {
   it('keeps worked time and balance for today and past days', async () => {
     renderPage();
 
-    const past = await screen.findByRole('button', { name: /^03\.11\.2026/ });
+    const past = await screen.findByRole('button', { name: /^03\/11\/2026/ });
     expect(past.querySelector('.day__balance')).not.toBeNull();
     expect(within(past).queryByText(/^Target/)).not.toBeInTheDocument();
   });
@@ -141,27 +156,27 @@ describe('MonthPage', () => {
   it('renders the calendar cells with badges and balance chips', async () => {
     renderPage();
 
-    const cell = await screen.findByRole('button', { name: /^02\.11\.2026/ });
+    const cell = await screen.findByRole('button', { name: /^02\/11\/2026/ });
     expect(within(cell).getByText('6:50 h')).toBeInTheDocument();
     expect(within(cell).getByText('-0:58 h')).toHaveClass('balance-negative');
 
-    const holiday = screen.getByRole('button', { name: /^11\.11\.2026/ });
+    const holiday = screen.getByRole('button', { name: /^11\/11\/2026/ });
     expect(within(holiday).getByText('St. Martin')).toHaveClass('badge--holiday');
     expect(within(holiday).queryByText(/h$/)).not.toBeInTheDocument();
 
-    const today = screen.getByRole('button', { name: /^14\.11\.2026/ });
+    const today = screen.getByRole('button', { name: /^14\/11\/2026/ });
     expect(today).toHaveClass('day--today');
-    expect(screen.getAllByRole('button', { name: /^\d\d\.11\.2026/ })).toHaveLength(30);
+    expect(screen.getAllByRole('button', { name: /^\d\d\/11\/2026/ })).toHaveLength(30);
   });
 
   it('colors worked days by intensity and hides empty 0:00 figures', async () => {
     vi.mocked(api.getSummary).mockResolvedValue([...SUMMARIES, day('2026-11-04')]);
     renderPage();
 
-    const worked = await screen.findByRole('button', { name: /^02\.11\.2026/ });
+    const worked = await screen.findByRole('button', { name: /^02\/11\/2026/ });
     expect(worked.style.getPropertyValue('--heat')).toBe('0.88');
 
-    const empty = screen.getByRole('button', { name: /^04\.11\.2026/ });
+    const empty = screen.getByRole('button', { name: /^04\/11\/2026/ });
     expect(empty.style.getPropertyValue('--heat')).toBe('');
     expect(within(empty).queryByText('0:00 h')).not.toBeInTheDocument();
     expect(within(empty).getByText('-7:48 h')).toHaveClass('balance-negative');
@@ -170,9 +185,9 @@ describe('MonthPage', () => {
   it('marks days off and weekends with their own surface classes', async () => {
     renderPage();
 
-    const saturday = await screen.findByRole('button', { name: /^07\.11\.2026/ });
+    const saturday = await screen.findByRole('button', { name: /^07\/11\/2026/ });
     expect(saturday).toHaveClass('day--off', 'day--weekend');
-    const holiday = screen.getByRole('button', { name: /^11\.11\.2026/ });
+    const holiday = screen.getByRole('button', { name: /^11\/11\/2026/ });
     expect(holiday).toHaveClass('day--off');
     expect(holiday).not.toHaveClass('day--weekend');
   });
@@ -183,7 +198,7 @@ describe('MonthPage', () => {
     await screen.findByLabelText('Statistics');
     const heads = document.querySelectorAll('.week-head');
     expect(heads).toHaveLength(6);
-    expect(heads[1].textContent).toMatch(/^02\.11\.2026 . 08\.11\.2026/);
+    expect(heads[1].textContent).toMatch(/^02\/11\/2026 . 08\/11\/2026/);
     expect(screen.getByLabelText('Legend')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /â€“/ })).toBeNull();
   });
@@ -191,10 +206,10 @@ describe('MonthPage', () => {
   it('marks empty future and off days as compact', async () => {
     renderPage();
 
-    const future = await screen.findByRole('button', { name: /^16\.11\.2026/ });
+    const future = await screen.findByRole('button', { name: /^16\/11\/2026/ });
     expect(future).toHaveClass('day--empty');
-    expect(screen.getByRole('button', { name: /^07\.11\.2026/ })).toHaveClass('day--empty');
-    expect(screen.getByRole('button', { name: /^02\.11\.2026/ })).not.toHaveClass('day--empty');
+    expect(screen.getByRole('button', { name: /^07\/11\/2026/ })).toHaveClass('day--empty');
+    expect(screen.getByRole('button', { name: /^02\/11\/2026/ })).not.toHaveClass('day--empty');
   });
 
   it('lists only the absence types present in the month in the legend', async () => {
@@ -213,7 +228,7 @@ describe('MonthPage', () => {
     expect(screen.queryByRole('button', { name: 'Today' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Next month' }));
     expect(screen.getByRole('button', { name: 'December 2026' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /^\d\d\.12\.2026/ })).toHaveLength(31);
+    expect(screen.getAllByRole('button', { name: /^\d\d\/12\/2026/ })).toHaveLength(31);
     expect(api.getSummary).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole('button', { name: 'Today' }));
@@ -240,15 +255,15 @@ describe('MonthPage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(await screen.findByRole('button', { name: /^02\.11\.2026/ }));
+    await user.click(await screen.findByRole('button', { name: /^02\/11\/2026/ }));
     const dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveTextContent('02.11.2026');
+    expect(dialog).toHaveTextContent('02/11/2026');
     await waitFor(() => expect(api.getTimeEntries).toHaveBeenCalledWith('2026-11-02', '2026-11-02'));
     await user.click(within(dialog).getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
-    screen.getByRole('button', { name: /^03\.11\.2026/ }).focus();
+    screen.getByRole('button', { name: /^03\/11\/2026/ }).focus();
     await user.keyboard('{Enter}');
-    expect(await screen.findByRole('dialog')).toHaveTextContent('03.11.2026');
+    expect(await screen.findByRole('dialog')).toHaveTextContent('03/11/2026');
   });
 });

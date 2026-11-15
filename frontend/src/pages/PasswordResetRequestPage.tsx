@@ -8,13 +8,15 @@ import { Button } from '../components/Button';
 import { TextField } from '../components/fields';
 import { isValidEmail } from '../lib/password';
 import { useAppConfig } from '../lib/queries';
+import { translate, useT } from '../i18n';
 
 function validateEmail(value: string): string | null {
-  if (!value.trim()) return 'Email is required';
-  return isValidEmail(value) ? null : 'Please enter a valid email address';
+  if (!value.trim()) return translate('auth.emailRequired');
+  return isValidEmail(value) ? null : translate('auth.emailInvalid');
 }
 
 export function PasswordResetRequestPage() {
+  const { t } = useT();
   const { appName } = useAppConfig();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -22,8 +24,8 @@ export function PasswordResetRequestPage() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    document.title = `Reset Password | ${appName}`;
-  }, [appName]);
+    document.title = t('auth.resetRequest.docTitle', { appName });
+  }, [appName, t]);
 
   const mutation = useMutation({
     mutationFn: () => api.requestPasswordReset(email.trim()),
@@ -32,7 +34,7 @@ export function PasswordResetRequestPage() {
       setSent(true);
     },
     onError: (e: unknown) => {
-      setError(e instanceof ApiError ? e.message : 'Something went wrong. Please try again.');
+      setError(e instanceof ApiError ? e.message : t('auth.somethingWrong'));
     },
   });
 
@@ -54,14 +56,14 @@ export function PasswordResetRequestPage() {
           <div className="auth-card__emoji" aria-hidden="true">
             🔑
           </div>
-          <h1 className="auth-card__title">Reset Password</h1>
-          <p className="auth-card__subtitle">Enter your email and we'll send you a reset link</p>
+          <h1 className="auth-card__title">{t('auth.resetRequest.title')}</h1>
+          <p className="auth-card__subtitle">{t('auth.resetRequest.subtitle')}</p>
         </div>
 
         <form className="form" onSubmit={handleSubmit} noValidate>
           {sent && (
             <div className="notice notice--success" role="status">
-              If an account exists for this email, a reset link has been sent.
+              {t('auth.resetRequest.sent')}
             </div>
           )}
           {error && (
@@ -70,11 +72,11 @@ export function PasswordResetRequestPage() {
             </div>
           )}
           <TextField
-            label="Email"
+            label={t('auth.email')}
             type="email"
             name="email"
             autoComplete="email"
-            placeholder="your@email.com"
+            placeholder={t('auth.emailPlaceholder')}
             required
             value={email}
             error={emailError}
@@ -85,10 +87,10 @@ export function PasswordResetRequestPage() {
             onBlur={() => email && setEmailError(validateEmail(email))}
           />
           <Button type="submit" variant="primary" block loading={mutation.isPending}>
-            Send Reset Link
+            {t('auth.resetRequest.submit')}
           </Button>
           <Link className="btn btn--tertiary btn--block" to="/login">
-            Back to Login
+            {t('auth.backToLogin')}
           </Link>
         </form>
       </div>

@@ -22,21 +22,20 @@ import {
   weekdayOrder,
   type YearMonth,
 } from '../lib/dates';
-import { absenceCssKey, ABSENCE_TYPES } from '../lib/absence';
+import { absenceCssKey, getAbsenceTypes } from '../lib/absence';
+import { translate, useT } from '../i18n';
 import { formatBalance, formatMinutes } from '../lib/format';
 import { queryKeys } from '../lib/queries';
 import type { DaySummary } from '../api/types';
 import '../styles/month.css';
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const WEEKEND_INDICES = [5, 6];
-const SHORT_MONTHS = Array.from({ length: 12 }, (_, i) =>
-  new Date(2000, i, 1).toLocaleDateString('en-US', { month: 'short' }),
-);
 const HEAT_FALLBACK_MINUTES = 480;
-const ABSENCE_LEGEND: { type: DaySummary['absenceType']; label: string }[] = [
-  { type: 'HOLIDAY', label: 'Public holiday' },
-  ...ABSENCE_TYPES.map(({ type, label }) => ({ type, label })),
+const weekdayName = (index: number) => translate(`month.weekday.${index}` as 'month.weekday.0');
+const shortMonths = () => Array.from({ length: 12 }, (_, i) => translate(`month.short.${i + 1}` as 'month.short.1'));
+const absenceLegend = (): { type: DaySummary['absenceType']; label: string }[] => [
+  { type: 'HOLIDAY', label: translate('month.holiday') },
+  ...getAbsenceTypes().map(({ type, label }) => ({ type, label })),
 ];
 const MIN_YEAR = 2000;
 const MAX_YEAR = 2050;
@@ -106,6 +105,7 @@ function DayCard({
   today: string;
   onOpen: (iso: string) => void;
 }) {
+  const { t } = useT();
   const dayNumber = Number(iso.slice(8, 10));
   const isToday = iso === today;
   const workday = day?.workday ?? false;
@@ -121,9 +121,9 @@ function DayCard({
   const label = [
     formatShortDate(iso),
     hasBadge ? day?.absenceLabel : null,
-    showTarget ? `target ${formatMinutes(target)}` : null,
-    showWorked ? `${formatMinutes(worked)} worked` : null,
-    showBalance ? `balance ${formatBalance(balance)}` : null,
+    showTarget ? t('month.day.target', { value: formatMinutes(target) }) : null,
+    showWorked ? t('month.day.worked', { value: formatMinutes(worked) }) : null,
+    showBalance ? t('month.day.balance', { value: formatBalance(balance) }) : null,
   ]
     .filter(Boolean)
     .join(', ');
@@ -159,7 +159,7 @@ function DayCard({
       }}
     >
       <div className="day__date">
-        <span className="day__weekday">{WEEKDAYS[weekdayIndex(parseIsoDate(iso))]}</span>
+        <span className="day__weekday">{weekdayName(weekdayIndex(parseIsoDate(iso)))}</span>
         <span className="day__num">{dayNumber}</span>
       </div>
       {hasBadge && (
@@ -169,7 +169,7 @@ function DayCard({
       )}
       {showTarget && (
         <div className="day__figures">
-          <span className="day__target">Target {formatMinutes(target)}</span>
+          <span className="day__target">{t('month.day.targetShort', { value: formatMinutes(target) })}</span>
         </div>
       )}
       {(showWorked || showBalance) && (
@@ -230,6 +230,7 @@ function MonthPicker({
   onSelect: (ym: YearMonth) => void;
   onClose: () => void;
 }) {
+  const { t } = useT();
   const [year, setYear] = useState(selected.year);
   const current = currentYearMonth();
 
@@ -250,24 +251,24 @@ function MonthPicker({
     <Modal
       open={open}
       onClose={onClose}
-      title="Select Month"
+      title={t('month.picker.title')}
       narrow
       closeOnBackdrop
       footer={
         <Button variant="tertiary" onClick={onClose}>
-          Close
+          {t('month.picker.close')}
         </Button>
       }
     >
       <div className="month-picker">
         <SelectField
-          label="Year"
+          label={t('month.picker.year')}
           value={String(year)}
           options={years}
           onChange={(e) => setYear(Number(e.target.value))}
         />
         <div className="month-picker__grid">
-          {SHORT_MONTHS.map((name, i) => {
+          {shortMonths().map((name, i) => {
             const ym = { year, month: i + 1 };
             const isSelected = sameMonth(ym, selected);
             const isCurrent = sameMonth(ym, current);
@@ -290,14 +291,15 @@ function MonthPicker({
 }
 
 export function MonthPage() {
+  const { t } = useT();
   const { user } = useAuth();
   const [ym, setYm] = useState<YearMonth>(currentYearMonth);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [dialogDate, setDialogDate] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = 'Month | chroniqo';
-  }, []);
+    document.title = t('month.pageTitle');
+  }, [t]);
 
   const from = `${ym.year}-01-01`;
   const to = `${ym.year}-12-31`;
@@ -316,15 +318,19 @@ export function MonthPage() {
   const legend = useMemo(() => {
     const prefix = `0${ym.month}`.slice(-2);
     const present = new Set((data ?? []).filter((d) => d.date.slice(5, 7) === prefix).map((d) => d.absenceType));
-    return ABSENCE_LEGEND.filter((item) => present.has(item.type));
-  }, [data, ym.month]);
+    return absenceLegend().filter((item) => present.has(item.type));
+  }, [data, ym.month, t]);
 
   const total = daysInMonth(ym);
   const firstDay = user?.firstDayOfWeek ?? 'MONDAY';
   const leading = firstWeekdayIndex(ym, firstDay);
   const headerOrder = weekdayOrder(firstDay);
   const isFutureMonth = ym.year * 12 + ym.month > current.year * 12 + current.month;
-  const hint = sameMonth(ym, current) ? 'up to today' : isFutureMonth ? 'not started yet' : 'full month';
+  const hint = sameMonth(ym, current)
+    ? t('month.hint.current')
+    : isFutureMonth
+      ? t('month.hint.future')
+      : t('month.hint.full');
   const tone = (n: number) => (n >= 0 ? 'positive' : 'negative');
 
   const selectMonth = (next: YearMonth) => {
@@ -337,20 +343,20 @@ export function MonthPage() {
       <div className="month-nav">
         <span aria-hidden="true" />
         <div className="month-nav__group">
-          <Button icon aria-label="Previous month" onClick={() => setYm((v) => addMonths(v, -1))}>
+          <Button icon aria-label={t('month.prev')} onClick={() => setYm((v) => addMonths(v, -1))}>
             <Icon name="chevron-left" />
           </Button>
           <Button className="month-nav__label" aria-haspopup="dialog" onClick={() => setPickerOpen(true)}>
             {formatMonthLabel(ym)}
           </Button>
-          <Button icon aria-label="Next month" onClick={() => setYm((v) => addMonths(v, 1))}>
+          <Button icon aria-label={t('month.next')} onClick={() => setYm((v) => addMonths(v, 1))}>
             <Icon name="chevron-right" />
           </Button>
         </div>
         <div className="month-nav__today-slot">
           {!sameMonth(ym, current) && (
             <Button variant="outlined" small className="month-nav__today" onClick={() => setYm(current)}>
-              Today
+              {t('month.today')}
             </Button>
           )}
         </div>
@@ -359,29 +365,29 @@ export function MonthPage() {
       {isPending ? (
         <div className="centered-state" role="status">
           <span className="spinner" aria-hidden="true" />
-          Loading…
+          {t('month.loading')}
         </div>
       ) : isError ? (
         <div>
           <div className="notice notice--error" role="alert">
-            The monthly overview could not be loaded.
+            {t('month.loadError')}
           </div>
           <p>
-            <Button onClick={() => void refetch()}>Retry</Button>
+            <Button onClick={() => void refetch()}>{t('month.retry')}</Button>
           </p>
         </div>
       ) : (
         <>
-          <section className="card month-stats" aria-label="Statistics">
-            <StatSection kind="target" label="Target hours" value={formatMinutes(monthTotals.target)} hint={hint} />
-            <StatSection kind="worked" label="Worked hours" value={formatMinutes(monthTotals.worked)} hint={hint} />
+          <section className="card month-stats" aria-label={t('month.stats')}>
+            <StatSection kind="target" label={t('month.target')} value={formatMinutes(monthTotals.target)} hint={hint} />
+            <StatSection kind="worked" label={t('month.worked')} value={formatMinutes(monthTotals.worked)} hint={hint} />
             <StatSection
               kind="balance"
-              label="Balance"
+              label={t('month.balance')}
               value={formatBalance(monthTotals.balance)}
               tone={tone(monthTotals.balance)}
               sub={{
-                label: `Year ${ym.year}`,
+                label: t('month.year', { year: ym.year }),
                 value: formatBalance(yearTotals.balance),
                 tone: tone(yearTotals.balance),
               }}
@@ -395,7 +401,7 @@ export function MonthPage() {
                 className={`cal__head${WEEKEND_INDICES.includes(weekday) ? ' cal__head--weekend' : ''}`}
                 aria-hidden="true"
               >
-                {WEEKDAYS[weekday]}
+                {weekdayName(weekday)}
               </div>
             ))}
             {Array.from({ length: leading }, (_, i) => (
@@ -421,7 +427,7 @@ export function MonthPage() {
           </div>
 
           {legend.length > 0 && (
-            <ul className="cal-legend" aria-label="Legend">
+            <ul className="cal-legend" aria-label={t('month.legend')}>
               {legend.map((item) => (
                 <li key={item.type} className="cal-legend__item">
                   <span

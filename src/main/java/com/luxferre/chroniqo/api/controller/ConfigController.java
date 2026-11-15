@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.api.controller;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.api.dto.AppConfigResponse;
 import com.luxferre.chroniqo.api.dto.LookupItem;
 import com.luxferre.chroniqo.config.AppProperties;
@@ -53,7 +54,7 @@ public class ConfigController {
      */
     @GetMapping("/countries")
     public List<LookupItem> countries() {
-        return toItems(countryRegistry.getAllCountries());
+        return toItems(countryRegistry.getLocalizedCountries(Messages.currentLocale()));
     }
 
     /**

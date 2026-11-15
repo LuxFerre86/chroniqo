@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.api;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.service.RegistrationDisabledException;
 import com.luxferre.chroniqo.service.TimeEntryValidationException;
 import com.luxferre.chroniqo.service.user.UserNotFoundException;
@@ -46,7 +47,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
             errors.putIfAbsent(fieldError.getField(), fieldError.getDefaultMessage());
         }
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, Messages.get("error.validation"));
         problem.setProperty("code", "VALIDATION_FAILED");
         problem.setProperty("errors", errors);
         return ResponseEntity.badRequest().body(problem);
@@ -78,7 +79,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ProblemDetail> handleUserNotFound(UserNotFoundException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, Messages.get("error.unauthenticated"));
         problem.setProperty("code", "UNAUTHENTICATED");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
     }
@@ -111,7 +112,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ProblemDetail> handleUnexpected(Exception ex) {
         log.error("Unexpected error while handling API request", ex);
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
-                "An unexpected error occurred. Please try again.");
+                Messages.get("error.unexpected"));
         problem.setProperty("code", "INTERNAL_ERROR");
         return ResponseEntity.internalServerError().body(problem);
     }

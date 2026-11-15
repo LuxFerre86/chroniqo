@@ -18,7 +18,13 @@ public record UserRegistrationRequest(String email,
                                       String lastName,
                                       BigDecimal weeklyTargetHours,
                                       String countryCode,
-                                      String subdivisionCode) {
+                                      String subdivisionCode,
+                                      String language) {
+
+    public UserRegistrationRequest(String email, String password, String firstName, String lastName,
+                                   BigDecimal weeklyTargetHours, String countryCode, String subdivisionCode) {
+        this(email, password, firstName, lastName, weeklyTargetHours, countryCode, subdivisionCode, null);
+    }
 
 }
 

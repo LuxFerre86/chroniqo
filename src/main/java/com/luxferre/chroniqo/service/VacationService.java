@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.service;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.dto.VacationAccountDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.AbsenceType;
@@ -66,7 +67,7 @@ public class VacationService {
     @Transactional
     public void setEntitlement(int year, int days) {
         if (days < 0 || days > MAX_ENTITLEMENT_DAYS) {
-            throw new IllegalArgumentException("Vacation entitlement must be between 0 and " + MAX_ENTITLEMENT_DAYS + " days");
+            throw new IllegalArgumentException(Messages.get("error.vacation.entitlement", String.valueOf(MAX_ENTITLEMENT_DAYS)));
         }
         User user = userService.getCurrentUser();
         VacationEntitlement entitlement = entitlementRepository.findByUserAndYear(user, year)

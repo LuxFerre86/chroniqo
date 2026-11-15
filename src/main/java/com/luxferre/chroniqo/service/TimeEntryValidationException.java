@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.service;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import lombok.Getter;
 
 /**
@@ -77,7 +78,7 @@ public class TimeEntryValidationException extends RuntimeException {
                 ValidationErrorType.FUTURE_DATE,
                 "date",
                 date,
-                "Date cannot be in the future"
+                Messages.get("error.entry.futureDate")
         );
     }
 
@@ -93,7 +94,7 @@ public class TimeEntryValidationException extends RuntimeException {
                 ValidationErrorType.NEGATIVE_VALUE,
                 field,
                 value,
-                String.format("%s cannot be negative (got: %s)", field, value)
+                Messages.get("error.value.negative", field, String.valueOf(value))
         );
     }
 
@@ -110,7 +111,7 @@ public class TimeEntryValidationException extends RuntimeException {
                 ValidationErrorType.VALUE_TOO_LARGE,
                 field,
                 value,
-                String.format("%s cannot exceed %s (got: %s)", field, max, value)
+                Messages.get("error.value.tooLarge", field, String.valueOf(max), String.valueOf(value))
         );
     }
 

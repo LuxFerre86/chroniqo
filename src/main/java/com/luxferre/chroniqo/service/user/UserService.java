@@ -3,6 +3,7 @@ package com.luxferre.chroniqo.service.user;
 import com.luxferre.chroniqo.config.AppProperties;
 import com.luxferre.chroniqo.config.DefaultUserDetailsService;
 import com.luxferre.chroniqo.dto.UserRegistrationRequest;
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
@@ -82,7 +83,7 @@ public class UserService {
         return userDetailsService.getUsernameFromContext()
                 .flatMap(userRepository::findByEmail)
                 .orElseThrow(() -> new UserNotFoundException(
-                        "Could not determine current user."));
+                        Messages.get("error.user.unknown")));
     }
 
     /**
@@ -104,14 +105,14 @@ public class UserService {
         if (!appProperties.getRegistrationProperties().isEnabled()) {
             log.warn("User registration rejected: registration disabled");
             throw new RegistrationDisabledException(
-                    "Registration is currently disabled.");
+                    Messages.get("error.registration.disabled"));
         }
 
         if (userRepository.findByEmail(request.email()).isPresent()) {
             log.warn("User registration rejected: email already registered: {}", request.email());
             // Hash anyway so the response time does not reveal that the email exists.
             passwordEncoder.encode(request.password());
-            throw new EmailAlreadyRegisteredException("Email already registered");
+            throw new EmailAlreadyRegisteredException(Messages.get("error.email.registered"));
         }
 
         log.info("User registration initiated for email: {}", request.email());
@@ -124,6 +125,7 @@ public class UserService {
         user.setWeeklyTargetHours(request.weeklyTargetHours());
         user.setCountryCode(request.countryCode());
         user.setSubdivisionCode(request.subdivisionCode());
+        user.setLanguage(Messages.normalizeLanguage(request.language()));
         user.setEnabled(false);
         user.setVerificationToken(UUID.randomUUID().toString());
         user.setVerificationTokenExpiryDate(LocalDateTime.now().plusHours(VERIFICATION_TOKEN_VALIDITY_HOURS));
@@ -274,11 +276,18 @@ public class UserService {
      *         {@code workingDays} is null or empty
      */
     @Transactional
+    public void updateLanguage(String email, String language) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException(Messages.get("error.user.notFound")));
+        user.setLanguage(Messages.normalizeLanguage(language));
+        userRepository.save(user);
+    }
+
     public void updateProfile(String email, String firstName, String lastName,
                               BigDecimal weeklyTargetHours, Set<DayOfWeek> workingDays,
                               String countryCode, String subdivisionCode) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException(Messages.get("error.user.notFound")));
 
         user.setFirstName(firstName);
         user.setLastName(lastName);
@@ -304,10 +313,10 @@ public class UserService {
     public void changePassword(String email, String oldPassword,
                                String newPassword) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException(Messages.get("error.user.notFound")));
 
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Current password is incorrect");
+            throw new IllegalArgumentException(Messages.get("error.password.incorrect"));
         }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
@@ -333,7 +342,7 @@ public class UserService {
         User user = getCurrentUser();
 
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Current password is incorrect");
+            throw new IllegalArgumentException(Messages.get("error.password.incorrect"));
         }
 
         timeEntryRepository.deleteByUser(user);

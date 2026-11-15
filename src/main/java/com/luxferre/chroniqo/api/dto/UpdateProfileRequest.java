@@ -20,5 +20,6 @@ public record UpdateProfileRequest(@NotBlank @Size(max = 255) String firstName,
                                    @NotNull @DecimalMin("0") @DecimalMax("80") @Digits(integer = 2, fraction = 1) BigDecimal weeklyTargetHours,
                                    @NotEmpty Set<DayOfWeek> workingDays,
                                    @Size(max = 10) String countryCode,
-                                   @Size(max = 20) String subdivisionCode) {
+                                   @Size(max = 20) String subdivisionCode,
+                                   @Size(max = 5) String language) {
 }
