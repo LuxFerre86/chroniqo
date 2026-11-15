@@ -436,6 +436,26 @@ select.field__input option {
   border: 1px solid var(--contrast-20pct);
 }
 
+.badge--flex-day {
+  background: hsla(265, 70%, 65%, 0.16);
+  color: hsl(265, 70%, 78%);
+}
+
+.badge--parental-leave {
+  background: hsla(335, 75%, 62%, 0.16);
+  color: hsl(335, 75%, 76%);
+}
+
+.badge--business-trip {
+  background: hsla(195, 80%, 55%, 0.16);
+  color: hsl(195, 80%, 70%);
+}
+
+.badge--special-leave {
+  background: hsla(20, 85%, 58%, 0.16);
+  color: hsl(20, 85%, 72%);
+}
+
 .tone-positive {
   color: var(--positive);
 }

@@ -242,7 +242,7 @@ public class SummaryServiceUnitTest {
         }
 
         @ParameterizedTest
-        @EnumSource(AbsenceType.class)
+        @EnumSource(value = AbsenceType.class, names = {"VACATION", "SICK", "PARENTAL_LEAVE", "SPECIAL_LEAVE"})
         void weekday_withAbsence_considerWorkedMinutes_absenceTypeSet(AbsenceType type) {
             TimeEntryDTO e = entry(WEEKDAY, LocalTime.of(9, 0), LocalTime.of(17, 0), 0);
             Absence a = absence(WEEKDAY, type);
@@ -256,6 +256,45 @@ public class SummaryServiceUnitTest {
             assertThat(result.targetMinutes()).isZero();
             assertThat(result.balanceMinutes()).isEqualTo(480);
             assertThat(result.absenceType()).isEqualTo(AbsenceTypeDTO.of(type));
+        }
+
+        @Test
+        void flexDay_keepsTarget_balanceDropsByDailyTarget() {
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    WEEKDAY, null, absence(WEEKDAY, AbsenceType.FLEX_DAY),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS,
+                    null, null);
+
+            assertThat(result.workedMinutes()).isZero();
+            assertThat(result.targetMinutes()).isEqualTo(DAILY_TARGET_MINUTES);
+            assertThat(result.balanceMinutes()).isEqualTo(-DAILY_TARGET_MINUTES);
+            assertThat(result.absenceType()).isEqualTo(AbsenceTypeDTO.FLEX_DAY);
+            assertThat(result.absenceLabel()).isEqualTo("Flextime day");
+        }
+
+        @Test
+        void businessTrip_creditsTargetAsWorked_balanceNeutral() {
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    WEEKDAY, null, absence(WEEKDAY, AbsenceType.BUSINESS_TRIP),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS,
+                    null, null);
+
+            assertThat(result.workedMinutes()).isEqualTo(DAILY_TARGET_MINUTES);
+            assertThat(result.targetMinutes()).isEqualTo(DAILY_TARGET_MINUTES);
+            assertThat(result.balanceMinutes()).isZero();
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = AbsenceType.class, names = {"FLEX_DAY", "BUSINESS_TRIP"})
+        void targetKeepingAbsence_onNonWorkingDay_hasNoTarget(AbsenceType type) {
+            DaySummaryDTO result = summaryService.createDaySummaryDTO(
+                    WEEKEND, null, absence(WEEKEND, type),
+                    DAILY_TARGET_MINUTES, User.DEFAULT_WORKING_DAYS, NO_HOLIDAYS,
+                    null, null);
+
+            assertThat(result.workedMinutes()).isZero();
+            assertThat(result.targetMinutes()).isZero();
+            assertThat(result.balanceMinutes()).isZero();
         }
 
         @Test

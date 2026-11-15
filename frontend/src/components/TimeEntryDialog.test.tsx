@@ -211,7 +211,8 @@ describe('TimeEntryDialog', () => {
     renderDialog();
     await screen.findByText('New booking');
 
-    await user.click(screen.getByRole('button', { name: 'Sick' }));
+    await user.click(screen.getByRole('button', { name: 'Absence' }));
+    await user.selectOptions(screen.getByLabelText('Type'), 'SICK');
     fireEvent.change(screen.getByLabelText(/Start date/), { target: { value: '2026-11-10' } });
     expect(screen.getByLabelText(/End date/)).toHaveValue('2026-11-10');
 
@@ -236,6 +237,20 @@ describe('TimeEntryDialog', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
+  it('books a business trip via the type select', async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await screen.findByText('New booking');
+
+    await user.click(screen.getByRole('button', { name: 'Absence' }));
+    await user.selectOptions(screen.getByLabelText('Type'), 'BUSINESS_TRIP');
+    expect(screen.getByText(/daily target counts as worked/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(api.saveAbsence).toHaveBeenCalledWith(DATE, DATE, 'BUSINESS_TRIP'));
+    expect(await screen.findByText(/Business trip booked/)).toBeInTheDocument();
+  });
+
   it('opens future days in vacation mode and blocks working time there', async () => {
     const user = userEvent.setup();
     renderDialog(vi.fn(), '2099-01-05');
@@ -253,7 +268,7 @@ describe('TimeEntryDialog', () => {
     renderDialog();
     await screen.findByText('New booking');
 
-    await user.click(screen.getByRole('button', { name: 'Vacation' }));
+    await user.click(screen.getByRole('button', { name: 'Absence' }));
     expect(await screen.findByLabelText(/Start date/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Remove vacation' })).not.toBeInTheDocument();
   });

@@ -306,6 +306,22 @@
   .day__badge.badge--sick {
     background: hsl(210, 15%, 62%);
   }
+
+  .day__badge.badge--flex-day {
+    background: hsl(265, 70%, 65%);
+  }
+
+  .day__badge.badge--parental-leave {
+    background: hsl(335, 75%, 62%);
+  }
+
+  .day__badge.badge--business-trip {
+    background: hsl(195, 80%, 55%);
+  }
+
+  .day__badge.badge--special-leave {
+    background: hsl(20, 85%, 58%);
+  }
 }
 
 /* ===== Legend ===== */
@@ -342,6 +358,22 @@
 
 .cal-legend__dot.badge--sick {
   background: hsl(210, 15%, 62%);
+}
+
+.cal-legend__dot.badge--flex-day {
+  background: hsl(265, 70%, 65%);
+}
+
+.cal-legend__dot.badge--parental-leave {
+  background: hsl(335, 75%, 62%);
+}
+
+.cal-legend__dot.badge--business-trip {
+  background: hsl(195, 80%, 55%);
+}
+
+.cal-legend__dot.badge--special-leave {
+  background: hsl(20, 85%, 58%);
 }
 
 @media (max-width: 700px) {

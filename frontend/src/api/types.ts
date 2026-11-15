@@ -1,4 +1,10 @@
-export type AbsenceType = 'VACATION' | 'SICK';
+export type AbsenceType =
+  | 'VACATION'
+  | 'SICK'
+  | 'FLEX_DAY'
+  | 'PARENTAL_LEAVE'
+  | 'BUSINESS_TRIP'
+  | 'SPECIAL_LEAVE';
 export type DayAbsenceType = AbsenceType | 'HOLIDAY';
 export type DayOfWeekName =
   | 'MONDAY'

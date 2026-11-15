@@ -4,11 +4,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
 import { ApiError } from '../api/http';
 import type { AbsenceType, TimeEntry } from '../api/types';
+import { ABSENCE_TYPES, absenceLabel } from '../lib/absence';
 import { countDays, formatShortDate, todayIso } from '../lib/dates';
 import { formatMinutes, isTime24h, normalizeTime, trimSeconds, worked } from '../lib/format';
 import { invalidateTimeData, queryKeys } from '../lib/queries';
 import { Button } from './Button';
-import { NumberField, TextAreaField, TextField } from './fields';
+import { NumberField, SelectField, TextAreaField, TextField } from './fields';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
 import { useToast } from './Toast';
@@ -16,17 +17,14 @@ import '../styles/dialog.css';
 
 type Mode = 'WORKING' | AbsenceType;
 
-const MODE_NAMES: Record<Mode, string> = {
-  WORKING: 'Working time',
-  SICK: 'Sick leave',
-  VACATION: 'Vacation',
-};
-
-const MODE_SWITCH: { mode: Mode; label: string }[] = [
-  { mode: 'WORKING', label: 'Working time' },
-  { mode: 'SICK', label: 'Sick' },
-  { mode: 'VACATION', label: 'Vacation' },
+const MODE_SWITCH: { key: 'WORKING' | 'ABSENCE'; label: string }[] = [
+  { key: 'WORKING', label: 'Working time' },
+  { key: 'ABSENCE', label: 'Absence' },
 ];
+
+function modeName(mode: Mode): string {
+  return mode === 'WORKING' ? 'Working time' : absenceLabel(mode);
+}
 
 const DEFAULT_BREAK_MINUTES = 30;
 const GENERIC_ERROR = 'An unexpected error occurred. Please try again.';
@@ -98,6 +96,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const formId = useId();
 
   const [mode, setMode] = useState<Mode | null>(null);
+  const [lastAbsenceType, setLastAbsenceType] = useState<AbsenceType>('VACATION');
   const [listDate, setListDate] = useState(date);
   const [editor, setEditor] = useState<EditorState>(() => newEditor(date));
   const [absenceStart, setAbsenceStart] = useState(date);
@@ -144,7 +143,9 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
     if (mode !== null || !initiallyLoaded) return;
     const absence = (absencesQuery.data ?? []).find((a) => a.date === date);
     const hasEntries = (entriesQuery.data ?? []).length > 0;
-    setMode(!hasEntries && absence ? absence.type : date > todayIso() ? 'VACATION' : 'WORKING');
+    const initial: Mode = !hasEntries && absence ? absence.type : date > todayIso() ? 'VACATION' : 'WORKING';
+    setMode(initial);
+    if (initial !== 'WORKING') setLastAbsenceType(initial);
   }, [mode, initiallyLoaded, absencesQuery.data, entriesQuery.data, date]);
 
   const patchEditor = (patch: Partial<EditorState>) => {
@@ -176,7 +177,11 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const changeMode = (next: Mode) => {
     setError(null);
     setMode(next);
+    if (next !== 'WORKING') setLastAbsenceType(next);
   };
+
+  const showAbsenceTab = (key: 'WORKING' | 'ABSENCE') =>
+    key === 'WORKING' ? mode === 'WORKING' : mode !== 'WORKING';
 
   const changeAbsenceStart = (value: string) => {
     setError(null);
@@ -235,9 +240,9 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
       if (end < absenceStart) throw new ValidationError('End date must be on or after start date');
       await api.saveAbsence(absenceStart, end, type);
       const { weekdays, weekendDays } = countDays(absenceStart, end);
-      const label = type === 'SICK' ? 'Sick leave recorded' : 'Vacation booked';
+      const label = absenceLabel(type);
       const skipped = weekendDays > 0 ? ` (${plural(weekendDays, 'weekend day')} skipped)` : '';
-      toast.success(`${label}: ${plural(weekdays, 'day')}${skipped}`);
+      toast.success(`${label} booked: ${plural(weekdays, 'day')}${skipped}`);
       await invalidateTimeData(queryClient);
       onClose();
     });
@@ -249,7 +254,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
       if (end < absenceStart) throw new ValidationError('End date must be on or after start date');
       await api.deleteAbsences(absenceStart, end, type);
       const removed = plural(removableCount, 'day');
-      toast.success(type === 'SICK' ? `Sick leave removed: ${removed}` : `Vacation cancelled: ${removed}`);
+      toast.success(`${absenceLabel(type)} removed: ${removed}`);
       await invalidateTimeData(queryClient);
       onClose();
     });
@@ -274,7 +279,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
     <div className="dialog-head">
       <div className="dialog-head__row">
         <h2 className="dialog-head__date">{formatShortDate(headerDate)}</h2>
-        {mode && <span className="dialog-head__pill">{MODE_NAMES[mode]}</span>}
+        {mode && <span className="dialog-head__pill">{modeName(mode)}</span>}
       </div>
       <p className="dialog-head__summary">{summary || '\u00a0'}</p>
     </div>
@@ -302,9 +307,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
           >
             {confirmRemove
               ? `Confirm: remove ${plural(removableCount, 'day')}`
-              : mode === 'SICK'
-                ? 'Remove sick leave'
-                : 'Remove vacation'}
+              : `Remove ${absenceLabel(mode).toLowerCase()}`}
           </Button>
         )}
         <Button
@@ -332,10 +335,12 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
           <div className="dialog-modes" role="group" aria-label="Entry type">
             {MODE_SWITCH.map((item) => (
               <Button
-                key={item.mode}
-                variant={mode === item.mode ? 'primary' : 'tertiary'}
-                aria-pressed={mode === item.mode}
-                onClick={() => changeMode(item.mode)}
+                key={item.key}
+                variant={showAbsenceTab(item.key) ? 'primary' : 'tertiary'}
+                aria-pressed={showAbsenceTab(item.key)}
+                onClick={() => {
+                  if (!showAbsenceTab(item.key)) changeMode(item.key === 'WORKING' ? 'WORKING' : lastAbsenceType);
+                }}
               >
                 {item.label}
               </Button>
@@ -344,7 +349,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
 
           {futureBooking && (
             <div className="notice notice--error" role="alert">
-              Working time cannot be booked for a future date. Use Vacation for planned absences.
+              Working time cannot be booked for a future date. Use an absence for planned days off.
             </div>
           )}
 
@@ -493,10 +498,20 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
               </section>
             </div>
           ) : (
-            <section className="dialog-panel" aria-label={MODE_NAMES[mode]}>
-              <h3 className="dialog-panel__title">{MODE_NAMES[mode]}</h3>
-              <p className="dialog-panel__hint">Use a simple date range. No time fields are needed for absences.</p>
+            <section className="dialog-panel" aria-label="Absence">
+              <h3 className="dialog-panel__title">Absence</h3>
+              <p className="dialog-panel__hint">
+                {ABSENCE_TYPES.find((t) => t.type === mode)?.hint ??
+                  'Use a simple date range. No time fields are needed for absences.'}
+              </p>
               <div className="dialog-grid dialog-grid--absence">
+                <SelectField
+                  className="dialog-grid__full"
+                  label="Type"
+                  value={mode}
+                  options={ABSENCE_TYPES.map((t) => ({ value: t.type, label: t.label }))}
+                  onChange={(e) => changeMode(e.target.value as AbsenceType)}
+                />
                 <TextField
                   label="Start date"
                   type="date"
