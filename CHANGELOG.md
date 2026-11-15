@@ -1,5 +1,21 @@
 # Changelog
 
+## [2026.11.13] - 2026-11-15
+
+### Added
+- feat(auth): allow resending the verification email
+- feat(profile): support one decimal place in weekly target hours
+
+
+### Fixed
+- fix(time): reject bookings on absence days and clarify range message
+- fix(absence): delete only the selected absence type in range
+- fix(absence): flush deletes before inserting replacement absences
+
+
+### Maintenance
+- Merge pull request #93 from LuxFerre86/bugfix/po-review-findings
+
 ## [2026.11.12] - 2026-11-14
 
 ### Added
