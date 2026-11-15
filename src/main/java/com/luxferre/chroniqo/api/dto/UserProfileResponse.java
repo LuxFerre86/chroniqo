@@ -19,6 +19,7 @@ public record UserProfileResponse(String email,
                                   DayOfWeek firstDayOfWeek,
                                   String countryCode,
                                   String subdivisionCode,
+                                  String language,
                                   LocalDateTime createdAt,
                                   LocalDateTime lastLoginAt) {
 
@@ -38,6 +39,7 @@ public record UserProfileResponse(String email,
                 WeekStart.forCountry(user.getCountryCode()),
                 user.getCountryCode(),
                 user.getSubdivisionCode(),
+                user.getLanguage(),
                 user.getCreatedAt(),
                 user.getLastLoginAt());
     }

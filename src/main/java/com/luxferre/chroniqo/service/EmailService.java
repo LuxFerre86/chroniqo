@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.service;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.config.AppProperties;
 import com.luxferre.chroniqo.model.User;
 import lombok.RequiredArgsConstructor;
@@ -37,21 +38,9 @@ public class EmailService {
     public void sendVerificationEmail(User user) {
         String verificationLink = appProperties.getBaseUrl() + "/verify-email?token=" + user.getVerificationToken();
 
-        String subject = "chroniqo - Verify your email";
-        String message = String.format("""
-                Hello %s,
-                
-                Welcome to chroniqo! Please verify your email address by clicking the link below:
-                
-                %s
-                
-                This link will expire in 24 hours.
-                
-                If you didn't create an account, please ignore this email.
-                
-                Best regards,
-                chroniqo Team
-                """, user.getFirstName(), verificationLink);
+        String lang = user.getLanguage();
+        String subject = Messages.forLanguage(lang, "mail.verify.subject");
+        String message = Messages.forLanguage(lang, "mail.verify.body", user.getFirstName(), verificationLink);
 
         sendEmail(user.getEmail(), subject, message);
     }
@@ -62,21 +51,9 @@ public class EmailService {
     public void sendPasswordResetEmail(User user) {
         String resetLink = appProperties.getBaseUrl() + "/reset-password-confirm?token=" + user.getResetToken();
 
-        String subject = "chroniqo - Password Reset";
-        String message = String.format("""
-                Hello %s,
-                
-                You requested to reset your password. Click the link below to set a new password:
-                
-                %s
-                
-                This link will expire in 1 hour.
-                
-                If you didn't request this, please ignore this email and your password will remain unchanged.
-                
-                Best regards,
-                chroniqo Team
-                """, user.getFirstName(), resetLink);
+        String lang = user.getLanguage();
+        String subject = Messages.forLanguage(lang, "mail.reset.subject");
+        String message = Messages.forLanguage(lang, "mail.reset.body", user.getFirstName(), resetLink);
 
         sendEmail(user.getEmail(), subject, message);
     }

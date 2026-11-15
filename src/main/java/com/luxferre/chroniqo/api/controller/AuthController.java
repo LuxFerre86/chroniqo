@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.api.controller;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.api.dto.PasswordResetConfirmRequest;
 import com.luxferre.chroniqo.api.dto.PasswordResetRequestRequest;
 import com.luxferre.chroniqo.api.dto.RegisterRequest;
@@ -55,7 +56,8 @@ public class AuthController {
                     request.lastName().trim(),
                     request.weeklyTargetHours(),
                     countryCode,
-                    subdivisionCode));
+                    subdivisionCode,
+                    request.language()));
         } catch (EmailAlreadyRegisteredException ignored) {
             // Answer exactly like a successful registration so registered emails cannot be enumerated.
         }
@@ -110,7 +112,7 @@ public class AuthController {
             return org.springframework.http.ResponseEntity.noContent().build();
         }
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-                "The reset link is invalid or has expired.");
+                Messages.get("error.reset.invalid"));
         problem.setProperty("code", "INVALID_TOKEN");
         return org.springframework.http.ResponseEntity.badRequest().body(problem);
     }

@@ -31,6 +31,23 @@ class ConfigControllerTest extends AbstractApiControllerTest {
     }
 
     @Test
+    void countries_followAcceptLanguage() throws Exception {
+        mockMvc.perform(get("/api/countries").header("Accept-Language", "de"))
+                .andExpect(jsonPath("$[?(@.code=='DE')].name").value("Deutschland"));
+        mockMvc.perform(get("/api/countries").header("Accept-Language", "en"))
+                .andExpect(jsonPath("$[?(@.code=='DE')].name").value("Germany"));
+        mockMvc.perform(get("/api/countries").header("Accept-Language", "fr"))
+                .andExpect(jsonPath("$[?(@.code=='DE')].name").value("Germany"));
+    }
+
+    @Test
+    @org.springframework.security.test.context.support.WithMockUser
+    void errors_followAcceptLanguage() throws Exception {
+        mockMvc.perform(        get("/api/vacation").param("year", "1999").header("Accept-Language", "de"))
+                        .andExpect(jsonPath("$.detail").value("Das Jahr muss zwischen 2000 und 2100 liegen"));
+    }
+
+    @Test
     void subdivisions_ofGermany_containBavaria() throws Exception {
         mockMvc.perform(get("/api/countries/DE/subdivisions"))
                 .andExpect(status().isOk())

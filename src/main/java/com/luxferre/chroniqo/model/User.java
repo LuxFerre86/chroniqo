@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.model;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.config.DefaultUserDetailsService;
 import com.luxferre.chroniqo.service.user.LoginAttemptService;
 import jakarta.persistence.*;
@@ -119,6 +120,11 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = false;
 
+    /** UI/e-mail language (ISO 639-1, {@code en} or {@code de}). */
+    @Column(nullable = false, length = 5)
+    @org.hibernate.annotations.ColumnDefault("'en'")
+    private String language = "en";
+
     /**
      * If set, the account is locked until this timestamp.
      * Null means the account is not locked.
@@ -165,7 +171,7 @@ public class User {
     public void setWorkingDays(Set<DayOfWeek> days) {
         if (days == null || days.isEmpty()) {
             throw new IllegalArgumentException(
-                    "At least one working day must be configured");
+                    Messages.get("error.workingDays.required"));
         }
         this.workingDays = days.stream().sorted().collect(Collectors.toList());
     }

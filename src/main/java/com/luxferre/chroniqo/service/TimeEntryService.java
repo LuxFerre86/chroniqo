@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.service;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.TimeEntry;
@@ -196,19 +197,19 @@ public class TimeEntryService {
         if (dto == null) {
             log.warn("Time entry validation failed: Time entry cannot be null");
             throw TimeEntryValidationException.nullValue("timeEntry",
-                    "Time entry cannot be null");
+                    Messages.get("error.entry.null"));
         }
 
         if (dto.getDate() == null) {
             log.warn("Time entry validation failed: Date cannot be null");
             throw TimeEntryValidationException.nullValue("date",
-                    "Date cannot be null");
+                    Messages.get("error.entry.dateNull"));
         }
 
         if (dto.getStartTime() == null) {
             log.warn("Time entry validation failed: Start time cannot be null");
             throw TimeEntryValidationException.nullValue("startTime",
-                    "Start time cannot be null");
+                    Messages.get("error.entry.startNull"));
         }
 
         // Validate date is not in the future
@@ -222,12 +223,12 @@ public class TimeEntryService {
         if (breakMinutes != null) {
             if (breakMinutes < MIN_BREAK_MINUTES) {
                 log.warn("Time entry validation failed: Break minutes {} is negative", breakMinutes);
-                throw TimeEntryValidationException.negativeValue("Break minutes", breakMinutes);
+                throw TimeEntryValidationException.negativeValue(Messages.get("field.breakMinutes"), breakMinutes);
             }
             if (breakMinutes > MAX_BREAK_MINUTES) {
                 log.warn("Time entry validation failed: Break minutes {} exceeds maximum {} minutes", breakMinutes, MAX_BREAK_MINUTES);
                 throw TimeEntryValidationException.valueTooLarge(
-                        "Break minutes", breakMinutes, MAX_BREAK_MINUTES + " minutes");
+                        Messages.get("field.breakMinutes"), breakMinutes, Messages.get("unit.minutes", MAX_BREAK_MINUTES));
             }
         }
 
@@ -257,7 +258,7 @@ public class TimeEntryService {
             if (endTime.equals(startTime)) {
                 log.warn("Time entry validation failed: End time equals start time {}", startTime);
                 throw TimeEntryValidationException.invalidRange(
-                        "End time cannot be equal to start time",
+                        Messages.get("error.entry.endEqualsStart"),
                         startTime, endTime
                 );
             }
@@ -279,7 +280,7 @@ public class TimeEntryService {
             if (totalMinutes > MAX_WORK_HOURS * 60) {
                 log.warn("Time entry validation failed: Total time {} minutes exceeds {} hours", totalMinutes, MAX_WORK_HOURS);
                 throw TimeEntryValidationException.valueTooLarge(
-                        "Total time", totalMinutes + " minutes", MAX_WORK_HOURS + " hours");
+                        Messages.get("field.totalTime"), Messages.get("unit.minutes", totalMinutes), Messages.get("unit.hours", MAX_WORK_HOURS));
             }
         }
     }
@@ -309,7 +310,7 @@ public class TimeEntryService {
 
         return timeEntryRepository.findByIdAndUser(dto.getId(), user)
                 .orElseThrow(() -> TimeEntryValidationException.inconsistentData(
-                        "Time entry to update does not exist"));
+                        Messages.get("error.entry.updateMissing")));
     }
 
     private void validateNoAbsence(User user, LocalDate date) {

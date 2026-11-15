@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.service.push;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.model.*;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
 import com.luxferre.chroniqo.repository.PushSubscriptionRepository;
@@ -71,7 +72,8 @@ public class ReminderService {
         LocalDate today = now.toLocalDate();
 
         if (settings.isStartEnabled() && isStartReminderDue(user, settings, now)) {
-            deliver(user, "Zeiterfassung", "Du hast heute noch keine Arbeitszeit erfasst.");
+            deliver(user, Messages.forLanguage(user.getLanguage(), "push.title"),
+                    Messages.forLanguage(user.getLanguage(), "push.start.body"));
             settings.setLastStartReminderDate(today);
             changed = true;
         }
@@ -81,8 +83,8 @@ public class ReminderService {
                 LocalDateTime started = LocalDateTime.of(entry.getDate(), entry.getStartTime());
                 if (!now.isBefore(started.plusHours(settings.getEndAfterHours()))
                         && !entry.getId().equals(settings.getLastEndReminderEntryId())) {
-                    deliver(user, "Zeiterfassung",
-                            "Dein Zeiteintrag läuft seit über " + settings.getEndAfterHours() + " Stunden.");
+                    deliver(user, Messages.forLanguage(user.getLanguage(), "push.title"),
+                            Messages.forLanguage(user.getLanguage(), "push.end.body", settings.getEndAfterHours()));
                     settings.setLastEndReminderEntryId(entry.getId());
                     changed = true;
                     break;

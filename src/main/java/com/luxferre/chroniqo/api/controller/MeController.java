@@ -67,6 +67,9 @@ public class MeController {
                 request.workingDays(),
                 countryCode,
                 subdivisionCode);
+        if (request.language() != null) {
+            userService.updateLanguage(user.getEmail(), request.language());
+        }
         return UserProfileResponse.of(userService.getCurrentUser());
     }
 

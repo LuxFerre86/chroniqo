@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.service;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.dto.AbsenceTypeDTO;
 import com.luxferre.chroniqo.dto.DaySummaryDTO;
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
@@ -329,8 +330,8 @@ public class SummaryService {
         } else if (isPublicHoliday) {
             return publicHolidayService
                     .getHoliday(date, countryCode, subdivisionCode)
-                    .map(holiday -> holiday.getDescription(Locale.ROOT))
-                    .orElseGet(() -> customDays.getOrDefault(date, "Holiday"));
+                    .map(holiday -> holiday.getDescription(Messages.currentLocale()))
+                    .orElseGet(() -> customDays.getOrDefault(date, Messages.get("holiday.default")));
         }
         return null;
     }

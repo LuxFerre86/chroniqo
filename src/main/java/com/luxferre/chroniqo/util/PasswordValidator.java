@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.util;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
@@ -40,28 +41,28 @@ public final class PasswordValidator {
      */
     public static Optional<String> validate(String value) {
         if (value == null || value.isBlank()) {
-            return Optional.of("Password is required");
+            return Optional.of(Messages.get("password.required"));
         }
         if (value.length() < MIN_LENGTH) {
-            return Optional.of("Password must be at least " + MIN_LENGTH + " characters");
+            return Optional.of(Messages.get("password.minLength", MIN_LENGTH));
         }
         if (value.length() > MAX_LENGTH) {
-            return Optional.of("Password must not exceed " + MAX_LENGTH + " characters");
+            return Optional.of(Messages.get("password.maxLength", MAX_LENGTH));
         }
         if (value.getBytes(StandardCharsets.UTF_8).length > MAX_LENGTH) {
-            return Optional.of("Password must not exceed " + MAX_LENGTH + " bytes (non-ASCII characters count as several)");
+            return Optional.of(Messages.get("password.maxBytes", MAX_LENGTH));
         }
         if (value.chars().noneMatch(Character::isUpperCase)) {
-            return Optional.of("Password must contain at least one uppercase letter");
+            return Optional.of(Messages.get("password.upper"));
         }
         if (value.chars().noneMatch(Character::isLowerCase)) {
-            return Optional.of("Password must contain at least one lowercase letter");
+            return Optional.of(Messages.get("password.lower"));
         }
         if (value.chars().noneMatch(Character::isDigit)) {
-            return Optional.of("Password must contain at least one digit");
+            return Optional.of(Messages.get("password.digit"));
         }
         if (value.chars().noneMatch(c -> SPECIAL_CHARS.indexOf(c) >= 0)) {
-            return Optional.of("Password must contain at least one special character");
+            return Optional.of(Messages.get("password.special"));
         }
         return Optional.empty();
     }

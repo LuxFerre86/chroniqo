@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.service;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.dto.CustomHolidayDTO;
 import com.luxferre.chroniqo.model.CustomHoliday;
 import com.luxferre.chroniqo.model.User;
@@ -57,27 +58,27 @@ public class CustomHolidayService {
     public CustomHolidayDTO create(String name, LocalDate startDate, LocalDate endDate, boolean recurring) {
         String trimmed = name == null ? "" : name.trim();
         if (trimmed.isEmpty() || trimmed.length() > 100) {
-            throw new IllegalArgumentException("Name must be between 1 and 100 characters");
+            throw new IllegalArgumentException(Messages.get("error.holiday.name"));
         }
         if (startDate == null || endDate == null) {
-            throw new IllegalArgumentException("Start and end date are required");
+            throw new IllegalArgumentException(Messages.get("error.holiday.datesRequired"));
         }
         if (startDate.getYear() < MIN_YEAR || endDate.getYear() > MAX_YEAR) {
-            throw new IllegalArgumentException("Dates must be between " + MIN_YEAR + " and " + MAX_YEAR);
+            throw new IllegalArgumentException(Messages.get("error.holiday.yearRange", String.valueOf(MIN_YEAR), String.valueOf(MAX_YEAR)));
         }
         if (endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException("End date must not be before start date");
+            throw new IllegalArgumentException(Messages.get("error.holiday.endBeforeStart"));
         }
         if (ChronoUnit.DAYS.between(startDate, endDate) >= MAX_SPAN_DAYS) {
-            throw new IllegalArgumentException("A custom holiday may span at most " + MAX_SPAN_DAYS + " days");
+            throw new IllegalArgumentException(Messages.get("error.holiday.maxSpan", String.valueOf(MAX_SPAN_DAYS)));
         }
         if (recurring && startDate.getYear() != endDate.getYear()) {
-            throw new IllegalArgumentException("A recurring holiday must lie within one calendar year");
+            throw new IllegalArgumentException(Messages.get("error.holiday.recurringYear"));
         }
 
         User user = userService.getCurrentUser();
         if (repository.findByUserOrderByStartDateAsc(user).size() >= MAX_ENTRIES_PER_USER) {
-            throw new IllegalArgumentException("At most " + MAX_ENTRIES_PER_USER + " custom holidays are allowed");
+            throw new IllegalArgumentException(Messages.get("error.holiday.maxEntries", String.valueOf(MAX_ENTRIES_PER_USER)));
         }
 
         CustomHoliday holiday = new CustomHoliday();
@@ -98,7 +99,7 @@ public class CustomHolidayService {
     public void delete(String id) {
         User user = userService.getCurrentUser();
         CustomHoliday holiday = repository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new NoSuchElementException("Custom holiday not found"));
+                .orElseThrow(() -> new NoSuchElementException(Messages.get("error.holiday.notFound")));
         repository.delete(holiday);
     }
 

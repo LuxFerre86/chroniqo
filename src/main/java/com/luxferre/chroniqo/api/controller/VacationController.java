@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.api.controller;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.api.dto.VacationEntitlementRequest;
 import com.luxferre.chroniqo.dto.VacationAccountDTO;
 import com.luxferre.chroniqo.service.VacationService;
@@ -36,7 +37,7 @@ public class VacationController {
     @GetMapping
     public VacationAccountDTO account(@RequestParam int year) {
         if (year < 2000 || year > 2100) {
-            throw new IllegalArgumentException("Year must be between 2000 and 2100");
+            throw new IllegalArgumentException(Messages.get("error.year.range"));
         }
         return vacationService.getAccount(year);
     }

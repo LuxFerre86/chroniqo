@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.api.controller;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.service.TimeEntryValidationException;
 
 import java.time.LocalDate;
@@ -30,10 +31,10 @@ final class DateRanges {
      */
     static void validate(LocalDate from, LocalDate to) {
         if (from.isAfter(to)) {
-            throw TimeEntryValidationException.invalidRange("End date must be on or after start date", from, to);
+            throw TimeEntryValidationException.invalidRange(Messages.get("error.range.endBeforeStart"), from, to);
         }
         if (ChronoUnit.DAYS.between(from, to) + 1 > MAX_DAYS) {
-            throw TimeEntryValidationException.valueTooLarge("Date range", ChronoUnit.DAYS.between(from, to) + 1 + " days", MAX_DAYS + " days");
+            throw TimeEntryValidationException.valueTooLarge(Messages.get("field.dateRange"), Messages.get("unit.days", ChronoUnit.DAYS.between(from, to) + 1), Messages.get("unit.days", MAX_DAYS));
         }
     }
 }

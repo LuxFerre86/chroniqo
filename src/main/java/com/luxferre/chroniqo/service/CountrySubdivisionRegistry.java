@@ -161,6 +161,27 @@ public class CountrySubdivisionRegistry {
     // -------------------------------------------------------------------------
 
     /**
+     * Country names localized to the given language, sorted by the localized name.
+     * Subdivision names stay as delivered by the ISO data (native names).
+     *
+     * @param locale target locale
+     * @return immutable map of country code -> localized display name
+     */
+    public Map<String, String> getLocalizedCountries(Locale locale) {
+        return allCountries.entrySet().stream()
+                .map(e -> Map.entry(e.getKey(), localizedCountryName(e.getKey(), e.getValue(), locale)))
+                .sorted(Map.Entry.comparingByValue(java.text.Collator.getInstance(locale)))
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new),
+                        Collections::unmodifiableMap));
+    }
+
+    private String localizedCountryName(String code, String fallback, Locale locale) {
+        String name = Locale.of("", code).getDisplayCountry(locale);
+        return name.isBlank() || name.equals(code) ? fallback : name;
+    }
+
+    /**
      * Get the subdivisions map for a given country code.
      *
      * @param countryCode ISO country code (case-insensitive)

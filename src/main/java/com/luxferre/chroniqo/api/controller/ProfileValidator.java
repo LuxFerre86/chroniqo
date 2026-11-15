@@ -1,5 +1,6 @@
 package com.luxferre.chroniqo.api.controller;
 
+import com.luxferre.chroniqo.i18n.Messages;
 import com.luxferre.chroniqo.service.CountrySubdivisionRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,7 @@ class ProfileValidator {
         }
         String normalized = countryCode.trim().toUpperCase();
         if (!countryRegistry.getAllCountries().containsKey(normalized)) {
-            throw new IllegalArgumentException("Unknown country: " + normalized);
+            throw new IllegalArgumentException(Messages.get("error.country.unknown", normalized));
         }
         return normalized;
     }
@@ -48,6 +49,6 @@ class ProfileValidator {
         return countryRegistry.getSubdivisions(countryCode).keySet().stream()
                 .filter(key -> key.equalsIgnoreCase(requested))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unknown region: " + requested));
+                .orElseThrow(() -> new IllegalArgumentException(Messages.get("error.region.unknown", requested)));
     }
 }
