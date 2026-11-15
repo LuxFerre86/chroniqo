@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026.11.15] - 2026-11-15
+
+### Added
+- vacation account with entitlement and booking limit (B-2)
+- absence types flextime day, parental leave, business trip, special leave (B-1)
+
+
+### Maintenance
+- Merge pull request #95 from LuxFerre86/feature/absence-types
+
 ## [2026.11.14] - 2026-11-15
 
 ### Added
