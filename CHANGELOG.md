@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026.11.18] - 2026-11-15
+
+### Added
+- feat(i18n): frontend localization DE/EN with language switch (B-11)
+- feat(i18n): backend localization (DE/EN) with user language (B-11)
+
+
+### Maintenance
+- Merge pull request #98 from LuxFerre86/feature/i18n
+
 ## [2026.11.17] - 2026-11-15
 
 ### Added
