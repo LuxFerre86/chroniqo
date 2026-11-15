@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.11.14] - 2026-11-15
+
+### Added
+- feat(ui): UX improvements UX-1 to UX-8
+
+
+### Maintenance
+- Merge pull request #94 from LuxFerre86/feature/ux-improvements
+
 ## [2026.11.13] - 2026-11-15
 
 ### Added
