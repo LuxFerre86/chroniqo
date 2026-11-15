@@ -3,6 +3,8 @@ import type {
   Absence,
   AbsenceType,
   AppConfig,
+  CustomHoliday,
+  CustomHolidayInput,
   Dashboard,
   DaySummary,
   LookupItem,
@@ -63,4 +65,8 @@ export const api = {
   getVacationAccount: (year: number) => request<VacationAccount>('GET', '/api/vacation', { query: { year } }),
   setVacationEntitlement: (year: number, days: number) =>
     request<void>('PUT', '/api/vacation/entitlement', { body: { year, days } }),
+  getCustomHolidays: () => request<CustomHoliday[]>('GET', '/api/custom-holidays'),
+  createCustomHoliday: (input: CustomHolidayInput) =>
+    request<CustomHoliday>('POST', '/api/custom-holidays', { body: input }),
+  deleteCustomHoliday: (id: string) => request<void>('DELETE', `/api/custom-holidays/${id}`),
 };

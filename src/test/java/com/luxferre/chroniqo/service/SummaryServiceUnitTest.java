@@ -57,6 +57,7 @@ public class SummaryServiceUnitTest {
                 mock(TimeTrackingService.class),
                 mock(UserService.class),
                 mock(PublicHolidayService.class),
+                mock(CustomHolidayService.class),
                 Clock.systemDefaultZone());
     }
 
@@ -389,6 +390,7 @@ public class SummaryServiceUnitTest {
 
             spySummaryService = new SummaryService(
                     mock(TimeTrackingService.class), mockUs, mock(PublicHolidayService.class),
+                    mock(CustomHolidayService.class),
                     Clock.systemDefaultZone());
         }
 
@@ -636,6 +638,7 @@ public class SummaryServiceUnitTest {
 
             spySummaryService = new SummaryService(
                     mockTts, mockUs, mockPhs,
+                    mock(CustomHolidayService.class),
                     Clock.systemDefaultZone());
 
             User user = new User();
@@ -721,6 +724,7 @@ public class SummaryServiceUnitTest {
 
             spySummaryService = new SummaryService(
                     mockTts, mockUs, mockPhs,
+                    mock(CustomHolidayService.class),
                     fixedClock);
 
             User user = new User();
@@ -781,6 +785,7 @@ public class SummaryServiceUnitTest {
                     mockTts,
                     mockUs,
                     mockPhs,
+                    mock(CustomHolidayService.class),
                     fixedClock);
 
             User user = new User();
@@ -846,6 +851,7 @@ public class SummaryServiceUnitTest {
 
             spySummaryService = new SummaryService(
                     mockTts, mockUs, mockPhs,
+                    mock(CustomHolidayService.class),
                     Clock.systemDefaultZone());
 
             user = new User();
@@ -910,6 +916,7 @@ public class SummaryServiceUnitTest {
 
             spySummaryService = new SummaryService(
                     mockTts, mockUs, mockPhs,
+                    mock(CustomHolidayService.class),
                     Clock.systemDefaultZone());
 
             User user = new User();

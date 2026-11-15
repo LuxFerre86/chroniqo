@@ -7,10 +7,10 @@ import { DAYS_OF_WEEK } from '../api/types';
 import type { DayOfWeekName } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../components/Button';
-import { NumberField, PasswordField, SelectField, TextField } from '../components/fields';
+import { Checkbox, NumberField, PasswordField, SelectField, TextField } from '../components/fields';
 import { Modal } from '../components/Modal';
 import { useToast } from '../components/Toast';
-import { formatDateTime, weekdayOrder } from '../lib/dates';
+import { formatDateTime, formatShortDate, weekdayOrder } from '../lib/dates';
 import { passwordHelperText, validatePassword } from '../lib/password';
 import { invalidateTimeData, queryKeys, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
 import { isValidWeeklyHours } from '../lib/weeklyHours';
@@ -46,12 +46,129 @@ export function SettingsPage() {
         </div>
         <div className="settings__col">
           <VacationSection />
+          <CustomHolidaysSection />
           <PasswordSection />
           <AccountSection />
           <DangerSection />
         </div>
       </div>
     </div>
+  );
+}
+
+function CustomHolidaysSection() {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const holidays = useQuery({ queryKey: queryKeys.customHolidays, queryFn: () => api.getCustomHolidays() });
+  const [name, setName] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [recurring, setRecurring] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function refresh() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.customHolidays }),
+      invalidateTimeData(queryClient),
+    ]);
+  }
+
+  async function handleAdd(event: FormEvent) {
+    event.preventDefault();
+    if (!name.trim() || !startDate) {
+      toast.error('Name and start date are required.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.createCustomHoliday({ name: name.trim(), startDate, endDate: endDate || startDate, recurring });
+      toast.success('Day off added!', 3000);
+      setName('');
+      setStartDate('');
+      setEndDate('');
+      setRecurring(false);
+      await refresh();
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setBusy(true);
+    try {
+      await api.deleteCustomHoliday(id);
+      await refresh();
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const items = holidays.data ?? [];
+  return (
+    <section className="card settings__section" aria-labelledby="settings-custom-holidays">
+      <h3 id="settings-custom-holidays" className="settings__heading">
+        Custom Days Off
+      </h3>
+      <p className="settings__hint">
+        Bridge days or company holidays. They count like public holidays: no target hours and no vacation days used.
+      </p>
+      {items.length > 0 && (
+        <ul className="holiday-list" aria-label="Custom days off">
+          {items.map((h) => (
+            <li key={h.id} className="holiday-list__item">
+              <div>
+                <div className="holiday-list__name">{h.name}</div>
+                <div className="holiday-list__dates">
+                  {h.startDate === h.endDate
+                    ? formatShortDate(h.startDate)
+                    : `${formatShortDate(h.startDate)} – ${formatShortDate(h.endDate)}`}
+                  {h.recurring && ' · every year'}
+                </div>
+              </div>
+              <Button
+                variant="tertiary"
+                disabled={busy}
+                aria-label={`Delete ${h.name}`}
+                onClick={() => void handleDelete(h.id)}
+              >
+                Delete
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form className="form" onSubmit={(e) => void handleAdd(e)} noValidate>
+        <TextField label="Name" required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
+        <TextField
+          label="Start date"
+          type="date"
+          required
+          value={startDate}
+          onChange={(e) => {
+            setStartDate(e.target.value);
+            if (endDate && endDate < e.target.value) setEndDate('');
+          }}
+        />
+        <TextField
+          label="End date"
+          type="date"
+          min={startDate || undefined}
+          value={endDate}
+          helperText="Leave empty for a single day"
+          onChange={(e) => setEndDate(e.target.value)}
+        />
+        <Checkbox label="Repeat every year" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} />
+        <div className="settings__actions">
+          <Button type="submit" variant="primary" disabled={busy}>
+            Add Day Off
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }
 

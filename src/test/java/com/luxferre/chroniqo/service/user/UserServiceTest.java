@@ -5,6 +5,7 @@ import com.luxferre.chroniqo.config.DefaultUserDetailsService;
 import com.luxferre.chroniqo.dto.UserRegistrationRequest;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
+import com.luxferre.chroniqo.repository.CustomHolidayRepository;
 import com.luxferre.chroniqo.repository.VacationEntitlementRepository;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.repository.UserRepository;
@@ -63,6 +64,8 @@ public class UserServiceTest {
     private AbsenceRepository absenceRepository;
     @Mock
     private VacationEntitlementRepository vacationEntitlementRepository;
+    @Mock
+    private CustomHolidayRepository customHolidayRepository;
     @Mock
     private AppProperties appProperties;
     @Mock
