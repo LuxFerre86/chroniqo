@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.11.16] - 2026-11-15
+
+### Added
+- custom days off treated like public holidays (B-9)
+
+
+### Maintenance
+- Merge pull request #96 from LuxFerre86/feature/custom-holidays
+
 ## [2026.11.15] - 2026-11-15
 
 ### Added
