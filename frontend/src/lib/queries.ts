@@ -13,6 +13,7 @@ export const queryKeys = {
   timeEntries: (from: string, to: string) => ['time-entries', from, to] as const,
   absences: (from: string, to: string) => ['absences', from, to] as const,
   vacation: (year: number) => ['vacation', year] as const,
+  customHolidays: ['custom-holidays'] as const,
 };
 
 /** Call after any mutation of time entries, absences or the user profile. */

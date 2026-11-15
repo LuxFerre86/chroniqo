@@ -45,6 +45,7 @@ public class VacationService {
     private final AbsenceRepository absenceRepository;
     private final UserService userService;
     private final PublicHolidayService publicHolidayService;
+    private final CustomHolidayService customHolidayService;
     private final Clock clock;
 
     /**
@@ -147,8 +148,8 @@ public class VacationService {
     }
 
     private Set<LocalDate> holidaysFor(User user, LocalDate start, LocalDate end) {
-        if (user.getCountryCode() == null) return Set.of();
-        Set<LocalDate> holidays = new java.util.HashSet<>();
+        Set<LocalDate> holidays = new java.util.HashSet<>(customHolidayService.getDays(user, start, end).keySet());
+        if (user.getCountryCode() == null) return holidays;
         for (int year = start.getYear(); year <= end.getYear(); year++) {
             holidays.addAll(publicHolidayService.getHolidays(
                     user.getCountryCode(), user.getSubdivisionCode(), Year.of(year)));

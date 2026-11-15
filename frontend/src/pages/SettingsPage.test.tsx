@@ -25,6 +25,9 @@ vi.mock('../api/endpoints', () => ({
     deleteAccount: vi.fn(),
     getVacationAccount: vi.fn(),
     setVacationEntitlement: vi.fn(),
+    getCustomHolidays: vi.fn(),
+    createCustomHoliday: vi.fn(),
+    deleteCustomHoliday: vi.fn(),
   },
 }));
 
@@ -96,6 +99,63 @@ beforeEach(() => {
     remaining: 30,
   }));
   mocked.setVacationEntitlement.mockResolvedValue(undefined);
+  mocked.getCustomHolidays.mockResolvedValue([
+    { id: 'h1', name: 'Bridge day', startDate: '2026-05-15', endDate: '2026-05-15', recurring: false },
+    { id: 'h2', name: 'Christmas break', startDate: '2026-12-24', endDate: '2026-12-31', recurring: true },
+  ]);
+  mocked.createCustomHoliday.mockResolvedValue({
+    id: 'h3',
+    name: 'x',
+    startDate: '2026-06-01',
+    endDate: '2026-06-01',
+    recurring: false,
+  });
+  mocked.deleteCustomHoliday.mockResolvedValue(undefined);
+});
+
+describe('SettingsPage – custom days off', () => {
+  it('lists the entries with their dates', async () => {
+    renderPage();
+    const holidays = section('Custom Days Off');
+
+    expect(await within(holidays).findByText('Bridge day')).toBeInTheDocument();
+    expect(within(holidays).getByText('15.05.2026')).toBeInTheDocument();
+    expect(within(holidays).getByText('24.12.2026 – 31.12.2026 · every year')).toBeInTheDocument();
+  });
+
+  it('adds a single-day entry', async () => {
+    renderPage();
+    const holidays = section('Custom Days Off');
+
+    await userEvent.type(within(holidays).getByLabelText(/^Name/), 'Company day');
+    await userEvent.type(within(holidays).getByLabelText(/^Start date/), '2026-06-01');
+    await userEvent.click(within(holidays).getByLabelText('Repeat every year'));
+    await userEvent.click(within(holidays).getByRole('button', { name: 'Add Day Off' }));
+
+    await waitFor(() =>
+      expect(mocked.createCustomHoliday).toHaveBeenCalledWith({
+        name: 'Company day',
+        startDate: '2026-06-01',
+        endDate: '2026-06-01',
+        recurring: true,
+      }),
+    );
+  });
+
+  it('requires name and start date', async () => {
+    renderPage();
+    await userEvent.click(within(section('Custom Days Off')).getByRole('button', { name: 'Add Day Off' }));
+
+    expect(mocked.createCustomHoliday).not.toHaveBeenCalled();
+    expect(await screen.findByText('Name and start date are required.')).toBeInTheDocument();
+  });
+
+  it('deletes an entry', async () => {
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete Bridge day' }));
+
+    await waitFor(() => expect(mocked.deleteCustomHoliday).toHaveBeenCalledWith('h1'));
+  });
 });
 
 describe('SettingsPage – vacation', () => {

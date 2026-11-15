@@ -115,6 +115,17 @@ export interface WeeklyProgress {
   hasTarget: boolean;
 }
 
+export interface CustomHolidayInput {
+  name: string;
+  startDate: string;
+  endDate: string;
+  recurring: boolean;
+}
+
+export interface CustomHoliday extends CustomHolidayInput {
+  id: string;
+}
+
 export interface VacationAccount {
   year: number;
   entitlement: number;

@@ -44,6 +44,7 @@ public class SummaryService {
     private final TimeTrackingService timeTrackingService;
     private final UserService userService;
     private final PublicHolidayService publicHolidayService;
+    private final CustomHolidayService customHolidayService;
     private final Clock clock;
 
     /**
@@ -123,10 +124,12 @@ public class SummaryService {
         int dailyTargetMinutes = calculateDailyTargetMinutes(
                 user.getWeeklyTargetHours(), workingDays.size());
 
-        Set<LocalDate> holidays = user.getCountryCode() != null
-                ? loadHolidaysForRange(user.getCountryCode(),
-                user.getSubdivisionCode(), startDate, endDate)
-                : Set.of();
+        Map<LocalDate, String> customDays = customHolidayService.getDays(user, startDate, endDate);
+        Set<LocalDate> holidays = new HashSet<>(customDays.keySet());
+        if (user.getCountryCode() != null) {
+            holidays.addAll(loadHolidaysForRange(user.getCountryCode(),
+                    user.getSubdivisionCode(), startDate, endDate));
+        }
 
         return startDate.datesUntil(endDate.plusDays(1L))
                 .map(date -> createDaySummaryDTO(
@@ -136,6 +139,7 @@ public class SummaryService {
                         dailyTargetMinutes,
                         workingDays,
                         holidays,
+                        customDays,
                         user.getCountryCode(),
                         user.getSubdivisionCode()))
                 .toList();
@@ -189,6 +193,7 @@ public class SummaryService {
                 dailyTargetMinutes,
                 workingDays,
                 holidays,
+                Map.of(),
                 countryCode,
                 subdivisionCode);
     }
@@ -199,6 +204,7 @@ public class SummaryService {
                                               int dailyTargetMinutes,
                                               Set<DayOfWeek> workingDays,
                                               Set<LocalDate> holidays,
+                                              Map<LocalDate, String> customDays,
                                               String countryCode,
                                               String subdivisionCode) {
 
@@ -230,7 +236,7 @@ public class SummaryService {
                 : (isPublicHoliday ? AbsenceTypeDTO.HOLIDAY : null);
 
         String absenceName = getAbsenceName(
-                date, isPublicHoliday, absence, countryCode, subdivisionCode);
+                date, isPublicHoliday, absence, customDays, countryCode, subdivisionCode);
 
         return new DaySummaryDTO(
                 date,
@@ -315,6 +321,7 @@ public class SummaryService {
     private String getAbsenceName(LocalDate date,
                                   boolean isPublicHoliday,
                                   Absence absence,
+                                  Map<LocalDate, String> customDays,
                                   String countryCode,
                                   String subdivisionCode) {
         if (absence != null) {
@@ -323,7 +330,7 @@ public class SummaryService {
             return publicHolidayService
                     .getHoliday(date, countryCode, subdivisionCode)
                     .map(holiday -> holiday.getDescription(Locale.ROOT))
-                    .orElse("Holiday");
+                    .orElseGet(() -> customDays.getOrDefault(date, "Holiday"));
         }
         return null;
     }

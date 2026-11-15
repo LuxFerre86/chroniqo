@@ -95,6 +95,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
+     * A referenced resource does not exist or belongs to another user.
+     */
+    @ExceptionHandler(java.util.NoSuchElementException.class)
+    public ResponseEntity<ProblemDetail> handleNotFound(java.util.NoSuchElementException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setProperty("code", "NOT_FOUND");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
+
+    /**
      * Anything unexpected: logged, but reported without internal details.
      */
     @ExceptionHandler(Exception.class)
