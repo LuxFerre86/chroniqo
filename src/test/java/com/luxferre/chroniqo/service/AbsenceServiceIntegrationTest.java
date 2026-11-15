@@ -169,6 +169,27 @@ public class AbsenceServiceIntegrationTest {
     }
 
     @Test
+    public void saveAbsence_overlappingRange_replacesExistingAbsences() {
+        LocalDate weekStart = getCurrentWeeksStart();
+        entityManager.persist(createAbsence(weekStart.plusDays(1), AbsenceType.SICK));
+        entityManager.persist(createAbsence(weekStart.plusDays(2), AbsenceType.SICK));
+        entityManager.flush();
+        AbsenceRequest absenceRequest = new AbsenceRequest(weekStart.plusDays(2), weekStart.plusDays(4), AbsenceType.VACATION);
+
+        absenceService.saveAbsence(absenceRequest);
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Absence> absences = absenceRepository.findByUserAndDateBetween(testUser, weekStart, weekStart.plusDays(4));
+        assertThat(absences).extracting(Absence::getType, Absence::getDate)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.api.Assertions.tuple(AbsenceType.SICK, weekStart.plusDays(1)),
+                        org.assertj.core.api.Assertions.tuple(AbsenceType.VACATION, weekStart.plusDays(2)),
+                        org.assertj.core.api.Assertions.tuple(AbsenceType.VACATION, weekStart.plusDays(3)),
+                        org.assertj.core.api.Assertions.tuple(AbsenceType.VACATION, weekStart.plusDays(4)));
+    }
+
+    @Test
     public void saveAbsence_absenceForOneWeek() {
         LocalDate weekStart = getCurrentWeeksStart();
         LocalDate weekEnd = getCurrentWeeksEnd();

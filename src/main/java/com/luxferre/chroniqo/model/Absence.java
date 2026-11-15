@@ -21,7 +21,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @Entity
-@Table(name = "absences")
+@Table(name = "absences", uniqueConstraints = @UniqueConstraint(name = "uk_absence_01", columnNames = {"user_id", "date"}))
 @NoArgsConstructor
 public class Absence {
 

@@ -45,6 +45,8 @@ public class AbsenceService {
         List<Absence> existingAbsence = repository.findByUserAndDateBetween(user, absenceRequest.startDate(), absenceRequest.endDate());
         if (!existingAbsence.isEmpty()) {
             repository.deleteAll(existingAbsence);
+            // Hibernate flushes inserts before deletes; without this the unique key (user_id, date) is violated.
+            repository.flush();
         }
 
         repository.saveAll(absenceRequest.startDate().datesUntil(absenceRequest.endDate().plusDays(1)).filter(date -> !date.query(new IsWeekendQuery())).map(date -> {
