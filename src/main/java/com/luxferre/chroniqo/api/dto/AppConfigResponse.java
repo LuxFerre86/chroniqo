@@ -7,11 +7,13 @@ package com.luxferre.chroniqo.api.dto;
  * @param version             application version
  * @param registrationEnabled whether self-registration is currently allowed
  * @param passwordPolicy      the password rules enforced by the server
+ * @param pushPublicKey       VAPID public key for Web Push, {@code null} when push reminders are not configured
  */
 public record AppConfigResponse(String appName,
                                 String version,
                                 boolean registrationEnabled,
-                                PasswordPolicy passwordPolicy) {
+                                PasswordPolicy passwordPolicy,
+                                String pushPublicKey) {
 
     /**
      * Password rules mirrored by the frontend for instant feedback.

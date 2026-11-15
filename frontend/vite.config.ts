@@ -32,6 +32,7 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api\//, /^\/actuator\//],
         globPatterns: ['**/*.{js,css,html,png,svg,webmanifest,woff2}'],
         cleanupOutdatedCaches: true,
+        importScripts: ['push-sw.js'],
       },
     }),
   ],

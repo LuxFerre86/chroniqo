@@ -14,6 +14,7 @@ export const queryKeys = {
   absences: (from: string, to: string) => ['absences', from, to] as const,
   vacation: (year: number) => ['vacation', year] as const,
   customHolidays: ['custom-holidays'] as const,
+  reminderSettings: ['reminder-settings'] as const,
 };
 
 /** Call after any mutation of time entries, absences or the user profile. */

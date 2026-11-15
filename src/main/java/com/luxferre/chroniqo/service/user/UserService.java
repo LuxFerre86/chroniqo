@@ -7,6 +7,8 @@ import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.repository.CustomHolidayRepository;
+import com.luxferre.chroniqo.repository.PushSubscriptionRepository;
+import com.luxferre.chroniqo.repository.ReminderSettingsRepository;
 import com.luxferre.chroniqo.repository.UserRepository;
 import com.luxferre.chroniqo.repository.VacationEntitlementRepository;
 import com.luxferre.chroniqo.service.EmailService;
@@ -65,6 +67,8 @@ public class UserService {
     private final AbsenceRepository absenceRepository;
     private final VacationEntitlementRepository vacationEntitlementRepository;
     private final CustomHolidayRepository customHolidayRepository;
+    private final PushSubscriptionRepository pushSubscriptionRepository;
+    private final ReminderSettingsRepository reminderSettingsRepository;
     private final AppProperties appProperties;
 
     /**
@@ -336,6 +340,8 @@ public class UserService {
         absenceRepository.deleteByUser(user);
         vacationEntitlementRepository.deleteByUser(user);
         customHolidayRepository.deleteByUser(user);
+        pushSubscriptionRepository.deleteByUser(user);
+        reminderSettingsRepository.deleteByUser(user);
         userRepository.delete(user);
         userRepository.flush();
         log.info("User account deleted");

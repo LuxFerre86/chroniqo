@@ -36,6 +36,21 @@ export interface AppConfig {
   version: string | null;
   registrationEnabled: boolean;
   passwordPolicy: PasswordPolicy;
+  /** VAPID public key; absent when the server has no push reminders configured. */
+  pushPublicKey?: string | null;
+}
+
+export interface ReminderSettings {
+  startEnabled: boolean;
+  startTime: string;
+  endEnabled: boolean;
+  endAfterHours: number;
+}
+
+export interface PushSubscriptionInput {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
 }
 
 export interface LookupItem {

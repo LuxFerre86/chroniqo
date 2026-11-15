@@ -8,6 +8,8 @@ import type {
   Dashboard,
   DaySummary,
   LookupItem,
+  PushSubscriptionInput,
+  ReminderSettings,
   RegisterRequest,
   TimeEntry,
   TimeEntryInput,
@@ -69,4 +71,11 @@ export const api = {
   createCustomHoliday: (input: CustomHolidayInput) =>
     request<CustomHoliday>('POST', '/api/custom-holidays', { body: input }),
   deleteCustomHoliday: (id: string) => request<void>('DELETE', `/api/custom-holidays/${id}`),
+  getReminderSettings: () => request<ReminderSettings>('GET', '/api/push/settings'),
+  updateReminderSettings: (settings: ReminderSettings) =>
+    request<ReminderSettings>('PUT', '/api/push/settings', { body: settings }),
+  subscribePush: (subscription: PushSubscriptionInput) =>
+    request<void>('POST', '/api/push/subscriptions', { body: subscription }),
+  unsubscribePush: (endpoint: string) =>
+    request<void>('DELETE', '/api/push/subscriptions', { query: { endpoint } }),
 };

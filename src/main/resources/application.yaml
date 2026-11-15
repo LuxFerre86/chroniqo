@@ -57,4 +57,9 @@ app:
   name: chroniqo
   registration:
     enabled: ${REGISTRATION_ENABLED:false}
+  # Web Push reminders need a VAPID key pair; without it the feature is hidden.
+  push:
+    vapid-public-key: ${VAPID_PUBLIC_KEY:}
+    vapid-private-key: ${VAPID_PRIVATE_KEY:}
+    subject: ${VAPID_SUBJECT:}
   version: ${APP_VERSION:}

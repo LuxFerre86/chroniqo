@@ -40,6 +40,8 @@ public class AppProperties {
     @NestedConfigurationProperty
     @Name("registration")
     private RegistrationProperties registrationProperties;
+    @NestedConfigurationProperty
+    private PushProperties push = new PushProperties();
 
     /**
      * Logs the resolved property values at startup for diagnostics.
@@ -50,6 +52,7 @@ public class AppProperties {
         log.info("# base-url: {}", baseUrl);
         log.info("# name: {}", name);
         log.info("# registration.enabled: {}", registrationProperties.isEnabled());
+        log.info("# push.enabled: {}", push.isConfigured());
         log.info("# version: {}", version);
         log.info("### {} ###", ClassUtils.getUserClass(getClass()).getSimpleName());
     }
@@ -57,5 +60,24 @@ public class AppProperties {
     @Data
     public static class RegistrationProperties {
         private boolean enabled;
+    }
+
+    /**
+     * VAPID configuration for Web Push. Push reminders are available only
+     * when the key pair is configured.
+     */
+    @Data
+    public static class PushProperties {
+        private String vapidPublicKey;
+        private String vapidPrivateKey;
+        private String subject;
+
+        public boolean isConfigured() {
+            return notBlank(vapidPublicKey) && notBlank(vapidPrivateKey) && notBlank(subject);
+        }
+
+        private static boolean notBlank(String value) {
+            return value != null && !value.isBlank();
+        }
     }
 }
