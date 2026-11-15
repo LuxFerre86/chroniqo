@@ -123,6 +123,24 @@ public class AbsenceServiceIntegrationTest {
     }
 
     @Test
+    public void saveAbsence_onDayWithTimeEntry_isRejected() {
+        LocalDate monday = getCurrentWeeksStart();
+        com.luxferre.chroniqo.model.TimeEntry entry = new com.luxferre.chroniqo.model.TimeEntry();
+        entry.setUser(testUser);
+        entry.setDate(monday);
+        entry.setStartTime(java.time.LocalTime.of(9, 0));
+        entry.setEndTime(java.time.LocalTime.of(17, 0));
+        entry.setBreakMinutes(0);
+        entityManager.persist(entry);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> absenceService.saveAbsence(
+                        new AbsenceRequest(monday, monday.plusDays(1), AbsenceType.SICK)))
+                .isInstanceOf(TimeEntryValidationException.class)
+                .hasMessageContaining(monday.toString());
+        assertThat(absenceRepository.findByUserAndDateBetween(testUser, monday, monday.plusDays(1))).isEmpty();
+    }
+
+    @Test
     public void deleteAbsences_withType_keepsOtherTypes() {
         LocalDate weekStart = getCurrentWeeksStart();
         entityManager.persist(createAbsence(weekStart, AbsenceType.SICK));

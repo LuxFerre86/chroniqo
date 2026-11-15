@@ -31,6 +31,8 @@ class TimeEntryServiceValidationTest {
     @Mock
     private TimeEntryRepository timeEntryRepository;
     @Mock
+    private com.luxferre.chroniqo.repository.AbsenceRepository absenceRepository;
+    @Mock
     private UserService userService;
 
     @InjectMocks
@@ -198,6 +200,21 @@ class TimeEntryServiceValidationTest {
         }
     }
 
+    @Test
+    @DisplayName("Should reject booking on a day with an absence")
+    void shouldRejectEntryOnAbsenceDay() {
+        com.luxferre.chroniqo.model.Absence absence = new com.luxferre.chroniqo.model.Absence();
+        absence.setType(com.luxferre.chroniqo.model.AbsenceType.SICK);
+        when(absenceRepository.findByUserAndDate(any(), any())).thenReturn(absence);
+        TimeEntryDTO dto = new TimeEntryDTO(LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), 30, null);
+
+        assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
+                .isInstanceOf(TimeEntryValidationException.class)
+                .hasMessageContaining("absence (sick)");
+
+        verify(timeEntryRepository, never()).save(any());
+    }
+
     // =========================================================================
     // Time Range Validation
     // =========================================================================
@@ -213,7 +230,7 @@ class TimeEntryServiceValidationTest {
 
             assertThatThrownBy(() -> timeEntryService.saveEntry(dto))
                     .isInstanceOf(TimeEntryValidationException.class)
-                    .hasMessageContaining("must be after")
+                    .hasMessageContaining("End time must be after start time (start: 17:00, end: 09:00)")
                     .satisfies(e -> {
                         TimeEntryValidationException ex = (TimeEntryValidationException) e;
                         assertThat(ex.getErrorType()).isEqualTo(ValidationErrorType.INVALID_RANGE);

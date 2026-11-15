@@ -3,8 +3,10 @@ package com.luxferre.chroniqo.service;
 import com.luxferre.chroniqo.dto.AbsenceRequest;
 import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.AbsenceType;
+import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
+import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.service.user.UserService;
 import com.luxferre.chroniqo.util.IsWeekendQuery;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Service for managing user absences (vacation, sick leave, public holidays).
@@ -31,6 +34,7 @@ import java.util.List;
 public class AbsenceService {
 
     private final AbsenceRepository repository;
+    private final TimeEntryRepository timeEntryRepository;
     private final UserService userService;
 
     /**
@@ -42,6 +46,19 @@ public class AbsenceService {
     @Transactional
     public void saveAbsence(AbsenceRequest absenceRequest) {
         User user = userService.getCurrentUser();
+
+        List<LocalDate> bookedDates = timeEntryRepository
+                .findByUserAndDateBetween(user, absenceRequest.startDate(), absenceRequest.endDate()).stream()
+                .map(TimeEntry::getDate)
+                .filter(date -> !date.query(new IsWeekendQuery()))
+                .distinct()
+                .sorted()
+                .toList();
+        if (!bookedDates.isEmpty()) {
+            throw TimeEntryValidationException.inconsistentData(String.format(
+                    "Cannot record an absence: working time is already booked on %s. Remove the time entries first.",
+                    bookedDates.stream().map(LocalDate::toString).collect(Collectors.joining(", "))));
+        }
 
         List<Absence> existingAbsence = repository.findByUserAndDateBetween(user, absenceRequest.startDate(), absenceRequest.endDate());
         if (!existingAbsence.isEmpty()) {
