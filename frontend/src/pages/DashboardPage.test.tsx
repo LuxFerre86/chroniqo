@@ -83,7 +83,7 @@ describe('DashboardPage', () => {
     renderPage();
 
     expect(await screen.findByTestId('today-worked')).toHaveTextContent('7:48');
-    expect(screen.getByText('Saturday, November 14, 2026')).toBeInTheDocument();
+    expect(screen.getByText('Saturday, 14.11.2026')).toBeInTheDocument();
     expect(screen.getByText('of 7:48 h target')).toBeInTheDocument();
     expect(screen.getByTestId('today-balance')).toHaveTextContent('+0:00');
     expect(screen.getByTestId('current-balance')).toHaveTextContent('+17 h 21 min');
@@ -131,6 +131,38 @@ describe('DashboardPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('could not be loaded');
     await userEvent.setup().click(screen.getByRole('button', { name: 'Retry' }));
     expect(await screen.findByTestId('today-worked')).toBeInTheDocument();
+  });
+
+  it('shows a running booking and stops it with the current time', async () => {
+    vi.mocked(api.getDashboard).mockResolvedValue(dashboard());
+    vi.mocked(api.getTimeEntries).mockResolvedValue([
+      { id: 'e1', date: '2026-11-14', startTime: '09:00:00', endTime: null, breakMinutes: 30, notes: 'x' },
+    ]);
+    vi.mocked(api.updateTimeEntry).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderPage();
+
+    expect(await screen.findByTestId('running-entry')).toHaveTextContent('Running since 09:00');
+    await user.click(screen.getByRole('button', { name: 'Stop' }));
+
+    await waitFor(() =>
+      expect(api.updateTimeEntry).toHaveBeenCalledWith('e1', {
+        date: '2026-11-14',
+        startTime: '09:00',
+        endTime: '12:00',
+        breakMinutes: 30,
+        notes: 'x',
+      }),
+    );
+    expect(await screen.findByText('Booking stopped at 12:00')).toBeInTheDocument();
+  });
+
+  it('does not show a running booking when all bookings are closed', async () => {
+    vi.mocked(api.getDashboard).mockResolvedValue(dashboard());
+    renderPage();
+
+    await screen.findByTestId('today-worked');
+    expect(screen.queryByTestId('running-entry')).not.toBeInTheDocument();
   });
 
   it('opens the time entry dialog for today and navigates to the month view', async () => {

@@ -72,15 +72,25 @@ export function formatMonthLabel(ym: YearMonth): string {
   return new Date(ym.year, ym.month - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 }
 
-/** "Saturday, November 14, 2026" (dashboard header) */
+/** "Saturday, 14.11.2026" (dashboard header) */
 export function formatLongDate(date: Date): string {
-  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const weekday = date.toLocaleDateString('en-GB', { weekday: 'long' });
+  return `${weekday}, ${formatShortDate(toIsoDate(date))}`;
 }
 
-/** "14.11.2026" (dialog header) */
+/** "14.11.2026" – the one date format used throughout the app. */
 export function formatShortDate(iso: string): string {
   const [y, m, d] = iso.split('-');
   return `${d}.${m}.${y}`;
+}
+
+/** "14.11.2026, 09:30" from a server timestamp ("2026-11-14T09:30:00"); date-only values lose the time part. */
+export function formatDateTime(value: string | null | undefined, fallback = ''): string {
+  if (!value) return fallback;
+  const match = /^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?/.exec(value);
+  if (!match) return fallback;
+  const date = formatShortDate(match[1]);
+  return match[2] ? `${date}, ${match[2]}` : date;
 }
 
 export function weekdayShort(date: Date): string {
@@ -90,4 +100,18 @@ export function weekdayShort(date: Date): string {
 export function isWeekend(iso: string): boolean {
   const day = parseIsoDate(iso).getDay();
   return day === 0 || day === 6;
+}
+
+/** Splits an inclusive ISO date range into Monday–Friday days and weekend days. */
+export function countDays(startIso: string, endIso: string): { weekdays: number; weekendDays: number } {
+  let weekdays = 0;
+  let weekendDays = 0;
+  const cursor = parseIsoDate(startIso);
+  const end = parseIsoDate(endIso);
+  while (cursor <= end) {
+    if (cursor.getDay() === 0 || cursor.getDay() === 6) weekendDays++;
+    else weekdays++;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return { weekdays, weekendDays };
 }

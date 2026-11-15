@@ -10,7 +10,7 @@ import { Button } from '../components/Button';
 import { NumberField, PasswordField, SelectField, TextField } from '../components/fields';
 import { Modal } from '../components/Modal';
 import { useToast } from '../components/Toast';
-import { weekdayOrder } from '../lib/dates';
+import { formatDateTime, weekdayOrder } from '../lib/dates';
 import { passwordHelperText, validatePassword } from '../lib/password';
 import { invalidateTimeData, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
 import { isValidWeeklyHours } from '../lib/weeklyHours';
@@ -25,11 +25,6 @@ const DAY_LABELS: Record<DayOfWeekName, string> = {
   SATURDAY: 'Saturday',
   SUNDAY: 'Sunday',
 };
-
-function datePart(value: string | null | undefined, fallback: string): string {
-  if (!value) return fallback;
-  return value.split('T')[0].split(' ')[0] || fallback;
-}
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong. Please try again.';
@@ -311,11 +306,11 @@ function AccountSection() {
       <div className="settings__stats">
         <div className="settings__stat">
           <div className="settings__stat-label">Member Since</div>
-          <div className="settings__stat-value">{datePart(user?.createdAt, 'Unknown')}</div>
+          <div className="settings__stat-value">{formatDateTime(user?.createdAt, 'Unknown')}</div>
         </div>
         <div className="settings__stat">
           <div className="settings__stat-label">Last Login</div>
-          <div className="settings__stat-value">{datePart(user?.lastLoginAt, 'Never')}</div>
+          <div className="settings__stat-value">{formatDateTime(user?.lastLoginAt, 'Never')}</div>
         </div>
       </div>
     </section>

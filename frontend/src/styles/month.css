@@ -285,7 +285,18 @@
   }
 
   .day__badge.badge--holiday {
-    background: hsl(38, 92%, 58%);
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: start;
+    width: auto;
+    height: auto;
+    margin-top: 6px;
+    padding: 1px 6px;
+    border-radius: var(--radius-s);
+    font-size: 11px;
+    font-weight: 600;
+    background: hsla(38, 92%, 58%, 0.16);
+    color: hsl(38, 92%, 68%);
   }
 
   .day__badge.badge--vacation {

@@ -6,7 +6,6 @@ import { api } from '../api/endpoints';
 import { ApiError } from '../api/http';
 import { Button } from '../components/Button';
 import { TextField } from '../components/fields';
-import { useToast } from '../components/Toast';
 import { isValidEmail } from '../lib/password';
 import { useAppConfig } from '../lib/queries';
 
@@ -19,7 +18,6 @@ function validateEmail(value: string): string | null {
 
 export function ResendVerificationPage() {
   const { appName } = useAppConfig();
-  const toast = useToast();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get('email') ?? '');
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -34,7 +32,6 @@ export function ResendVerificationPage() {
     mutationFn: () => api.resendVerificationEmail(email.trim()),
     onSuccess: () => {
       setSent(true);
-      toast.success(SENT_MESSAGE);
     },
     onError: (e: unknown) => {
       setError(e instanceof ApiError ? e.message : 'Something went wrong. Please try again.');

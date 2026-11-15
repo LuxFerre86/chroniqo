@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { api } from '../api/endpoints';
+import { ApiError } from '../api/http';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { TimeEntryDialog } from '../components/TimeEntryDialog';
-import { formatClock, formatHours, formatLongBalance, formatSignedClock } from '../lib/format';
+import { useToast } from '../components/Toast';
+import { formatClock, formatHours, formatLongBalance, formatSignedClock, trimSeconds } from '../lib/format';
 import { formatLongDate, parseIsoDate, todayIso, weekdayShort } from '../lib/dates';
-import { queryKeys } from '../lib/queries';
-import type { Dashboard, DaySummary } from '../api/types';
+import { invalidateTimeData, queryKeys } from '../lib/queries';
+import type { Dashboard, DaySummary, TimeEntry } from '../api/types';
 import '../styles/dashboard.css';
 
 const MIN_CHART_SCALE_MINUTES = 480;
@@ -22,12 +24,23 @@ function progressTone(percentage: number): 'green' | 'amber' | 'red' {
 const RING_RADIUS = 84;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-function TodayCard({ today }: { today: DaySummary | null }) {
+function TodayCard({
+  today,
+  openEntry,
+  onStop,
+  stopping,
+}: {
+  today: DaySummary | null;
+  openEntry: TimeEntry | null;
+  onStop: () => void;
+  stopping: boolean;
+}) {
   const workedMinutes = today?.workedMinutes ?? 0;
   const targetMinutes = today?.targetMinutes ?? 0;
   const balance = today?.balanceMinutes ?? 0;
   const hasTarget = targetMinutes > 0;
-  const ratio = hasTarget ? Math.min(1, workedMinutes / targetMinutes) : 0;
+  // Without a target (e.g. weekend) any worked time fills the ring instead of leaving it empty.
+  const ratio = hasTarget ? Math.min(1, workedMinutes / targetMinutes) : workedMinutes > 0 ? 1 : 0;
   return (
     <section className="card dash-today" aria-label="Today">
       <div className="dash-today__label">Today</div>
@@ -60,6 +73,17 @@ function TodayCard({ today }: { today: DaySummary | null }) {
       >
         {formatSignedClock(balance)}
       </div>
+      {openEntry && (
+        <div className="dash-today__running" data-testid="running-entry">
+          <span className="dash-today__running-label">
+            <span className="dash-today__running-dot" aria-hidden="true" />
+            Running since {trimSeconds(openEntry.startTime)}
+          </span>
+          <Button variant="error" small onClick={onStop} loading={stopping}>
+            Stop
+          </Button>
+        </div>
+      )}
     </section>
   );
 }
@@ -177,17 +201,53 @@ function DashboardSkeleton() {
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const toast = useToast();
   const [dialogDate, setDialogDate] = useState<string | null>(null);
+  const [stopping, setStopping] = useState(false);
+  const today = todayIso();
   const { data, isPending, isError, isFetching, refetch } = useQuery({
     queryKey: queryKeys.dashboard,
     queryFn: () => api.getDashboard(),
   });
+  const todayEntries = useQuery({
+    queryKey: queryKeys.timeEntries(today, today),
+    queryFn: () => api.getTimeEntries(today, today),
+  });
+  const openEntry: TimeEntry | null = (todayEntries.data ?? []).find((e) => !e.endTime && e.startTime) ?? null;
+
+  // The server counts an open booking up to "now"; keep the figures live while one is running.
+  useEffect(() => {
+    if (!openEntry) return;
+    const timer = window.setInterval(() => void refetch(), 60_000);
+    return () => window.clearInterval(timer);
+  }, [openEntry?.id, refetch]);
 
   useEffect(() => {
     document.title = 'Dashboard | chroniqo';
   }, []);
 
-  const today = todayIso();
+  const stopRunning = async () => {
+    if (!openEntry || stopping) return;
+    const now = new Date();
+    const endTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    setStopping(true);
+    try {
+      await api.updateTimeEntry(openEntry.id, {
+        date: openEntry.date,
+        startTime: trimSeconds(openEntry.startTime),
+        endTime,
+        breakMinutes: openEntry.breakMinutes,
+        notes: openEntry.notes,
+      });
+      toast.success(`Booking stopped at ${endTime}`);
+      await invalidateTimeData(queryClient);
+    } catch (e) {
+      toast.error(e instanceof ApiError && e.message ? e.message : 'The booking could not be stopped.');
+    } finally {
+      setStopping(false);
+    }
+  };
 
   return (
     <div className="page dash-page">
@@ -222,7 +282,7 @@ export function DashboardPage() {
         <div className="dash">
           <div className="dash-hero">
             <div className="dash-hero__main">
-              <TodayCard today={data.today} />
+              <TodayCard today={data.today} openEntry={openEntry} onStop={() => void stopRunning()} stopping={stopping} />
 
               <div className="dash-actions">
                 <Button variant="primary" onClick={() => setDialogDate(today)}>

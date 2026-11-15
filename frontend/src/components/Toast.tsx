@@ -22,8 +22,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const push = useCallback((kind: ToastKind, message: string, durationMs: number) => {
     const id = nextId.current++;
-    setToasts((current) => [...current, { id, kind, message }]);
-    window.setTimeout(() => setToasts((current) => current.filter((t) => t.id !== id)), durationMs);
+    let added = false;
+    setToasts((current) => {
+      // An identical message that is still visible is not stacked a second time.
+      if (current.some((t) => t.kind === kind && t.message === message)) return current;
+      added = true;
+      return [...current, { id, kind, message }];
+    });
+    window.setTimeout(() => {
+      if (added) setToasts((current) => current.filter((t) => t.id !== id));
+    }, durationMs);
   }, []);
 
   const api = useMemo<ToastApi>(
