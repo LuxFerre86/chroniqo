@@ -115,7 +115,16 @@ class AbsenceControllerTest extends AbstractApiControllerTest {
                         .param("from", "2026-07-06").param("to", "2026-07-10"))
                 .andExpect(status().isNoContent());
 
-        verify(timeTrackingService).deleteAbsences(START, END);
+        verify(timeTrackingService).deleteAbsences(START, END, null);
+    }
+
+    @Test
+    void delete_withType_passesTypeToService() throws Exception {
+        mockMvc.perform(delete("/api/absences").with(csrf())
+                        .param("from", "2026-07-06").param("to", "2026-07-10").param("type", "VACATION"))
+                .andExpect(status().isNoContent());
+
+        verify(timeTrackingService).deleteAbsences(START, END, AbsenceType.VACATION);
     }
 
     @Test
@@ -123,6 +132,6 @@ class AbsenceControllerTest extends AbstractApiControllerTest {
         mockMvc.perform(delete("/api/absences").param("from", "2026-07-06").param("to", "2026-07-10"))
                 .andExpect(status().isForbidden());
 
-        verify(timeTrackingService, never()).deleteAbsences(any(), any());
+        verify(timeTrackingService, never()).deleteAbsences(any(), any(), any());
     }
 }

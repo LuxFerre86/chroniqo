@@ -113,9 +113,9 @@ public class TimeTrackingServiceTest {
         LocalDate today = LocalDate.now();
         LocalDate tomorrow = today.plusDays(1L);
 
-        timeTrackingService.deleteAbsences(today, tomorrow);
+        timeTrackingService.deleteAbsences(today, tomorrow, AbsenceType.SICK);
 
-        verify(absenceService).deleteAbsences(today, tomorrow);
+        verify(absenceService).deleteAbsences(today, tomorrow, AbsenceType.SICK);
     }
 
     @Test

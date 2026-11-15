@@ -116,10 +116,24 @@ public class AbsenceServiceIntegrationTest {
         Absence absenceBefore = absenceRepository.findByUserAndDate(testUser, LocalDate.now());
         assertThat(absenceBefore).isNotNull();
 
-        absenceService.deleteAbsences(LocalDate.now(), LocalDate.now());
+        absenceService.deleteAbsences(LocalDate.now(), LocalDate.now(), null);
 
         Absence absenceAfter = absenceRepository.findByUserAndDate(testUser, LocalDate.now());
         assertThat(absenceAfter).isNull();
+    }
+
+    @Test
+    public void deleteAbsences_withType_keepsOtherTypes() {
+        LocalDate weekStart = getCurrentWeeksStart();
+        entityManager.persist(createAbsence(weekStart, AbsenceType.SICK));
+        entityManager.persist(createAbsence(weekStart.plusDays(1), AbsenceType.VACATION));
+        entityManager.persist(createAbsence(weekStart.plusDays(2), AbsenceType.VACATION));
+
+        absenceService.deleteAbsences(weekStart, weekStart.plusDays(2), AbsenceType.VACATION);
+
+        List<Absence> remaining = absenceRepository.findByUserAndDateBetween(testUser, weekStart, weekStart.plusDays(2));
+        assertThat(remaining).extracting(Absence::getType, Absence::getDate)
+                .containsExactly(org.assertj.core.api.Assertions.tuple(AbsenceType.SICK, weekStart));
     }
 
     @Test
@@ -127,7 +141,7 @@ public class AbsenceServiceIntegrationTest {
         Absence absenceBefore = absenceRepository.findByUserAndDate(testUser, LocalDate.now());
         assertThat(absenceBefore).isNull();
 
-        absenceService.deleteAbsences(LocalDate.now(), LocalDate.now());
+        absenceService.deleteAbsences(LocalDate.now(), LocalDate.now(), null);
 
         Absence absenceAfter = absenceRepository.findByUserAndDate(testUser, LocalDate.now());
         assertThat(absenceAfter).isNull();

@@ -55,5 +55,6 @@ export const api = {
   getAbsences: (from: string, to: string) => request<Absence[]>('GET', '/api/absences', { query: { from, to } }),
   saveAbsence: (startDate: string, endDate: string, absenceType: AbsenceType) =>
     request<void>('PUT', '/api/absences', { body: { startDate, endDate, absenceType } }),
-  deleteAbsences: (from: string, to: string) => request<void>('DELETE', '/api/absences', { query: { from, to } }),
+  deleteAbsences: (from: string, to: string, type?: AbsenceType) =>
+    request<void>('DELETE', '/api/absences', { query: { from, to, type } }),
 };
