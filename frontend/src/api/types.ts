@@ -115,6 +115,14 @@ export interface WeeklyProgress {
   hasTarget: boolean;
 }
 
+export interface VacationAccount {
+  year: number;
+  entitlement: number;
+  taken: number;
+  planned: number;
+  remaining: number;
+}
+
 export interface Dashboard {
   today: DaySummary | null;
   week: DaySummary[];

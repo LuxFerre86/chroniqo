@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import type { FormEvent } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
 import { ApiError } from '../api/http';
 import { DAYS_OF_WEEK } from '../api/types';
@@ -12,7 +12,7 @@ import { Modal } from '../components/Modal';
 import { useToast } from '../components/Toast';
 import { formatDateTime, weekdayOrder } from '../lib/dates';
 import { passwordHelperText, validatePassword } from '../lib/password';
-import { invalidateTimeData, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
+import { invalidateTimeData, queryKeys, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
 import { isValidWeeklyHours } from '../lib/weeklyHours';
 import '../styles/settings.css';
 
@@ -45,12 +45,78 @@ export function SettingsPage() {
           <ProfileSection />
         </div>
         <div className="settings__col">
+          <VacationSection />
           <PasswordSection />
           <AccountSection />
           <DangerSection />
         </div>
       </div>
     </div>
+  );
+}
+
+function VacationSection() {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(currentYear);
+  const [days, setDays] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const account = useQuery({ queryKey: queryKeys.vacation(year), queryFn: () => api.getVacationAccount(year) });
+
+  const loadedEntitlement = account.data?.entitlement;
+  useEffect(() => {
+    if (loadedEntitlement !== undefined) setDays(loadedEntitlement);
+  }, [loadedEntitlement, year]);
+
+  const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (days === null || !Number.isInteger(days) || days < 0 || days > 366) {
+      toast.error('Vacation days must be a whole number between 0 and 366.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.setVacationEntitlement(year, days);
+      toast.success('Vacation entitlement saved!', 3000);
+      await queryClient.invalidateQueries({ queryKey: ['vacation'] });
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="card settings__section" aria-labelledby="settings-vacation">
+      <h3 id="settings-vacation" className="settings__heading">
+        Vacation
+      </h3>
+      <form className="form" onSubmit={(e) => void handleSubmit(e)} noValidate>
+        <SelectField
+          label="Year"
+          value={String(year)}
+          onChange={(e) => setYear(Number(e.target.value))}
+          options={years.map((y) => ({ value: String(y), label: String(y) }))}
+        />
+        <NumberField
+          label="Annual Entitlement (days)"
+          value={days}
+          onChange={setDays}
+          min={0}
+          max={366}
+          step={1}
+          helperText="A new year inherits the entitlement of the previous year. Vacation bookings beyond the entitlement are blocked."
+        />
+        <div className="settings__actions">
+          <Button type="submit" variant="primary" disabled={saving}>
+            {saving ? 'Saving…' : 'Save Vacation'}
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }
 

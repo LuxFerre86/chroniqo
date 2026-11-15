@@ -18,6 +18,7 @@ vi.mock('../api/endpoints', () => ({
     deleteTimeEntry: vi.fn(),
     saveAbsence: vi.fn(),
     deleteAbsences: vi.fn(),
+    getVacationAccount: vi.fn(),
   },
 }));
 
@@ -71,6 +72,13 @@ describe('DashboardPage', () => {
     vi.setSystemTime(new Date(2026, 10, 14, 12, 0, 0));
     vi.mocked(api.getTimeEntries).mockResolvedValue([]);
     vi.mocked(api.getAbsences).mockResolvedValue([]);
+    vi.mocked(api.getVacationAccount).mockResolvedValue({
+      year: 2026,
+      entitlement: 30,
+      taken: 10,
+      planned: 5,
+      remaining: 15,
+    });
   });
 
   afterEach(() => {
@@ -91,6 +99,14 @@ describe('DashboardPage', () => {
     expect(screen.getByText('39:25h / 39h')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Mon 8:10h' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Sat 0h' })).toBeInTheDocument();
+  });
+
+  it('shows the vacation account', async () => {
+    vi.mocked(api.getDashboard).mockResolvedValue(dashboard());
+    renderPage();
+
+    expect(await screen.findByTestId('vacation-remaining')).toHaveTextContent('15 days left');
+    expect(screen.getByText('10 taken · 5 planned · 30 total')).toBeInTheDocument();
   });
 
   it('shows the daily target legend when time was logged', async () => {

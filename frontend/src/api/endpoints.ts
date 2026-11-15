@@ -11,6 +11,7 @@ import type {
   TimeEntryInput,
   UpdateProfileRequest,
   UserProfile,
+  VacationAccount,
   VerifyEmailStatus,
 } from './types';
 
@@ -59,4 +60,7 @@ export const api = {
     request<void>('PUT', '/api/absences', { body: { startDate, endDate, absenceType } }),
   deleteAbsences: (from: string, to: string, type?: AbsenceType) =>
     request<void>('DELETE', '/api/absences', { query: { from, to, type } }),
+  getVacationAccount: (year: number) => request<VacationAccount>('GET', '/api/vacation', { query: { year } }),
+  setVacationEntitlement: (year: number, days: number) =>
+    request<void>('PUT', '/api/vacation/entitlement', { body: { year, days } }),
 };
