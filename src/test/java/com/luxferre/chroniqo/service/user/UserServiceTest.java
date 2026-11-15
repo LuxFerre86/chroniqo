@@ -67,6 +67,10 @@ public class UserServiceTest {
     @Mock
     private CustomHolidayRepository customHolidayRepository;
     @Mock
+    private com.luxferre.chroniqo.repository.PushSubscriptionRepository pushSubscriptionRepository;
+    @Mock
+    private com.luxferre.chroniqo.repository.ReminderSettingsRepository reminderSettingsRepository;
+    @Mock
     private AppProperties appProperties;
     @Mock
     private AppProperties.RegistrationProperties registrationProperties;

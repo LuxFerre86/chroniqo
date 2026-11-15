@@ -27,6 +27,11 @@ public interface TimeEntryRepository extends JpaRepository<TimeEntry, String> {
     List<TimeEntry> findByUserAndDateOrderByStartTimeAsc(User user, LocalDate date);
 
     /**
+     * Finds all entries of a user in the given status, e.g. still running ones.
+     */
+    List<TimeEntry> findByUserAndStatus(User user, com.luxferre.chroniqo.model.TimeEntryStatus status);
+
+    /**
      * Finds a single time entry by id and user ownership.
      *
      * @param id   entry id

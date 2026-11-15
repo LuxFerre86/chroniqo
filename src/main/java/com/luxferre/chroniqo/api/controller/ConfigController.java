@@ -42,7 +42,8 @@ public class ConfigController {
                 new AppConfigResponse.PasswordPolicy(
                         PasswordValidator.MIN_LENGTH,
                         PasswordValidator.MAX_LENGTH,
-                        PasswordValidator.SPECIAL_CHARS));
+                        PasswordValidator.SPECIAL_CHARS),
+                appProperties.getPush().isConfigured() ? appProperties.getPush().getVapidPublicKey() : null);
     }
 
     /**

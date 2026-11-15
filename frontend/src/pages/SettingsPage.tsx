@@ -12,6 +12,12 @@ import { Modal } from '../components/Modal';
 import { useToast } from '../components/Toast';
 import { formatDateTime, formatShortDate, weekdayOrder } from '../lib/dates';
 import { passwordHelperText, validatePassword } from '../lib/password';
+import {
+  getCurrentSubscription,
+  isPushSupported,
+  subscribeThisDevice,
+  toSubscriptionInput,
+} from '../lib/push';
 import { invalidateTimeData, queryKeys, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
 import { isValidWeeklyHours } from '../lib/weeklyHours';
 import '../styles/settings.css';
@@ -47,12 +53,164 @@ export function SettingsPage() {
         <div className="settings__col">
           <VacationSection />
           <CustomHolidaysSection />
+          <RemindersSection />
           <PasswordSection />
           <AccountSection />
           <DangerSection />
         </div>
       </div>
     </div>
+  );
+}
+
+function RemindersSection() {
+  const { pushPublicKey } = useAppConfig();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const supported = isPushSupported();
+  const available = supported && !!pushPublicKey;
+  const settings = useQuery({
+    queryKey: queryKeys.reminderSettings,
+    queryFn: () => api.getReminderSettings(),
+    enabled: available,
+  });
+  const [deviceActive, setDeviceActive] = useState(false);
+  const [startEnabled, setStartEnabled] = useState(true);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endEnabled, setEndEnabled] = useState(true);
+  const [endAfterHours, setEndAfterHours] = useState('10');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!available) return;
+    void (async () => {
+      const existing = await getCurrentSubscription();
+      setDeviceActive(existing !== null);
+      if (existing) await api.subscribePush(toSubscriptionInput(existing)).catch(() => undefined);
+    })();
+  }, [available]);
+
+  useEffect(() => {
+    if (!settings.data) return;
+    setStartEnabled(settings.data.startEnabled);
+    setStartTime(settings.data.startTime.slice(0, 5));
+    setEndEnabled(settings.data.endEnabled);
+    setEndAfterHours(String(settings.data.endAfterHours));
+  }, [settings.data]);
+
+  if (!available) return null;
+
+  async function enableDevice() {
+    setBusy(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        toast.error('Notifications are blocked. Allow them in your browser settings to get reminders.');
+        return;
+      }
+      const subscription = await subscribeThisDevice(pushPublicKey as string);
+      await api.subscribePush(toSubscriptionInput(subscription));
+      setDeviceActive(true);
+      toast.success('Reminders enabled on this device!', 3000);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function disableDevice() {
+    setBusy(true);
+    try {
+      const subscription = await getCurrentSubscription();
+      if (subscription) {
+        await api.unsubscribePush(subscription.endpoint);
+        await subscription.unsubscribe();
+      }
+      setDeviceActive(false);
+      toast.success('Reminders disabled on this device.', 3000);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSave(event: FormEvent) {
+    event.preventDefault();
+    const hours = Number(endAfterHours);
+    if (!startTime || !Number.isInteger(hours) || hours < 1 || hours > 24) {
+      toast.error('Enter a start time and a duration between 1 and 24 hours.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.updateReminderSettings({ startEnabled, startTime, endEnabled, endAfterHours: hours });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.reminderSettings });
+      toast.success('Reminder settings saved!', 3000);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="card settings__section" aria-labelledby="settings-reminders">
+      <h3 id="settings-reminders" className="settings__heading">
+        Reminders
+      </h3>
+      <p className="settings__hint">
+        Push notifications on your devices. Enable them per device; the schedule below applies to all of them. No
+        reminders on non-working days, holidays or absence days.
+      </p>
+      <div className="settings__actions">
+        {deviceActive ? (
+          <Button variant="outlined" disabled={busy} onClick={() => void disableDevice()}>
+            Disable on this device
+          </Button>
+        ) : (
+          <Button variant="primary" disabled={busy} onClick={() => void enableDevice()}>
+            Enable on this device
+          </Button>
+        )}
+      </div>
+      <form className="form" onSubmit={(e) => void handleSave(e)} noValidate>
+        <Checkbox
+          label="Remind me to start tracking"
+          checked={startEnabled}
+          onChange={(e) => setStartEnabled(e.target.checked)}
+        />
+        <TextField
+          label="Start reminder time"
+          type="time"
+          value={startTime}
+          disabled={!startEnabled}
+          onChange={(e) => setStartTime(e.target.value)}
+          helperText="Only sent if nothing has been logged by then."
+        />
+        <Checkbox
+          label="Remind me about a running entry"
+          checked={endEnabled}
+          onChange={(e) => setEndEnabled(e.target.checked)}
+        />
+        <TextField
+          label="Running entry reminder after (hours)"
+          type="number"
+          min={1}
+          max={24}
+          step={1}
+          value={endAfterHours}
+          disabled={!endEnabled}
+          onChange={(e) => setEndAfterHours(e.target.value)}
+        />
+        <div className="settings__actions">
+          <Button type="submit" variant="primary" disabled={busy}>
+            Save Reminders
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }
 

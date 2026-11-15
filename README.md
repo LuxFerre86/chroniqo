@@ -173,6 +173,13 @@ All configuration is done via environment variables. Use [`.env.example`](.env.e
 | `FORWARD_HEADERS_STRATEGY`          | Set to `framework` behind a reverse proxy that sends `X-Forwarded-*` headers (see below) | `none` |
 | `TZ`                                | Application timezone        | `UTC`       |
 | `APP_VERSION`                       | Displayed version string    | `dev`       |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | VAPID key pair and contact (`mailto:you@example.com`) enabling Web Push reminders; without them the feature is hidden | *(empty)* |
+
+### Push reminders (optional)
+
+Reminders are delivered as Web Push notifications to devices the user opts in to in the settings. Generate a key pair once (e.g. `npx web-push generate-vapid-keys`) and keep it stable, otherwise existing subscriptions stop working. Reminder times follow the server time zone (`TZ`).
+
+**Data protection:** for every enabled device the push endpoint URL and its encryption keys are stored with the user account and are deleted when the device is disabled or the account is deleted. Notifications are routed through the browser vendor's push service (e.g. Google, Mozilla, Apple) and contain no time-tracking data beyond a short reminder text.
 
 ### Docker-specific Variable
 
