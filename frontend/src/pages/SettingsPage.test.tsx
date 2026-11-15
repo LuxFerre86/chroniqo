@@ -209,7 +209,30 @@ describe('SettingsPage – profile', () => {
     await userEvent.type(hours, '81');
     await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
-    expect(await screen.findByText('Weekly target hours must be between 0 and 80.')).toBeInTheDocument();
+    expect(await screen.findByText(/^Weekly target hours must be between 0 and 80/)).toBeInTheDocument();
+    expect(mocked.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it('accepts a decimal weekly target like 37.5', async () => {
+    renderPage();
+
+    const hours = screen.getByLabelText(/^Weekly Target Hours/);
+    await userEvent.clear(hours);
+    await userEvent.type(hours, '37.5');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => expect(mocked.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ weeklyTargetHours: 37.5 })));
+  });
+
+  it('rejects more than one decimal place', async () => {
+    renderPage();
+
+    const hours = screen.getByLabelText(/^Weekly Target Hours/);
+    await userEvent.clear(hours);
+    await userEvent.type(hours, '37.55');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    expect(await screen.findByText(/^Weekly target hours must be between 0 and 80/)).toBeInTheDocument();
     expect(mocked.updateProfile).not.toHaveBeenCalled();
   });
 

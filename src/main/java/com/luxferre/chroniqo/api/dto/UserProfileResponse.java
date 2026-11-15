@@ -3,6 +3,7 @@ package com.luxferre.chroniqo.api.dto;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.util.WeekStart;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.List;
 public record UserProfileResponse(String email,
                                   String firstName,
                                   String lastName,
-                                  int weeklyTargetHours,
+                                  BigDecimal weeklyTargetHours,
                                   List<DayOfWeek> workingDays,
                                   DayOfWeek firstDayOfWeek,
                                   String countryCode,

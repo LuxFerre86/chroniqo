@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -229,7 +230,7 @@ public class UserService {
      */
     @Transactional
     public void updateProfile(String email, String firstName, String lastName,
-                              int weeklyTargetHours, Set<DayOfWeek> workingDays,
+                              BigDecimal weeklyTargetHours, Set<DayOfWeek> workingDays,
                               String countryCode, String subdivisionCode) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));

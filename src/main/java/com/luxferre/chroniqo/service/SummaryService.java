@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.*;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
@@ -281,14 +283,15 @@ public class SummaryService {
      * Converts a weekly target in hours to a daily target in minutes based on
      * the number of configured working days per week.
      *
-     * @param weeklyTargetHours the weekly target in whole hours (0–80)
+     * @param weeklyTargetHours the weekly target in hours (0–80, at most one decimal place)
      * @param workingDaysCount  the number of working days per week (1–7)
      * @return daily target in minutes; zero when either parameter is zero
      */
-    int calculateDailyTargetMinutes(int weeklyTargetHours, int workingDaysCount) {
-        if (workingDaysCount <= 0) return 0;
-        int weeklyHours = Math.clamp(weeklyTargetHours, 0, 80);
-        return (weeklyHours * 60) / workingDaysCount;
+    int calculateDailyTargetMinutes(BigDecimal weeklyTargetHours, int workingDaysCount) {
+        if (workingDaysCount <= 0 || weeklyTargetHours == null) return 0;
+        BigDecimal weeklyHours = weeklyTargetHours.max(BigDecimal.ZERO).min(BigDecimal.valueOf(80));
+        int weeklyMinutes = weeklyHours.multiply(BigDecimal.valueOf(60)).setScale(0, RoundingMode.HALF_UP).intValue();
+        return weeklyMinutes / workingDaysCount;
     }
 
     /**

@@ -29,6 +29,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -109,7 +110,7 @@ public class UserServiceTest {
             assertThat(result.getPasswordHash()).isEqualTo("hashed_password");
             assertThat(result.getFirstName()).isEqualTo("John");
             assertThat(result.getLastName()).isEqualTo("Doe");
-            assertThat(result.getWeeklyTargetHours()).isEqualTo(38);
+            assertThat(result.getWeeklyTargetHours()).isEqualByComparingTo(BigDecimal.valueOf(38));
             assertThat(result.isEnabled()).isFalse();
             assertThat(result.getVerificationToken()).isNotNull();
             assertThat(result.getVerificationTokenExpiryDate()).isAfter(LocalDateTime.now());
@@ -129,7 +130,7 @@ public class UserServiceTest {
                     registrationRequest("user@example.com", "password123", "John", "Doe", 40,
                             "DE", "DE-BY"));
 
-            assertThat(result.getWeeklyTargetHours()).isEqualTo(40);
+            assertThat(result.getWeeklyTargetHours()).isEqualByComparingTo(BigDecimal.valueOf(40));
             assertThat(result.getCountryCode()).isEqualTo("DE");
             assertThat(result.getSubdivisionCode()).isEqualTo("DE-BY");
         }
@@ -143,7 +144,18 @@ public class UserServiceTest {
                     registrationRequest("hours@example.com", "password123", "Jane", "Doe", 32,
                             null, null));
 
-            assertThat(result.getWeeklyTargetHours()).isEqualTo(32);
+            assertThat(result.getWeeklyTargetHours()).isEqualByComparingTo(BigDecimal.valueOf(32));
+        }
+
+        @Test
+        void register_withDecimalWeeklyTargetHours_persists() {
+            when(userRepository.findByEmail("dec@example.com"))
+                    .thenReturn(Optional.empty());
+
+            User result = userService.register(new UserRegistrationRequest(
+                    "dec@example.com", "password123", "Jane", "Doe", new BigDecimal("37.5"), null, null));
+
+            assertThat(result.getWeeklyTargetHours()).isEqualByComparingTo(new BigDecimal("37.5"));
         }
 
         @Test
@@ -573,20 +585,37 @@ public class UserServiceTest {
             user.setEmail("user@example.com");
             user.setFirstName("Old");
             user.setLastName("Name");
-            user.setWeeklyTargetHours(0);
+            user.setWeeklyTargetHours(BigDecimal.ZERO);
             when(userRepository.findByEmail("user@example.com"))
                     .thenReturn(Optional.of(user));
 
-            userService.updateProfile("user@example.com", "New", "Name", 40,
+            userService.updateProfile("user@example.com", "New", "Name", BigDecimal.valueOf(40),
                     User.DEFAULT_WORKING_DAYS, "DE", "DE-BY");
 
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
             verify(userRepository).save(captor.capture());
             User saved = captor.getValue();
             assertThat(saved.getFirstName()).isEqualTo("New");
-            assertThat(saved.getWeeklyTargetHours()).isEqualTo(40);
+            assertThat(saved.getWeeklyTargetHours()).isEqualByComparingTo(BigDecimal.valueOf(40));
             assertThat(saved.getCountryCode()).isEqualTo("DE");
             assertThat(saved.getSubdivisionCode()).isEqualTo("DE-BY");
+        }
+
+        @Test
+        void updateProfile_decimalWeeklyTargetHours_persisted() {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setFirstName("First");
+            user.setLastName("Last");
+            when(userRepository.findByEmail("user@example.com"))
+                    .thenReturn(Optional.of(user));
+
+            userService.updateProfile("user@example.com", "First", "Last", new BigDecimal("37.5"),
+                    User.DEFAULT_WORKING_DAYS, null, null);
+
+            ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(captor.capture());
+            assertThat(captor.getValue().getWeeklyTargetHours()).isEqualByComparingTo(new BigDecimal("37.5"));
         }
 
         @Test
@@ -598,7 +627,7 @@ public class UserServiceTest {
             when(userRepository.findByEmail("user@example.com"))
                     .thenReturn(Optional.of(user));
 
-            userService.updateProfile("user@example.com", "First", "Last", 40,
+            userService.updateProfile("user@example.com",             "First", "Last", BigDecimal.valueOf(40),
                     User.DEFAULT_WORKING_DAYS, null, null);
 
             verify(userRepository).save(user);
@@ -617,7 +646,7 @@ public class UserServiceTest {
                     DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
                     DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY);
 
-            userService.updateProfile("user@example.com", "First", "Last", 32,
+            userService.updateProfile("user@example.com", "First", "Last", BigDecimal.valueOf(32),
                     fourDayWeek, null, null);
 
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
@@ -638,7 +667,7 @@ public class UserServiceTest {
                     .thenReturn(Optional.of(user));
 
             assertThatThrownBy(() -> userService.updateProfile(
-                    "user@example.com", "First", "Last", 40,
+                    "user@example.com",                     "First", "Last", BigDecimal.valueOf(40),
                     Set.of(), null, null))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("At least one working day");
@@ -656,7 +685,7 @@ public class UserServiceTest {
                     .thenReturn(Optional.of(user));
 
             assertThatThrownBy(() -> userService.updateProfile(
-                    "user@example.com", "First", "Last", 999,
+                    "user@example.com", "First", "Last", BigDecimal.valueOf(999),
                     User.DEFAULT_WORKING_DAYS, null, null))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("weeklyTargetHours must be between 0 and 80");
@@ -669,7 +698,7 @@ public class UserServiceTest {
             when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> userService.updateProfile(
-                    "unknown@example.com", "First", "Last", 40,
+                    "unknown@example.com",                     "First", "Last", BigDecimal.valueOf(40),
                     User.DEFAULT_WORKING_DAYS, null, null))
                     .isInstanceOf(IllegalArgumentException.class);
         }
@@ -764,7 +793,7 @@ public class UserServiceTest {
                                                         String countryCode,
                                                         String subdivisionCode) {
         return new UserRegistrationRequest(email, password, firstName, lastName,
-                weeklyTargetHours, countryCode, subdivisionCode);
+                BigDecimal.valueOf(weeklyTargetHours), countryCode, subdivisionCode);
     }
 
     // =========================================================================
