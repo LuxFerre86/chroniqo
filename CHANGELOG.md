@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026.11.19] - 2026-11-15
+
+### Added
+- feat(year): yearly overview with statistics and month comparison (B-12)
+
+
+### Maintenance
+- Merge pull request #99 from LuxFerre86/feature/year-overview
+
 ## [2026.11.18] - 2026-11-15
 
 ### Added
