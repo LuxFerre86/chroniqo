@@ -6,13 +6,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -43,7 +44,7 @@ class MeControllerTest extends AbstractApiControllerTest {
         user.setEmail("user@example.com");
         user.setFirstName("Ada");
         user.setLastName("Lovelace");
-        user.setWeeklyTargetHours(32);
+        user.setWeeklyTargetHours(new BigDecimal("32.0"));
         user.setWorkingDays(EnumSet.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY));
         user.setCountryCode("DE");
         user.setSubdivisionCode("DE-BY");
@@ -62,7 +63,7 @@ class MeControllerTest extends AbstractApiControllerTest {
                 .andExpect(jsonPath("$.email").value("user@example.com"))
                 .andExpect(jsonPath("$.firstName").value("Ada"))
                 .andExpect(jsonPath("$.lastName").value("Lovelace"))
-                .andExpect(jsonPath("$.weeklyTargetHours").value(32))
+                .andExpect(jsonPath("$.weeklyTargetHours").value(32.0))
                 .andExpect(jsonPath("$.workingDays[0]").value("MONDAY"))
                 .andExpect(jsonPath("$.workingDays[1]").value("TUESDAY"))
                 .andExpect(jsonPath("$.countryCode").value("DE"))
@@ -92,7 +93,7 @@ class MeControllerTest extends AbstractApiControllerTest {
                 .andExpect(jsonPath("$.email").value("user@example.com"));
 
         verify(userService).updateProfile(
-                "user@example.com", "Ada", "Lovelace", 32,
+                "user@example.com", "Ada", "Lovelace", BigDecimal.valueOf(32),
                 EnumSet.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY),
                 "DE", "DE-BY");
     }
@@ -108,8 +109,50 @@ class MeControllerTest extends AbstractApiControllerTest {
         mockMvc.perform(put("/api/me").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk());
 
-        verify(userService).updateProfile(eq("user@example.com"), eq("Ada"), eq("Lovelace"), eq(40),
+        verify(userService).updateProfile(eq("user@example.com"), eq("Ada"), eq("Lovelace"), eq(BigDecimal.valueOf(40)),
                 eq(Set.of(DayOfWeek.MONDAY)), isNull(), isNull());
+    }
+
+    @Test
+    void updateProfile_decimalWeeklyTargetHours_isAcceptedAndPassedAsBigDecimal() throws Exception {
+        when(userService.getCurrentUser()).thenReturn(user());
+        String body = """
+                {"firstName":"Ada","lastName":"Lovelace","weeklyTargetHours":37.5,
+                 "workingDays":["MONDAY"],"countryCode":"DE","subdivisionCode":"DE-BY"}
+                """;
+
+        mockMvc.perform(put("/api/me").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk());
+
+        verify(userService).updateProfile(eq("user@example.com"), eq("Ada"), eq("Lovelace"),
+                argThat((BigDecimal h) -> h != null && h.compareTo(new BigDecimal("37.5")) == 0),
+                eq(Set.of(DayOfWeek.MONDAY)), eq("DE"), eq("DE-BY"));
+    }
+
+    @Test
+    void updateProfile_tooManyDecimals_returns400() throws Exception {
+        String body = """
+                {"firstName":"Ada","lastName":"Lovelace","weeklyTargetHours":37.55,
+                 "workingDays":["MONDAY"]}
+                """;
+
+        mockMvc.perform(put("/api/me").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.errors.weeklyTargetHours").exists());
+
+        verify(userService, never()).updateProfile(any(), any(), any(), any(), anySet(), any(), any());
+    }
+
+    @Test
+    void me_decimalWeeklyTargetHours_isSerializedAsJsonNumber() throws Exception {
+        User user = user();
+        user.setWeeklyTargetHours(new BigDecimal("37.5"));
+        when(userService.getCurrentUser()).thenReturn(user);
+
+        mockMvc.perform(get("/api/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.weeklyTargetHours").value(37.5));
     }
 
     @Test
@@ -125,7 +168,7 @@ class MeControllerTest extends AbstractApiControllerTest {
                 .andExpect(jsonPath("$.errors.weeklyTargetHours").exists())
                 .andExpect(jsonPath("$.errors.workingDays").exists());
 
-        verify(userService, never()).updateProfile(any(), any(), any(), anyInt(), anySet(), any(), any());
+        verify(userService, never()).updateProfile(any(), any(), any(), any(), anySet(), any(), any());
     }
 
     @Test
@@ -141,7 +184,7 @@ class MeControllerTest extends AbstractApiControllerTest {
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
                 .andExpect(jsonPath("$.detail").value("Unknown country: ZZ"));
 
-        verify(userService, never()).updateProfile(any(), any(), any(), anyInt(), anySet(), any(), any());
+        verify(userService, never()).updateProfile(any(), any(), any(), any(), anySet(), any(), any());
     }
 
     @Test

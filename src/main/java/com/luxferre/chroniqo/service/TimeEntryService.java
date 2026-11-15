@@ -1,9 +1,11 @@
 package com.luxferre.chroniqo.service;
 
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
+import com.luxferre.chroniqo.model.Absence;
 import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.TimeEntryStatus;
 import com.luxferre.chroniqo.model.User;
+import com.luxferre.chroniqo.repository.AbsenceRepository;
 import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +49,7 @@ import java.util.Objects;
 public class TimeEntryService {
 
     private final TimeEntryRepository timeEntryRepository;
+    private final AbsenceRepository absenceRepository;
     private final UserService userService;
 
     // Validation constants
@@ -102,6 +105,7 @@ public class TimeEntryService {
 
         TimeEntry entry = resolveEntryForSave(user, timeEntryDTO);
         validateNoOverlap(user, timeEntryDTO);
+        validateNoAbsence(user, date);
 
         entry.setDate(date);
 
@@ -244,7 +248,7 @@ public class TimeEntryService {
             if (endTime.isBefore(startTime)) {
                 log.warn("Time entry validation failed: End time {} is before start time {}", endTime, startTime);
                 throw TimeEntryValidationException.invalidRange(
-                        String.format("End time (%s) must be after start time (%s)", endTime, startTime),
+                        String.format("End time must be after start time (start: %s, end: %s)", startTime, endTime),
                         startTime, endTime
                 );
             }
@@ -306,6 +310,16 @@ public class TimeEntryService {
         return timeEntryRepository.findByIdAndUser(dto.getId(), user)
                 .orElseThrow(() -> TimeEntryValidationException.inconsistentData(
                         "Time entry to update does not exist"));
+    }
+
+    private void validateNoAbsence(User user, LocalDate date) {
+        Absence absence = absenceRepository.findByUserAndDate(user, date);
+        if (absence != null) {
+            log.warn("Time entry validation failed: {} already recorded for {}", absence.getType(), date);
+            throw TimeEntryValidationException.inconsistentData(String.format(
+                    "Cannot book working time on %s: an absence (%s) is already recorded for this day. Remove the absence first.",
+                    date, absence.getType().name().toLowerCase()));
+        }
     }
 
     private void validateNoOverlap(User user, TimeEntryDTO dto) {

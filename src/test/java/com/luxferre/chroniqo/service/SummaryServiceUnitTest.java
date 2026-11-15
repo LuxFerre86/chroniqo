@@ -18,6 +18,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.Instant;
@@ -129,38 +130,49 @@ public class SummaryServiceUnitTest {
 
         @Test
         void fiveDayWeek_40h_returns480() {
-            assertThat(summaryService.calculateDailyTargetMinutes(40, 5)).isEqualTo(480);
+            assertThat(summaryService.            calculateDailyTargetMinutes(BigDecimal.valueOf(40), 5)).isEqualTo(480);
         }
+
+                    @Test
+                    void decimalHours_375h_fiveDayWeek_returns450() {
+                        assertThat(summaryService.calculateDailyTargetMinutes(new BigDecimal("37.5"), 5)).isEqualTo(450);
+                    }
+
+                    @Test
+                    void decimalHours_375h_fourDayWeek_usesIntegerDivision() {
+                        // 2250 min / 4 days = 562.5 -> 562
+                        assertThat(summaryService.calculateDailyTargetMinutes(new BigDecimal("37.5"), 4)).isEqualTo(562);
+                    }
 
         @Test
         void fourDayWeek_40h_returns600() {
-            assertThat(summaryService.calculateDailyTargetMinutes(40, 4)).isEqualTo(600);
+            assertThat(summaryService.calculateDailyTargetMinutes(BigDecimal.valueOf(40), 4)).isEqualTo(600);
         }
 
         @Test
         void threeDayWeek_39h_returns780() {
-            assertThat(summaryService.calculateDailyTargetMinutes(39, 3)).isEqualTo(780);
+            assertThat(summaryService.calculateDailyTargetMinutes(BigDecimal.valueOf(39), 3)).isEqualTo(780);
         }
 
         @Test
         void zeroHours_returnsZero() {
-            assertThat(summaryService.calculateDailyTargetMinutes(0, 5)).isZero();
+            assertThat(summaryService.calculateDailyTargetMinutes(BigDecimal.ZERO, 5)).isZero();
         }
 
         @Test
         void zeroDays_returnsZero() {
-            assertThat(summaryService.calculateDailyTargetMinutes(40, 0)).isZero();
+            assertThat(summaryService.calculateDailyTargetMinutes(BigDecimal.valueOf(40), 0)).isZero();
         }
 
         @Test
         void negativeHours_clampedToZero() {
-            assertThat(summaryService.calculateDailyTargetMinutes(-10, 5)).isZero();
+            assertThat(summaryService.calculateDailyTargetMinutes(BigDecimal.valueOf(-10), 5)).isZero();
         }
 
         @Test
         void hoursAboveMax_clampedToEighty() {
             // 80h / 5 days = 960 min/day
-            assertThat(summaryService.calculateDailyTargetMinutes(999, 5)).isEqualTo(960);
+            assertThat(summaryService.calculateDailyTargetMinutes(BigDecimal.valueOf(999), 5)).isEqualTo(960);
         }
     }
 
@@ -588,7 +600,7 @@ public class SummaryServiceUnitTest {
                     Clock.systemDefaultZone());
 
             User user = new User();
-            user.setWeeklyTargetHours(39);
+            user.setWeeklyTargetHours(BigDecimal.valueOf(39));
             when(mockUs.getCurrentUser()).thenReturn(user);
             when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
@@ -673,7 +685,7 @@ public class SummaryServiceUnitTest {
                     fixedClock);
 
             User user = new User();
-            user.setWeeklyTargetHours(39);
+            user.setWeeklyTargetHours(BigDecimal.valueOf(39));
             when(mockUs.getCurrentUser()).thenReturn(user);
             when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
@@ -733,7 +745,7 @@ public class SummaryServiceUnitTest {
                     fixedClock);
 
             User user = new User();
-            user.setWeeklyTargetHours(40);
+            user.setWeeklyTargetHours(BigDecimal.valueOf(40));
             when(mockUs.getCurrentUser()).thenReturn(user);
             when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
@@ -798,7 +810,7 @@ public class SummaryServiceUnitTest {
                     Clock.systemDefaultZone());
 
             user = new User();
-            user.setWeeklyTargetHours(39);
+            user.setWeeklyTargetHours(BigDecimal.valueOf(39));
             when(mockUs.getCurrentUser()).thenReturn(user);
             when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());
@@ -862,7 +874,7 @@ public class SummaryServiceUnitTest {
                     Clock.systemDefaultZone());
 
             User user = new User();
-            user.setWeeklyTargetHours(39);
+            user.setWeeklyTargetHours(BigDecimal.valueOf(39));
             when(mockUs.getCurrentUser()).thenReturn(user);
             when(mockTts.getTimeEntries(any(), any())).thenReturn(Collections.emptyList());
             when(mockTts.getAbsences(any(), any())).thenReturn(Collections.emptyList());

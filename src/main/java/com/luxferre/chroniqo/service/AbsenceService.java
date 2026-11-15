@@ -2,8 +2,11 @@ package com.luxferre.chroniqo.service;
 
 import com.luxferre.chroniqo.dto.AbsenceRequest;
 import com.luxferre.chroniqo.model.Absence;
+import com.luxferre.chroniqo.model.AbsenceType;
+import com.luxferre.chroniqo.model.TimeEntry;
 import com.luxferre.chroniqo.model.User;
 import com.luxferre.chroniqo.repository.AbsenceRepository;
+import com.luxferre.chroniqo.repository.TimeEntryRepository;
 import com.luxferre.chroniqo.service.user.UserService;
 import com.luxferre.chroniqo.util.IsWeekendQuery;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Service for managing user absences (vacation, sick leave, public holidays).
@@ -30,6 +34,7 @@ import java.util.List;
 public class AbsenceService {
 
     private final AbsenceRepository repository;
+    private final TimeEntryRepository timeEntryRepository;
     private final UserService userService;
 
     /**
@@ -42,9 +47,24 @@ public class AbsenceService {
     public void saveAbsence(AbsenceRequest absenceRequest) {
         User user = userService.getCurrentUser();
 
+        List<LocalDate> bookedDates = timeEntryRepository
+                .findByUserAndDateBetween(user, absenceRequest.startDate(), absenceRequest.endDate()).stream()
+                .map(TimeEntry::getDate)
+                .filter(date -> !date.query(new IsWeekendQuery()))
+                .distinct()
+                .sorted()
+                .toList();
+        if (!bookedDates.isEmpty()) {
+            throw TimeEntryValidationException.inconsistentData(String.format(
+                    "Cannot record an absence: working time is already booked on %s. Remove the time entries first.",
+                    bookedDates.stream().map(LocalDate::toString).collect(Collectors.joining(", "))));
+        }
+
         List<Absence> existingAbsence = repository.findByUserAndDateBetween(user, absenceRequest.startDate(), absenceRequest.endDate());
         if (!existingAbsence.isEmpty()) {
             repository.deleteAll(existingAbsence);
+            // Hibernate flushes inserts before deletes; without this the unique key (user_id, date) is violated.
+            repository.flush();
         }
 
         repository.saveAll(absenceRequest.startDate().datesUntil(absenceRequest.endDate().plusDays(1)).filter(date -> !date.query(new IsWeekendQuery())).map(date -> {
@@ -74,16 +94,19 @@ public class AbsenceService {
     }
 
     /**
-     * Deletes all absence records for the current user within the given date
-     * range (inclusive).
+     * Deletes the absence records for the current user within the given date
+     * range (inclusive), optionally restricted to a single absence type.
      *
      * @param startDate first day of the range (inclusive)
      * @param endDate   last day of the range (inclusive)
+     * @param type      only absences of this type are removed; {@code null} removes all types
      */
     @Transactional
-    public void deleteAbsences(LocalDate startDate, LocalDate endDate) {
+    public void deleteAbsences(LocalDate startDate, LocalDate endDate, AbsenceType type) {
         User user = userService.getCurrentUser();
-        List<Absence> absenceList = repository.findByUserAndDateBetween(user, startDate, endDate);
+        List<Absence> absenceList = repository.findByUserAndDateBetween(user, startDate, endDate).stream()
+                .filter(absence -> type == null || absence.getType() == type)
+                .toList();
         if (!absenceList.isEmpty()) {
             repository.deleteAll(absenceList);
             log.info("Absences deleted between {} and {}", startDate, endDate);

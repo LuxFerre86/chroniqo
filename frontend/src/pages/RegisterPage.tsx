@@ -10,6 +10,7 @@ import { NumberField, PasswordField, SelectField, TextField } from '../component
 import { useToast } from '../components/Toast';
 import { isValidEmail, passwordHelperText, validatePassword } from '../lib/password';
 import { queryKeys, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
+import { isValidWeeklyHours } from '../lib/weeklyHours';
 
 type FieldName =
   | 'firstName'
@@ -73,7 +74,7 @@ function validateField(field: FieldName, values: FormValues, policy: PasswordPol
     case 'weeklyTargetHours': {
       const hours = values.weeklyTargetHours;
       if (hours === null || Number.isNaN(hours)) return 'Weekly Target Hours are required';
-      return hours < 0 || hours > 80 ? 'Please enter a value between 0 and 80' : null;
+      return isValidWeeklyHours(hours) ? null : 'Please enter a value between 0 and 80 (one decimal place, e.g. 37.5)';
     }
     case 'email':
       if (!values.email.trim()) return 'Email is required';
@@ -273,7 +274,9 @@ export function RegisterPage() {
             required
             min={0}
             max={80}
-            helperText="0–80 hours per week (0 = no target)"
+            step={0.5}
+            inputStep={0.1}
+            helperText="0–80 hours per week, e.g. 37.5 (0 = no target)"
             value={values.weeklyTargetHours}
             error={errors.weeklyTargetHours}
             onChange={(hours) => update({ weeklyTargetHours: hours })}

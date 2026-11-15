@@ -227,7 +227,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
       if (!absenceStart) throw new ValidationError('Start date is mandatory');
       const end = absenceEnd || absenceStart;
       if (end < absenceStart) throw new ValidationError('End date must be on or after start date');
-      await api.deleteAbsences(absenceStart, end);
+      await api.deleteAbsences(absenceStart, end, type);
       toast.success(type === 'SICK' ? 'Sick leave removed' : 'Vacation cancelled');
       await invalidateTimeData(queryClient);
       onClose();

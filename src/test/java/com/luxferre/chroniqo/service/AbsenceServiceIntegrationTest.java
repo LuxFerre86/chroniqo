@@ -116,10 +116,42 @@ public class AbsenceServiceIntegrationTest {
         Absence absenceBefore = absenceRepository.findByUserAndDate(testUser, LocalDate.now());
         assertThat(absenceBefore).isNotNull();
 
-        absenceService.deleteAbsences(LocalDate.now(), LocalDate.now());
+        absenceService.deleteAbsences(LocalDate.now(), LocalDate.now(), null);
 
         Absence absenceAfter = absenceRepository.findByUserAndDate(testUser, LocalDate.now());
         assertThat(absenceAfter).isNull();
+    }
+
+    @Test
+    public void saveAbsence_onDayWithTimeEntry_isRejected() {
+        LocalDate monday = getCurrentWeeksStart();
+        com.luxferre.chroniqo.model.TimeEntry entry = new com.luxferre.chroniqo.model.TimeEntry();
+        entry.setUser(testUser);
+        entry.setDate(monday);
+        entry.setStartTime(java.time.LocalTime.of(9, 0));
+        entry.setEndTime(java.time.LocalTime.of(17, 0));
+        entry.setBreakMinutes(0);
+        entityManager.persist(entry);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> absenceService.saveAbsence(
+                        new AbsenceRequest(monday, monday.plusDays(1), AbsenceType.SICK)))
+                .isInstanceOf(TimeEntryValidationException.class)
+                .hasMessageContaining(monday.toString());
+        assertThat(absenceRepository.findByUserAndDateBetween(testUser, monday, monday.plusDays(1))).isEmpty();
+    }
+
+    @Test
+    public void deleteAbsences_withType_keepsOtherTypes() {
+        LocalDate weekStart = getCurrentWeeksStart();
+        entityManager.persist(createAbsence(weekStart, AbsenceType.SICK));
+        entityManager.persist(createAbsence(weekStart.plusDays(1), AbsenceType.VACATION));
+        entityManager.persist(createAbsence(weekStart.plusDays(2), AbsenceType.VACATION));
+
+        absenceService.deleteAbsences(weekStart, weekStart.plusDays(2), AbsenceType.VACATION);
+
+        List<Absence> remaining = absenceRepository.findByUserAndDateBetween(testUser, weekStart, weekStart.plusDays(2));
+        assertThat(remaining).extracting(Absence::getType, Absence::getDate)
+                .containsExactly(org.assertj.core.api.Assertions.tuple(AbsenceType.SICK, weekStart));
     }
 
     @Test
@@ -127,7 +159,7 @@ public class AbsenceServiceIntegrationTest {
         Absence absenceBefore = absenceRepository.findByUserAndDate(testUser, LocalDate.now());
         assertThat(absenceBefore).isNull();
 
-        absenceService.deleteAbsences(LocalDate.now(), LocalDate.now());
+        absenceService.deleteAbsences(LocalDate.now(), LocalDate.now(), null);
 
         Absence absenceAfter = absenceRepository.findByUserAndDate(testUser, LocalDate.now());
         assertThat(absenceAfter).isNull();
@@ -166,6 +198,27 @@ public class AbsenceServiceIntegrationTest {
         assertThat(absenceAfter.getType()).isEqualTo(AbsenceType.SICK);
         assertThat(absenceAfter.getUser()).isEqualTo(testUser);
         assertThat(absenceAfter.getId()).isNotEqualTo(absenceBefore.getId()); // because delete + insert
+    }
+
+    @Test
+    public void saveAbsence_overlappingRange_replacesExistingAbsences() {
+        LocalDate weekStart = getCurrentWeeksStart();
+        entityManager.persist(createAbsence(weekStart.plusDays(1), AbsenceType.SICK));
+        entityManager.persist(createAbsence(weekStart.plusDays(2), AbsenceType.SICK));
+        entityManager.flush();
+        AbsenceRequest absenceRequest = new AbsenceRequest(weekStart.plusDays(2), weekStart.plusDays(4), AbsenceType.VACATION);
+
+        absenceService.saveAbsence(absenceRequest);
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Absence> absences = absenceRepository.findByUserAndDateBetween(testUser, weekStart, weekStart.plusDays(4));
+        assertThat(absences).extracting(Absence::getType, Absence::getDate)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.api.Assertions.tuple(AbsenceType.SICK, weekStart.plusDays(1)),
+                        org.assertj.core.api.Assertions.tuple(AbsenceType.VACATION, weekStart.plusDays(2)),
+                        org.assertj.core.api.Assertions.tuple(AbsenceType.VACATION, weekStart.plusDays(3)),
+                        org.assertj.core.api.Assertions.tuple(AbsenceType.VACATION, weekStart.plusDays(4)));
     }
 
     @Test

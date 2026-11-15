@@ -8,6 +8,7 @@ import { MonthPage } from './pages/MonthPage';
 import { PasswordResetConfirmPage } from './pages/PasswordResetConfirmPage';
 import { PasswordResetRequestPage } from './pages/PasswordResetRequestPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ResendVerificationPage } from './pages/ResendVerificationPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -24,6 +25,7 @@ export function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/reset-password" element={<PasswordResetRequestPage />} />
+        <Route path="/resend-verification" element={<ResendVerificationPage />} />
       </Route>
 
       {/* Reachable regardless of login state (links from emails). */}

@@ -99,6 +99,12 @@ export function LoginPage() {
         <Button variant="link" onClick={() => navigate('/reset-password')}>
           Forgot password
         </Button>
+        <Button
+          variant="link"
+          onClick={() => navigate(email.trim() ? `/resend-verification?email=${encodeURIComponent(email.trim())}` : '/resend-verification')}
+        >
+          Resend verification email
+        </Button>
 
         <div className="auth-card__footer">
           <span>Don't have an account?</span>

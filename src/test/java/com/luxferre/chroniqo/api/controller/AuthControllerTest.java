@@ -36,8 +36,37 @@ class AuthControllerTest extends AbstractApiControllerTest {
                 .andExpect(status().isCreated());
 
         verify(userService).register(new UserRegistrationRequest(
-                "new@example.com", "Secur3P@ssword", "New", "User", 40, "DE", "DE-BY"));
+                "new@example.com", "Secur3P@ssword",                 "New", "User", java.math.BigDecimal.valueOf(40), "DE", "DE-BY"));
     }
+
+                    @Test
+                    void register_withDecimalWeeklyTargetHours_isAccepted() throws Exception {
+                        String body = """
+                                {"email":"new@example.com","password":"Secur3P@ssword","firstName":"New","lastName":"User",
+                                 "weeklyTargetHours":37.5}
+                                """;
+
+                        mockMvc.perform(post("/api/auth/register").with(csrf())
+                                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                                .andExpect(status().isCreated());
+
+                        verify(userService).register(new UserRegistrationRequest(
+                                "new@example.com", "Secur3P@ssword", "New", "User", new java.math.BigDecimal("37.5"), null, null));
+                    }
+
+                    @Test
+                    void register_withTooManyDecimals_returns400() throws Exception {
+                        String body = """
+                                {"email":"new@example.com","password":"Secur3P@ssword","firstName":"New","lastName":"User",
+                                 "weeklyTargetHours":37.55}
+                                """;
+
+                        mockMvc.perform(post("/api/auth/register").with(csrf())
+                                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                                .andExpect(status().isBadRequest());
+
+                        verify(userService, never()).register(any());
+                    }
 
     @Test
     void register_withoutCountry_isAccepted() throws Exception {
@@ -51,7 +80,7 @@ class AuthControllerTest extends AbstractApiControllerTest {
                 .andExpect(status().isCreated());
 
         verify(userService).register(new UserRegistrationRequest(
-                "new@example.com", "Secur3P@ssword", "New", "User", 40, null, null));
+                "new@example.com", "Secur3P@ssword", "New", "User", java.math.BigDecimal.valueOf(40), null, null));
     }
 
     @Test
@@ -144,6 +173,28 @@ class AuthControllerTest extends AbstractApiControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"token\":\" \"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.token").exists());
+    }
+
+    // ---- resend verification ------------------------------------------------
+
+    @Test
+    void resendVerificationEmail_alwaysReturns202() throws Exception {
+        mockMvc.perform(post("/api/auth/verification-email/resend").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"unknown@example.com\"}"))
+                .andExpect(status().isAccepted());
+
+        verify(userService).resendVerificationEmail("unknown@example.com");
+    }
+
+    @Test
+    void resendVerificationEmail_invalidEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/verification-email/resend").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"nope\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).resendVerificationEmail(any());
     }
 
     // ---- password reset -----------------------------------------------------

@@ -13,6 +13,7 @@ import { useToast } from '../components/Toast';
 import { weekdayOrder } from '../lib/dates';
 import { passwordHelperText, validatePassword } from '../lib/password';
 import { invalidateTimeData, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
+import { isValidWeeklyHours } from '../lib/weeklyHours';
 import '../styles/settings.css';
 
 const DAY_LABELS: Record<DayOfWeekName, string> = {
@@ -103,8 +104,8 @@ function ProfileSection() {
     setErrors(nextErrors);
     if (nextErrors.firstName || nextErrors.lastName) return;
 
-    if (weeklyHours === null || !Number.isInteger(weeklyHours) || weeklyHours < 0 || weeklyHours > 80) {
-      toast.error('Weekly target hours must be between 0 and 80.');
+    if (!isValidWeeklyHours(weeklyHours)) {
+      toast.error('Weekly target hours must be between 0 and 80 with at most one decimal place (e.g. 37.5).');
       return;
     }
     if (workingDays.length === 0) {
@@ -180,7 +181,9 @@ function ProfileSection() {
           onChange={setWeeklyHours}
           min={0}
           max={80}
-          helperText="0–80 hours per week (0 = no target)"
+          step={0.5}
+          inputStep={0.1}
+          helperText="0–80 hours per week, e.g. 37.5 (0 = no target)"
         />
         <div className="settings__group" role="group" aria-labelledby={workingDaysId}>
           <span className="field__label" id={workingDaysId}>

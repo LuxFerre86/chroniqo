@@ -89,7 +89,7 @@ describe('RegisterPage', () => {
     await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
     expect(await screen.findByText('Please enter a valid email address')).toBeInTheDocument();
-    expect(screen.getByText('Please enter a value between 0 and 80')).toBeInTheDocument();
+    expect(screen.getByText(/^Please enter a value between 0 and 80/)).toBeInTheDocument();
     expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
     expect(mocks.register).not.toHaveBeenCalled();
   });

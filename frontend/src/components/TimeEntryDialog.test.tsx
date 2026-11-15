@@ -229,7 +229,7 @@ describe('TimeEntryDialog', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Remove sick leave' }));
 
-    await waitFor(() => expect(api.deleteAbsences).toHaveBeenCalledWith(DATE, DATE));
+    await waitFor(() => expect(api.deleteAbsences).toHaveBeenCalledWith(DATE, DATE, 'SICK'));
     expect(await screen.findByText('Sick leave removed')).toBeInTheDocument();
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });

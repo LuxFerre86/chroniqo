@@ -67,7 +67,7 @@ class ApiSecurityTest {
         user.setPasswordHash(passwordEncoder.encode(PASSWORD));
         user.setFirstName("Api");
         user.setLastName("Security");
-        user.setWeeklyTargetHours(40);
+        user.setWeeklyTargetHours(java.math.BigDecimal.valueOf(40));
         user.setEnabled(true);
         userRepository.save(user);
     }

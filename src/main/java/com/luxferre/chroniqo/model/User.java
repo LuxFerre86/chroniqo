@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
@@ -67,21 +69,29 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
-    private int weeklyTargetHours;
+    @Column(nullable = false, precision = 4, scale = 1)
+    private BigDecimal weeklyTargetHours = BigDecimal.ZERO;
 
     /**
      * Sets the user's weekly working-hour target.
      *
-     * @param weeklyTargetHours the target in whole hours; must be in [0, 80]
-     * @throws IllegalArgumentException if the value is outside [0, 80]
+     * @param weeklyTargetHours the target in hours with at most one decimal place (e.g. 37.5); must be in [0, 80]
+     * @throws IllegalArgumentException if the value is null, outside [0, 80] or has more than one decimal place
      */
-    public void setWeeklyTargetHours(int weeklyTargetHours) {
-        if (weeklyTargetHours < 0 || weeklyTargetHours > 80) {
+    public void setWeeklyTargetHours(BigDecimal weeklyTargetHours) {
+        if (weeklyTargetHours == null
+                || weeklyTargetHours.signum() < 0
+                || weeklyTargetHours.compareTo(BigDecimal.valueOf(80)) > 0) {
             throw new IllegalArgumentException(
                     "weeklyTargetHours must be between 0 and 80, got: "
                             + weeklyTargetHours);
         }
-        this.weeklyTargetHours = weeklyTargetHours;
+        if (weeklyTargetHours.stripTrailingZeros().scale() > 1) {
+            throw new IllegalArgumentException(
+                    "weeklyTargetHours must have at most one decimal place, got: "
+                            + weeklyTargetHours);
+        }
+        this.weeklyTargetHours = weeklyTargetHours.setScale(1, RoundingMode.UNNECESSARY);
     }
 
     @ElementCollection(fetch = FetchType.EAGER)

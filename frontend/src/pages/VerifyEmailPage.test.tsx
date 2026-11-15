@@ -84,6 +84,7 @@ describe('VerifyEmailPage', () => {
     renderPage('/verify-email?token=t-invalid');
     expect(await screen.findByText('Verification Failed')).toBeInTheDocument();
     expect(mocks.verifyEmail).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Request New Verification Email' })).toBeInTheDocument();
   });
 
   it('shows a failure when the request errors', async () => {

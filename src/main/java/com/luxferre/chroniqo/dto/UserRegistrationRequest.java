@@ -1,5 +1,7 @@
 package com.luxferre.chroniqo.dto;
 
+import java.math.BigDecimal;
+
 /**
  * Immutable request object carrying the data needed to register a new user.
  *
@@ -14,7 +16,7 @@ public record UserRegistrationRequest(String email,
                                       String password,
                                       String firstName,
                                       String lastName,
-                                      int weeklyTargetHours,
+                                      BigDecimal weeklyTargetHours,
                                       String countryCode,
                                       String subdivisionCode) {
 

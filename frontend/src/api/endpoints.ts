@@ -31,6 +31,8 @@ export const api = {
   register: (data: RegisterRequest) => request<void>('POST', '/api/auth/register', { body: data }),
   verifyEmail: (token: string) =>
     request<{ status: VerifyEmailStatus }>('POST', '/api/auth/verify-email', { body: { token } }),
+  resendVerificationEmail: (email: string) =>
+    request<void>('POST', '/api/auth/verification-email/resend', { body: { email } }),
   requestPasswordReset: (email: string) =>
     request<void>('POST', '/api/auth/password-reset/request', { body: { email } }),
   confirmPasswordReset: (token: string, newPassword: string) =>
@@ -55,5 +57,6 @@ export const api = {
   getAbsences: (from: string, to: string) => request<Absence[]>('GET', '/api/absences', { query: { from, to } }),
   saveAbsence: (startDate: string, endDate: string, absenceType: AbsenceType) =>
     request<void>('PUT', '/api/absences', { body: { startDate, endDate, absenceType } }),
-  deleteAbsences: (from: string, to: string) => request<void>('DELETE', '/api/absences', { query: { from, to } }),
+  deleteAbsences: (from: string, to: string, type?: AbsenceType) =>
+    request<void>('DELETE', '/api/absences', { query: { from, to, type } }),
 };

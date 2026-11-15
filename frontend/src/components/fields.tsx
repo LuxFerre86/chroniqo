@@ -186,6 +186,8 @@ export interface NumberFieldProps extends BaseFieldProps {
   min?: number;
   max?: number;
   step?: number;
+  /** Granularity accepted when typing; defaults to {@link step}. */
+  inputStep?: number;
   label?: string;
   required?: boolean;
   id?: string;
@@ -193,12 +195,13 @@ export interface NumberFieldProps extends BaseFieldProps {
   disabled?: boolean;
 }
 
-/** Integer input with minus/plus step buttons (matches the former Vaadin IntegerField). */
-export function NumberField({ label, helperText, error, className, required, value, onChange, min, max, step = 1, id, disabled }: NumberFieldProps) {
+/** Number input with minus/plus step buttons; decimals are supported via a fractional `inputStep`. */
+export function NumberField({ label, helperText, error, className, required, value, onChange, min, max, step = 1, inputStep, id, disabled }: NumberFieldProps) {
   const autoId = useId();
   const fieldId = id ?? autoId;
+  const effectiveInputStep = inputStep ?? step;
   const clamp = (n: number) => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n));
-  const bump = (delta: number) => onChange(clamp((value ?? 0) + delta));
+  const bump = (delta: number) => onChange(clamp(Math.round(((value ?? 0) + delta) * 10) / 10));
   return (
     <FieldShell id={fieldId} label={label} required={required} helperText={helperText} error={error} className={className}>
       <div className="stepper">
@@ -215,11 +218,11 @@ export function NumberField({ label, helperText, error, className, required, val
           id={fieldId}
           className="field__input"
           type="number"
-          inputMode="numeric"
+          inputMode={Number.isInteger(effectiveInputStep) ? 'numeric' : 'decimal'}
           value={value ?? ''}
           min={min}
           max={max}
-          step={step}
+          step={effectiveInputStep}
           required={required}
           disabled={disabled}
           aria-invalid={error ? true : undefined}

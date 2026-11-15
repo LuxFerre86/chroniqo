@@ -3,6 +3,7 @@ package com.luxferre.chroniqo.api.controller;
 import com.luxferre.chroniqo.api.dto.AbsenceRangeRequest;
 import com.luxferre.chroniqo.api.dto.AbsenceResponse;
 import com.luxferre.chroniqo.dto.AbsenceRequest;
+import com.luxferre.chroniqo.model.AbsenceType;
 import com.luxferre.chroniqo.service.TimeTrackingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -61,16 +62,18 @@ public class AbsenceController {
     }
 
     /**
-     * Removes all absences within an inclusive date range.
+     * Removes absences within an inclusive date range.
      *
      * @param from first day (inclusive)
      * @param to   last day (inclusive)
+     * @param type optional; only absences of this type are removed, all types when omitted
      */
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+                       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                       @RequestParam(required = false) AbsenceType type) {
         DateRanges.validate(from, to);
-        timeTrackingService.deleteAbsences(from, to);
+        timeTrackingService.deleteAbsences(from, to, type);
     }
 }

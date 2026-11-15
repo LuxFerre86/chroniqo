@@ -3,6 +3,7 @@ package com.luxferre.chroniqo.service;
 import com.luxferre.chroniqo.dto.AbsenceRequest;
 import com.luxferre.chroniqo.dto.TimeEntryDTO;
 import com.luxferre.chroniqo.model.Absence;
+import com.luxferre.chroniqo.model.AbsenceType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -106,13 +107,14 @@ public class TimeTrackingService {
     }
 
     /**
-     * Deletes all absence records within the given date range (inclusive).
+     * Deletes absence records within the given date range (inclusive).
      *
      * @param startDate first day of the range (inclusive)
      * @param endDate   last day of the range (inclusive)
+     * @param type      only absences of this type are removed; {@code null} removes all types
      */
     @Transactional
-    public void deleteAbsences(LocalDate startDate, LocalDate endDate) {
-        absenceService.deleteAbsences(startDate, endDate);
+    public void deleteAbsences(LocalDate startDate, LocalDate endDate, AbsenceType type) {
+        absenceService.deleteAbsences(startDate, endDate, type);
     }
 }
