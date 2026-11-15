@@ -12,6 +12,7 @@ import { ResendVerificationPage } from './pages/ResendVerificationPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { YearPage } from './pages/YearPage';
 
 export function App() {
   // Keep the document title in sync with the routes' page titles.
@@ -36,6 +37,7 @@ export function App() {
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
           <Route path="/month" element={<MonthPage />} />
+          <Route path="/year" element={<YearPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

@@ -4,12 +4,14 @@ import { dashboard as enDashboard } from './en/dashboard';
 import { entry as enEntry } from './en/entry';
 import { month as enMonth } from './en/month';
 import { settings as enSettings } from './en/settings';
+import { year as enYear } from './en/year';
 import { auth as deAuth } from './de/auth';
 import { common as deCommon } from './de/common';
 import { dashboard as deDashboard } from './de/dashboard';
 import { entry as deEntry } from './de/entry';
 import { month as deMonth } from './de/month';
 import { settings as deSettings } from './de/settings';
+import { year as deYear } from './de/year';
 
 export const en = {
   ...enCommon,
@@ -18,6 +20,7 @@ export const en = {
   ...enEntry,
   ...enMonth,
   ...enSettings,
+  ...enYear,
 } as const;
 
 export type TranslationKey = keyof typeof en;
@@ -30,6 +33,7 @@ export const de: Record<TranslationKey, string> = {
   ...deEntry,
   ...deMonth,
   ...deSettings,
+  ...deYear,
 };
 
 export const dictionaries = { en, de } as const;

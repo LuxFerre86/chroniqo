@@ -14,6 +14,7 @@ const SIDEBAR_KEY = 'chroniqo.sidebar.collapsed';
 const NAV_ITEMS: { to: string; label: TranslationKey; icon: IconName; end?: boolean }[] = [
   { to: '/', label: 'nav.dashboard', icon: 'dashboard', end: true },
   { to: '/month', label: 'nav.month', icon: 'calendar' },
+  { to: '/year', label: 'nav.year', icon: 'calendar' },
   { to: '/settings', label: 'nav.settings', icon: 'settings' },
 ];
 

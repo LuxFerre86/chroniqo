@@ -1,0 +1,278 @@
+/* =====================================================
+   Yearly overview
+   ===================================================== */
+
+.year {
+  width: 100%;
+}
+
+.year .is-positive {
+  color: var(--positive);
+}
+
+.year .is-negative {
+  color: var(--negative);
+}
+
+.year-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.year-nav__label {
+  min-width: 96px;
+  margin: 0;
+  text-align: center;
+  font-size: 22px;
+}
+
+.year-nav .btn--icon {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.year-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.year-stat__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--secondary-text-color);
+}
+
+.year-stat__value {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.year-stat__sub {
+  font-size: 13px;
+  color: var(--secondary-text-color);
+}
+
+.year-absences {
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.year-months {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.year-month {
+  background: var(--card-background, var(--contrast-5pct));
+  border-radius: var(--radius-m, 8px);
+  padding: 0.75rem;
+}
+
+.year-month__title {
+  margin: 0 0 0.5rem;
+  font-size: 15px;
+}
+
+.year-month__title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.year-month__title a:hover {
+  text-decoration: underline;
+}
+
+.year-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.year-grid__head {
+  color: var(--secondary-text-color);
+  font-size: 11px;
+}
+
+.year-day {
+  display: block;
+  padding: 4px 0;
+  border-radius: 4px;
+  color: var(--body-text-color, inherit);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.year-day:hover,
+.year-day:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -1px;
+}
+
+.year-day--off {
+  opacity: 0.45;
+}
+
+.year-day--worked {
+  background: hsla(38, 92%, 58%, calc(0.1 + var(--heat, 0) * 0.5));
+}
+
+.year-day--today {
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1.5px var(--primary-color);
+}
+
+.year-day--absence {
+  color: var(--body-text-color, inherit);
+}
+
+.year-day--absence.badge--holiday {
+  background: hsla(38, 92%, 58%, 0.45);
+}
+
+.year-day--absence.badge--vacation {
+  background: hsla(145, 60%, 48%, 0.45);
+}
+
+.year-day--absence.badge--sick {
+  background: hsla(210, 15%, 62%, 0.45);
+}
+
+.year-day--absence.badge--flex-day {
+  background: hsla(265, 70%, 65%, 0.45);
+}
+
+.year-day--absence.badge--parental-leave {
+  background: hsla(335, 75%, 62%, 0.45);
+}
+
+.year-day--absence.badge--business-trip {
+  background: hsla(195, 80%, 55%, 0.45);
+}
+
+.year-day--absence.badge--special-leave {
+  background: hsla(20, 85%, 58%, 0.45);
+}
+
+.cal-legend.year-legend {
+  display: flex;
+  margin: 1rem 0;
+}
+
+.year-compare {
+  margin-top: 1rem;
+}
+
+.year-compare__title {
+  margin: 0 0 1rem;
+  font-size: 16px;
+}
+
+.year-chart {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 6px;
+  height: 180px;
+}
+
+.year-chart__col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.year-chart__bars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+}
+
+.year-chart__bar {
+  display: block;
+  width: 40%;
+  max-width: 18px;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+}
+
+.year-chart__bar--worked {
+  background: hsl(38, 92%, 58%);
+}
+
+.year-chart__bar--target {
+  background: var(--contrast-30pct, hsl(210, 15%, 50%));
+}
+
+.year-chart__label {
+  margin-top: 4px;
+  font-size: 11px;
+  text-align: center;
+  color: var(--secondary-text-color);
+}
+
+.year-chart__legend {
+  display: flex;
+  gap: 1rem;
+  margin: 0.75rem 0 1rem;
+  font-size: 13px;
+}
+
+.year-chart__swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 2px;
+}
+
+.year-table-wrap {
+  overflow-x: auto;
+}
+
+.year-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.year-table th,
+.year-table td {
+  padding: 6px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--contrast-10pct, rgba(128, 128, 128, 0.2));
+}
+
+.year-table th:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+
+@media (max-width: 700px) {
+  .year-months {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .year-chart {
+    height: 140px;
+    gap: 3px;
+  }
+
+  .cal-legend.year-legend {
+    flex-wrap: wrap;
+  }
+}

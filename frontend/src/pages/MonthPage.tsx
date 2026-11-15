@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router';
 import { api } from '../api/endpoints';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../components/Button';
@@ -57,6 +58,15 @@ function totalsFor(days: DaySummary[], today: string, month?: number): Totals {
     worked += day.workedMinutes;
   }
   return { target, worked, balance: worked - target };
+}
+
+/** Reads YYYY-MM (e.g. from the yearly overview); invalid or out-of-range values are ignored. */
+function parseMonthParam(value: string | null): YearMonth | null {
+  const match = /^(\d{4})-(\d{2})$/.exec(value ?? '');
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  return year >= MIN_YEAR && year <= MAX_YEAR && month >= 1 && month <= 12 ? { year, month } : null;
 }
 
 function badgeClass(type: DaySummary['absenceType']): string {
@@ -293,7 +303,8 @@ function MonthPicker({
 export function MonthPage() {
   const { t } = useT();
   const { user } = useAuth();
-  const [ym, setYm] = useState<YearMonth>(currentYearMonth);
+  const [searchParams] = useSearchParams();
+  const [ym, setYm] = useState<YearMonth>(() => parseMonthParam(searchParams.get('month')) ?? currentYearMonth());
   const [pickerOpen, setPickerOpen] = useState(false);
   const [dialogDate, setDialogDate] = useState<string | null>(null);
 
