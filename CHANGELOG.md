@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026.11.17] - 2026-11-15
+
+### Added
+- web push reminders (B-4)
+
+
+### Fixed
+- resolve Trivy findings in push dependencies
+
+
+### Maintenance
+- Merge pull request #97 from LuxFerre86/feature/push-reminders
+- docs: add VAPID variables to .env.example
+
 ## [2026.11.16] - 2026-11-15
 
 ### Added
