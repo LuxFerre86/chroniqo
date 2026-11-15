@@ -67,6 +67,7 @@ export interface UserProfile {
   firstDayOfWeek: DayOfWeekName;
   countryCode: string | null;
   subdivisionCode: string | null;
+  language?: 'en' | 'de';
   createdAt: string | null;
   lastLoginAt: string | null;
 }
@@ -78,6 +79,7 @@ export interface UpdateProfileRequest {
   workingDays: DayOfWeekName[];
   countryCode: string | null;
   subdivisionCode: string | null;
+  language?: 'en' | 'de';
 }
 
 export interface RegisterRequest {
@@ -88,6 +90,7 @@ export interface RegisterRequest {
   weeklyTargetHours: number;
   countryCode: string | null;
   subdivisionCode: string | null;
+  language?: 'en' | 'de';
 }
 
 /** Time of day as "HH:mm" or "HH:mm:ss"; date as "YYYY-MM-DD". */

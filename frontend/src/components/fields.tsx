@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
 import { Icon } from './Icon';
+import { useT } from '../i18n';
 
 interface FieldShellProps {
   id: string;
@@ -92,6 +93,7 @@ export function TextField({ label, helperText, error, className, required, readO
 export function PasswordField({ label, helperText, error, className, required, id, ...rest }: TextFieldProps) {
   const autoId = useId();
   const fieldId = id ?? autoId;
+  const { t } = useT();
   const [visible, setVisible] = useState(false);
   return (
     <FieldShell id={fieldId} label={label} required={required} helperText={helperText} error={error} className={className}>
@@ -109,7 +111,7 @@ export function PasswordField({ label, helperText, error, className, required, i
           type="button"
           className="field__adornment"
           onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-label={visible ? t('field.hidePassword') : t('field.showPassword')}
           aria-pressed={visible}
         >
           <Icon name={visible ? 'eye-off' : 'eye'} />
@@ -199,6 +201,7 @@ export interface NumberFieldProps extends BaseFieldProps {
 export function NumberField({ label, helperText, error, className, required, value, onChange, min, max, step = 1, inputStep, id, disabled }: NumberFieldProps) {
   const autoId = useId();
   const fieldId = id ?? autoId;
+  const { t } = useT();
   const effectiveInputStep = inputStep ?? step;
   const clamp = (n: number) => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n));
   const bump = (delta: number) => onChange(clamp(Math.round(((value ?? 0) + delta) * 10) / 10));
@@ -208,7 +211,7 @@ export function NumberField({ label, helperText, error, className, required, val
         <button
           type="button"
           className="stepper__button"
-          aria-label="Decrease"
+          aria-label={t('field.decrease')}
           disabled={disabled || (min !== undefined && value !== null && value <= min)}
           onClick={() => bump(-step)}
         >
@@ -232,7 +235,7 @@ export function NumberField({ label, helperText, error, className, required, val
         <button
           type="button"
           className="stepper__button"
-          aria-label="Increase"
+          aria-label={t('field.increase')}
           disabled={disabled || (max !== undefined && value !== null && value >= max)}
           onClick={() => bump(step)}
         >

@@ -139,13 +139,13 @@ describe('formatters', () => {
   });
 
   it('formats the long dashboard date', () => {
-    expect(formatLongDate(new Date(2026, 10, 14))).toBe('Saturday, 14.11.2026');
+    expect(formatLongDate(new Date(2026, 10, 14))).toBe('Saturday, 14/11/2026');
   });
 
   it('formats server timestamps with and without time', () => {
-    expect(formatDateTime('2026-11-14T08:05:30')).toBe('14.11.2026, 08:05');
-    expect(formatDateTime('2026-11-14 08:05:30')).toBe('14.11.2026, 08:05');
-    expect(formatDateTime('2026-11-14')).toBe('14.11.2026');
+    expect(formatDateTime('2026-11-14T08:05:30')).toBe('14/11/2026, 08:05');
+    expect(formatDateTime('2026-11-14 08:05:30')).toBe('14/11/2026, 08:05');
+    expect(formatDateTime('2026-11-14')).toBe('14/11/2026');
     expect(formatDateTime(null, 'Never')).toBe('Never');
     expect(formatDateTime('garbage', 'Unknown')).toBe('Unknown');
   });
@@ -156,7 +156,7 @@ describe('formatters', () => {
   });
 
   it('formats the short dialog date', () => {
-    expect(formatShortDate('2026-11-14')).toBe('14.11.2026');
+    expect(formatShortDate('2026-11-14')).toBe('14/11/2026');
   });
 
   it('formats the short weekday', () => {

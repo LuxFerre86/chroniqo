@@ -1,0 +1,87 @@
+import type { auth as en } from '../en/auth';
+
+export const auth: Record<keyof typeof en, string> = {
+  'auth.email': 'E-Mail',
+  'auth.password': 'Passwort',
+  'auth.confirmPassword': 'Passwort bestätigen',
+  'auth.emailPlaceholder': 'deine@email.de',
+  'auth.backToLogin': 'Zurück zur Anmeldung',
+  'auth.somethingWrong': 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
+  'auth.emailRequired': 'E-Mail ist erforderlich',
+  'auth.emailInvalid': 'Bitte gib eine gültige E-Mail-Adresse ein',
+  'auth.confirmPasswordRequired': 'Bitte bestätige dein Passwort',
+  'auth.passwordsMismatch': 'Die Passwörter stimmen nicht überein',
+
+  'auth.login.docTitle': 'Anmelden | {appName}',
+  'auth.login.subtitle': 'Erfasse deine Zeit ganz einfach',
+  'auth.login.accountDeleted': 'Dein Konto wurde erfolgreich gelöscht.',
+  'auth.login.defaultError':
+    'E-Mail oder Passwort sind falsch, oder das Konto ist gesperrt oder noch nicht bestätigt.',
+  'auth.login.emailRequired': 'Bitte gib deine E-Mail-Adresse ein',
+  'auth.login.passwordRequired': 'Bitte gib dein Passwort ein',
+  'auth.login.rememberMe': 'Angemeldet bleiben',
+  'auth.login.submit': 'Anmelden',
+  'auth.login.forgotPassword': 'Passwort vergessen',
+  'auth.login.resendVerification': 'Bestätigungs-E-Mail erneut senden',
+  'auth.login.noAccount': 'Noch kein Konto?',
+  'auth.login.signUp': 'Registrieren',
+
+  'auth.register.docTitle': 'Registrieren | {appName}',
+  'auth.register.title': 'Konto erstellen',
+  'auth.register.subtitle': 'Beginne noch heute mit der Zeiterfassung',
+  'auth.register.firstName': 'Vorname',
+  'auth.register.lastName': 'Nachname',
+  'auth.register.firstNameRequired': 'Vorname ist erforderlich',
+  'auth.register.lastNameRequired': 'Nachname ist erforderlich',
+  'auth.register.weeklyHours': 'Wöchentliche Sollstunden',
+  'auth.register.weeklyHoursRequired': 'Wöchentliche Sollstunden sind erforderlich',
+  'auth.register.weeklyHoursInvalid':
+    'Bitte gib einen Wert zwischen 0 und 80 ein (eine Nachkommastelle, z. B. 37,5)',
+  'auth.register.weeklyHoursHelper': '0–80 Stunden pro Woche, z. B. 37,5 (0 = kein Soll)',
+  'auth.register.country': 'Land',
+  'auth.register.countryPlaceholder': 'Wähle dein Land (optional)',
+  'auth.register.countryHelper': 'Wird verwendet, um Feiertage in deinem Kalender automatisch zu erkennen',
+  'auth.register.subdivision': 'Bundesland / Region',
+  'auth.register.subdivisionPlaceholder': 'Wähle dein Bundesland / deine Region (optional)',
+  'auth.register.disabled': 'Die Registrierung ist derzeit deaktiviert. Bitte wende dich an den Administrator.',
+  'auth.register.failed': 'Registrierung fehlgeschlagen. Bitte versuche es erneut.',
+  'auth.register.success':
+    'Registrierung erfolgreich! Bitte prüfe dein E-Mail-Postfach, um dein Konto zu bestätigen.',
+  'auth.register.submit': 'Konto erstellen',
+  'auth.register.haveAccount': 'Du hast bereits ein Konto?',
+  'auth.register.signIn': 'Anmelden',
+
+  'auth.verify.docTitle': 'E-Mail bestätigen | {appName}',
+  'auth.verify.verifying': 'Wird überprüft…',
+  'auth.verify.successTitle': 'E-Mail bestätigt!',
+  'auth.verify.failedTitle': 'Bestätigung fehlgeschlagen',
+  'auth.verify.invalid':
+    'Der Bestätigungslink ist ungültig oder abgelaufen. Bitte fordere eine neue Bestätigungs-E-Mail an.',
+  'auth.verify.successLoggedIn': 'Deine E-Mail-Adresse wurde erfolgreich bestätigt. Du bist jetzt angemeldet!',
+  'auth.verify.successLogin':
+    'Deine E-Mail-Adresse wurde erfolgreich bestätigt. Bitte melde dich an, um fortzufahren.',
+  'auth.verify.goToDashboard': 'Zum Dashboard',
+  'auth.verify.requestNew': 'Neue Bestätigungs-E-Mail anfordern',
+  'auth.verify.goToLogin': 'Zur Anmeldung',
+
+  'auth.resend.docTitle': 'Bestätigung erneut senden | {appName}',
+  'auth.resend.title': 'Bestätigungs-E-Mail erneut senden',
+  'auth.resend.subtitle': 'Gib deine E-Mail-Adresse ein und wir senden dir einen neuen Bestätigungslink',
+  'auth.resend.sent':
+    'Falls dieses Konto existiert und noch nicht bestätigt ist, wurde eine neue Bestätigungs-E-Mail gesendet.',
+  'auth.resend.submit': 'Bestätigungs-E-Mail senden',
+
+  'auth.resetRequest.docTitle': 'Passwort zurücksetzen | {appName}',
+  'auth.resetRequest.title': 'Passwort zurücksetzen',
+  'auth.resetRequest.subtitle': 'Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen',
+  'auth.resetRequest.sent': 'Falls für diese E-Mail-Adresse ein Konto existiert, wurde ein Link zum Zurücksetzen gesendet.',
+  'auth.resetRequest.submit': 'Link zum Zurücksetzen senden',
+
+  'auth.resetConfirm.docTitle': 'Neues Passwort festlegen | {appName}',
+  'auth.resetConfirm.title': 'Neues Passwort festlegen',
+  'auth.resetConfirm.subtitle': 'Wähle ein sicheres Passwort',
+  'auth.resetConfirm.invalidLink': 'Ungültiger Link zum Zurücksetzen',
+  'auth.resetConfirm.newPassword': 'Neues Passwort',
+  'auth.resetConfirm.success': 'Passwort erfolgreich zurückgesetzt. Du kannst dich jetzt anmelden.',
+  'auth.resetConfirm.submit': 'Neues Passwort festlegen',
+};

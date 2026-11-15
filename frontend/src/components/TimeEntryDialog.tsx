@@ -4,10 +4,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
 import { ApiError } from '../api/http';
 import type { AbsenceType, TimeEntry } from '../api/types';
-import { ABSENCE_TYPES, absenceLabel } from '../lib/absence';
+import { getAbsenceTypes, absenceLabel } from '../lib/absence';
 import { countDays, formatShortDate, todayIso } from '../lib/dates';
 import { formatMinutes, isTime24h, normalizeTime, trimSeconds, worked } from '../lib/format';
 import { invalidateTimeData, queryKeys } from '../lib/queries';
+import { translate, translatePlural, useT } from '../i18n';
 import { Button } from './Button';
 import { NumberField, SelectField, TextAreaField, TextField } from './fields';
 import { Icon } from './Icon';
@@ -17,47 +18,45 @@ import '../styles/dialog.css';
 
 type Mode = 'WORKING' | AbsenceType;
 
-const MODE_SWITCH: { key: 'WORKING' | 'ABSENCE'; label: string }[] = [
-  { key: 'WORKING', label: 'Working time' },
-  { key: 'ABSENCE', label: 'Absence' },
+const modeSwitch = (): { key: 'WORKING' | 'ABSENCE'; label: string }[] => [
+  { key: 'WORKING', label: translate('entry.mode.working') },
+  { key: 'ABSENCE', label: translate('entry.mode.absence') },
 ];
 
 function modeName(mode: Mode): string {
-  return mode === 'WORKING' ? 'Working time' : absenceLabel(mode);
+  return mode === 'WORKING' ? translate('entry.mode.working') : absenceLabel(mode);
 }
 
 const DEFAULT_BREAK_MINUTES = 30;
-const GENERIC_ERROR = 'An unexpected error occurred. Please try again.';
 
 class ValidationError extends Error {}
 
 function errorMessage(error: unknown): string {
   if (error instanceof ValidationError) return error.message;
-  return error instanceof ApiError && error.message ? error.message : GENERIC_ERROR;
-}
-
-function plural(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+  return error instanceof ApiError && error.message ? error.message : translate('entry.error.generic');
 }
 
 function bookingHeadline(entry: TimeEntry): string {
-  return `${trimSeconds(entry.startTime) || '--:--'} - ${entry.endTime ? trimSeconds(entry.endTime) : 'OPEN'}`;
+  return `${trimSeconds(entry.startTime) || '--:--'} - ${entry.endTime ? trimSeconds(entry.endTime) : translate('entry.open')}`;
 }
 
 function bookingDetails(entry: TimeEntry): string {
   const parts: string[] = [];
-  if (entry.breakMinutes) parts.push(`Break ${entry.breakMinutes}m`);
+  if (entry.breakMinutes) parts.push(translate('entry.break', { minutes: entry.breakMinutes }));
   const notes = entry.notes?.trim();
   if (notes) parts.push(notes.length > 40 ? `${notes.slice(0, 40)}…` : notes);
-  return parts.length > 0 ? parts.join(' · ') : 'No extra details';
+  return parts.length > 0 ? parts.join(' · ') : translate('entry.noDetails');
 }
 
 function summarize(entries: TimeEntry[]): string {
-  if (entries.length === 0) return 'No bookings yet for this day';
+  if (entries.length === 0) return translate('entry.noBookings');
   const minutes = entries.reduce((sum, e) => sum + worked(e.startTime, e.endTime, e.breakMinutes), 0);
   const open = entries.filter((e) => !e.endTime).length;
-  const parts = [plural(entries.length, 'booking'), `${formatMinutes(minutes)} worked`];
-  if (open > 0) parts.push(plural(open, 'open booking'));
+  const parts = [
+    translatePlural('entry.booking', entries.length),
+    translate('entry.worked', { value: formatMinutes(minutes) }),
+  ];
+  if (open > 0) parts.push(translatePlural('entry.openBooking', open));
   return parts.join(' · ');
 }
 
@@ -92,6 +91,7 @@ interface DialogProps {
 
 function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const queryClient = useQueryClient();
+  const { t } = useT();
   const toast = useToast();
   const formId = useId();
 
@@ -203,12 +203,12 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
 
   const saveWorking = () =>
     run(async () => {
-      if (!editor.date) throw new ValidationError('Date cannot be null');
+      if (!editor.date) throw new ValidationError(t('entry.validation.dateNull'));
       const startTime = normalizeTime(editor.startTime);
       const endTime = normalizeTime(editor.endTime);
-      if (!startTime) throw new ValidationError('Start time is mandatory');
+      if (!startTime) throw new ValidationError(t('entry.validation.startMandatory'));
       if (!isTime24h(startTime) || (endTime && !isTime24h(endTime))) {
-        throw new ValidationError('Enter times as HH:MM (24-hour), e.g. 08:30');
+        throw new ValidationError(t('entry.validation.timeFormat'));
       }
       const payload = {
         date: editor.date,
@@ -219,7 +219,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
       };
       if (editor.id) await api.updateTimeEntry(editor.id, payload);
       else await api.createTimeEntry(payload);
-      toast.success('Time entry saved successfully');
+      toast.success(t('entry.saved'));
       setListDate(editor.date);
       setEditor(newEditor(editor.date));
       await invalidateTimeData(queryClient);
@@ -228,33 +228,40 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const deleteBooking = (id: string) =>
     run(async () => {
       await api.deleteTimeEntry(id);
-      toast.success('Time entry deleted');
+      toast.success(t('entry.deleted'));
       if (editor.id === id) setEditor(newEditor(listDate));
       await invalidateTimeData(queryClient);
     });
 
   const saveAbsence = (type: AbsenceType) =>
     run(async () => {
-      if (!absenceStart) throw new ValidationError('Start date is mandatory');
+      if (!absenceStart) throw new ValidationError(t('entry.validation.startDateMandatory'));
       const end = absenceEnd || absenceStart;
-      if (end < absenceStart) throw new ValidationError('End date must be on or after start date');
+      if (end < absenceStart) throw new ValidationError(t('entry.validation.endBeforeStart'));
       await api.saveAbsence(absenceStart, end, type);
       const { weekdays, weekendDays } = countDays(absenceStart, end);
       const label = absenceLabel(type);
-      const skipped = weekendDays > 0 ? ` (${plural(weekendDays, 'weekend day')} skipped)` : '';
-      toast.success(`${label} booked: ${plural(weekdays, 'day')}${skipped}`);
+      const days = translatePlural('entry.day', weekdays);
+      toast.success(
+        weekendDays > 0
+          ? t('entry.absenceBooked.skipped', {
+              label,
+              days,
+              weekend: translatePlural('entry.weekendDay', weekendDays),
+            })
+          : t('entry.absenceBooked', { label, days }),
+      );
       await invalidateTimeData(queryClient);
       onClose();
     });
 
   const removeAbsence = (type: AbsenceType) =>
     run(async () => {
-      if (!absenceStart) throw new ValidationError('Start date is mandatory');
+      if (!absenceStart) throw new ValidationError(t('entry.validation.startDateMandatory'));
       const end = absenceEnd || absenceStart;
-      if (end < absenceStart) throw new ValidationError('End date must be on or after start date');
+      if (end < absenceStart) throw new ValidationError(t('entry.validation.endBeforeStart'));
       await api.deleteAbsences(absenceStart, end, type);
-      const removed = plural(removableCount, 'day');
-      toast.success(`${absenceLabel(type)} removed: ${removed}`);
+      toast.success(t('entry.absenceRemoved', { label: absenceLabel(type), days: translatePlural('entry.day', removableCount) }));
       await invalidateTimeData(queryClient);
       onClose();
     });
@@ -289,11 +296,11 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
     mode === null ? undefined : (
       <>
         <Button variant="tertiary" onClick={onClose}>
-          Close
+          {t('entry.close')}
         </Button>
         {mode === 'WORKING' && editor.id && (
           <Button variant="error" disabled={busy} onClick={() => void deleteBooking(editor.id as string)}>
-            Delete booking
+            {t('entry.deleteBooking')}
           </Button>
         )}
         {mode !== 'WORKING' && removableCount > 0 && (
@@ -306,8 +313,8 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
             }}
           >
             {confirmRemove
-              ? `Confirm: remove ${plural(removableCount, 'day')}`
-              : `Remove ${absenceLabel(mode).toLowerCase()}`}
+              ? t('entry.confirmRemove', { days: translatePlural('entry.day', removableCount) })
+              : t('entry.remove', { label: absenceLabel(mode).toLowerCase() })}
           </Button>
         )}
         <Button
@@ -318,7 +325,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
           loading={busy}
           disabled={futureBooking}
         >
-          Save changes
+          {t('entry.save')}
         </Button>
       </>
     );
@@ -328,12 +335,12 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
       {mode === null ? (
         <div className="dialog-loading" role="status">
           <span className="spinner" aria-hidden="true" />
-          Loading…
+          {t('entry.loading')}
         </div>
       ) : (
         <form id={formId} className="dialog-body" noValidate onSubmit={onSubmit}>
-          <div className="dialog-modes" role="group" aria-label="Entry type">
-            {MODE_SWITCH.map((item) => (
+          <div className="dialog-modes" role="group" aria-label={t('entry.modeGroup')}>
+            {modeSwitch().map((item) => (
               <Button
                 key={item.key}
                 variant={showAbsenceTab(item.key) ? 'primary' : 'tertiary'}
@@ -349,7 +356,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
 
           {futureBooking && (
             <div className="notice notice--error" role="alert">
-              Working time cannot be booked for a future date. Use an absence for planned days off.
+              {t('entry.futureBlocked')}
             </div>
           )}
 
@@ -362,17 +369,17 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
           {mode === 'WORKING' ? (
             <div className={`dialog-panels`}>
               {showList && (
-                <section className="dialog-panel" aria-label="Bookings">
-                  <h3 className="dialog-panel__title">Bookings</h3>
+                <section className="dialog-panel"                 aria-label={t('entry.bookings')}>
+                                  <h3 className="dialog-panel__title">{t('entry.bookings')}</h3>
                   <p className="dialog-panel__hint">{summarize(entries)}</p>
                   {entriesQuery.isPending ? (
                     <div className="dialog-loading" role="status">
                       <span className="spinner" aria-hidden="true" />
-                      Loading…
+                      {t('entry.loading')}
                     </div>
                   ) : entriesQuery.isError ? (
                     <div className="notice notice--error" role="alert">
-                      The bookings could not be loaded.
+                      {t('entry.bookingsLoadError')}
                     </div>
                   ) : (
                     <ul className="bookings">
@@ -393,7 +400,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
                               <Button
                                 icon
                                 variant="tertiary"
-                                aria-label={`Edit booking ${bookingHeadline(entry)}`}
+                                aria-label={t('entry.editBooking', { booking: bookingHeadline(entry) })}
                                 onClick={() => selectEntry(entry)}
                               >
                                 <Icon name="edit" />
@@ -402,7 +409,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
                                 icon
                                 variant="tertiary"
                                 className="btn--danger-text"
-                                aria-label={`Delete booking ${bookingHeadline(entry)}`}
+                                aria-label={t('entry.deleteBookingItem', { booking: bookingHeadline(entry) })}
                                 disabled={busy}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -420,26 +427,26 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
                   <div>
                     <Button variant="tertiary" onClick={() => startNewBooking()}>
                       <Icon name="plus" />
-                      Add booking
+                      {t('entry.addBooking')}
                     </Button>
                   </div>
                 </section>
               )}
 
-              <section className="dialog-panel dialog-panel--editor" aria-label="Booking editor">
-                <h3 className="dialog-panel__title">{editor.id ? 'Editing booking' : 'New booking'}</h3>
+              <section className="dialog-panel dialog-panel--editor"               aria-label={t('entry.editor')}>
+                              <h3 className="dialog-panel__title">{editor.id ? t('entry.editing') : t('entry.newBooking')}</h3>
                 <p className="dialog-panel__hint">
                   {editor.id
-                    ? 'Update the selected booking or delete it if it is no longer needed.'
+                                  ? t('entry.editingHint')
                     : showList
-                      ? 'Create a new booking for the selected day.'
-                      : 'Add the first booking for this day.'}
+                                    ? t('entry.newHint')
+                                    : t('entry.firstHint')}
                 </p>
                 <div className="dialog-grid">
                   {dateEditable ? (
                     <TextField
                       className="dialog-grid__full"
-                      label="Date"
+                      label={t('entry.date')}
                       type="date"
                       required
                       value={editor.date}
@@ -447,17 +454,17 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
                     />
                   ) : (
                     <div className="dialog-grid__full dialog-date">
-                      <span>For {formatShortDate(editor.date)}</span>
+                      <span>{t('entry.forDate', { date: formatShortDate(editor.date) })}</span>
                       <Button variant="tertiary" small onClick={() => setDateEditable(true)}>
-                        Change date
+                        {t('entry.changeDate')}
                       </Button>
                     </div>
                   )}
                   <TextField
-                    label="Start time"
+                    label={t('entry.startTime')}
                     type="text"
                     inputMode="numeric"
-                    placeholder="HH:MM"
+                    placeholder={t('entry.timePlaceholder')}
                     maxLength={5}
                     autoComplete="off"
                     required
@@ -466,10 +473,10 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
                     onBlur={() => patchEditor({ startTime: normalizeTime(editor.startTime) })}
                   />
                   <TextField
-                    label="End time"
+                    label={t('entry.endTime')}
                     type="text"
                     inputMode="numeric"
-                    placeholder="HH:MM"
+                    placeholder={t('entry.timePlaceholder')}
                     maxLength={5}
                     autoComplete="off"
                     value={editor.endTime}
@@ -478,8 +485,8 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
                   />
                   <NumberField
                     className="dialog-grid__full"
-                    label="Break (min)"
-                    helperText="Minutes"
+                    label={t('entry.break.label')}
+                    helperText={t('entry.break.helper')}
                     min={0}
                     max={480}
                     step={5}
@@ -488,8 +495,8 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
                   />
                   <TextAreaField
                     className="dialog-grid__full"
-                    label="Notes"
-                    helperText="Max. 500 characters"
+                    label={t('entry.notes')}
+                    helperText={t('entry.notes.helper')}
                     maxLength={500}
                     value={editor.notes}
                     onChange={(e) => patchEditor({ notes: e.target.value })}
@@ -498,29 +505,28 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
               </section>
             </div>
           ) : (
-            <section className="dialog-panel" aria-label="Absence">
-              <h3 className="dialog-panel__title">Absence</h3>
-              <p className="dialog-panel__hint">
-                {ABSENCE_TYPES.find((t) => t.type === mode)?.hint ??
-                  'Use a simple date range. No time fields are needed for absences.'}
-              </p>
+            <section className="dialog-panel"             aria-label={t('entry.absence')}>
+                          <h3 className="dialog-panel__title">{t('entry.absence')}</h3>
+                          <p className="dialog-panel__hint">
+                            {getAbsenceTypes().find((a) => a.type === mode)?.hint ?? t('entry.absence.hint')}
+                          </p>
               <div className="dialog-grid dialog-grid--absence">
                 <SelectField
                   className="dialog-grid__full"
-                  label="Type"
+                  label={t('entry.type')}
                   value={mode}
-                  options={ABSENCE_TYPES.map((t) => ({ value: t.type, label: t.label }))}
+                  options={getAbsenceTypes().map((a) => ({ value: a.type, label: a.label }))}
                   onChange={(e) => changeMode(e.target.value as AbsenceType)}
                 />
                 <TextField
-                  label="Start date"
+                  label={t('entry.startDate')}
                   type="date"
                   required
                   value={absenceStart}
                   onChange={(e) => changeAbsenceStart(e.target.value)}
                 />
                 <TextField
-                  label="End date"
+                  label={t('entry.endDate')}
                   type="date"
                   value={absenceEnd}
                   onChange={(e) => {

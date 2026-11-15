@@ -8,6 +8,7 @@ import { ApiError } from '../api/http';
 import type { TimeEntry } from '../api/types';
 import { ToastProvider } from './Toast';
 import { TimeEntryDialog } from './TimeEntryDialog';
+import { setActiveLanguage } from '../i18n';
 
 vi.mock('../api/endpoints', () => ({
   api: {
@@ -52,6 +53,7 @@ function renderDialog(onClose = vi.fn(), date = DATE) {
 describe('TimeEntryDialog', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    setActiveLanguage('en');
     vi.mocked(api.getTimeEntries).mockResolvedValue([]);
     vi.mocked(api.getAbsences).mockResolvedValue([]);
     vi.mocked(api.createTimeEntry).mockResolvedValue(undefined);
@@ -78,12 +80,26 @@ describe('TimeEntryDialog', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('shows the header and an empty state in German', async () => {
+    setActiveLanguage('de');
+    renderDialog();
+
+    expect(await screen.findByText('Neue Buchung')).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('14.11.2026');
+    expect(dialog).toHaveTextContent('Arbeitszeit');
+    expect(dialog).toHaveTextContent('Noch keine Buchungen für diesen Tag');
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Änderungen speichern' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Die Startzeit ist erforderlich');
+  });
+
   it('shows the header and an empty state in working mode', async () => {
     renderDialog();
 
     expect(await screen.findByText('New booking')).toBeInTheDocument();
     const dialog = screen.getByRole('dialog');
-    expect(dialog).toHaveTextContent('14.11.2026');
+    expect(dialog).toHaveTextContent('14/11/2026');
     expect(dialog).toHaveTextContent('Working time');
     expect(dialog).toHaveTextContent('No bookings yet for this day');
     expect(screen.getByText(/Add the first booking for this day/)).toBeInTheDocument();
@@ -198,7 +214,7 @@ describe('TimeEntryDialog', () => {
     expect(screen.getByLabelText(/End date/)).toHaveValue(DATE);
 
     fireEvent.change(screen.getByLabelText(/End date/), { target: { value: '2026-11-18' } });
-    expect(screen.getByRole('dialog')).toHaveTextContent('14.11.2026 – 18.11.2026');
+    expect(screen.getByRole('dialog')).toHaveTextContent('14/11/2026 – 18/11/2026');
     await user.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(api.saveAbsence).toHaveBeenCalledWith(DATE, '2026-11-18', 'VACATION'));

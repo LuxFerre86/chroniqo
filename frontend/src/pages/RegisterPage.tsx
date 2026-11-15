@@ -8,6 +8,7 @@ import type { PasswordPolicy } from '../api/types';
 import { Button } from '../components/Button';
 import { NumberField, PasswordField, SelectField, TextField } from '../components/fields';
 import { useToast } from '../components/Toast';
+import { getLanguage, translate, useT } from '../i18n';
 import { isValidEmail, passwordHelperText, validatePassword } from '../lib/password';
 import { queryKeys, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
 import { isValidWeeklyHours } from '../lib/weeklyHours';
@@ -68,28 +69,29 @@ const SERVER_FIELDS: FieldName[] = [
 function validateField(field: FieldName, values: FormValues, policy: PasswordPolicy): string | null {
   switch (field) {
     case 'firstName':
-      return values.firstName.trim() ? null : 'First name is required';
+      return values.firstName.trim() ? null : translate('auth.register.firstNameRequired');
     case 'lastName':
-      return values.lastName.trim() ? null : 'Last name is required';
+      return values.lastName.trim() ? null : translate('auth.register.lastNameRequired');
     case 'weeklyTargetHours': {
       const hours = values.weeklyTargetHours;
-      if (hours === null || Number.isNaN(hours)) return 'Weekly Target Hours are required';
-      return isValidWeeklyHours(hours) ? null : 'Please enter a value between 0 and 80 (one decimal place, e.g. 37.5)';
+      if (hours === null || Number.isNaN(hours)) return translate('auth.register.weeklyHoursRequired');
+      return isValidWeeklyHours(hours) ? null : translate('auth.register.weeklyHoursInvalid');
     }
     case 'email':
-      if (!values.email.trim()) return 'Email is required';
-      return isValidEmail(values.email) ? null : 'Please enter a valid email address';
+      if (!values.email.trim()) return translate('auth.emailRequired');
+      return isValidEmail(values.email) ? null : translate('auth.emailInvalid');
     case 'password':
       return validatePassword(values.password, policy);
     case 'confirmPassword':
-      if (!values.confirmPassword) return 'Please confirm your password';
-      return values.confirmPassword === values.password ? null : 'Passwords do not match';
+      if (!values.confirmPassword) return translate('auth.confirmPasswordRequired');
+      return values.confirmPassword === values.password ? null : translate('auth.passwordsMismatch');
     default:
       return null;
   }
 }
 
 export function RegisterPage() {
+  const { t } = useT();
   const config = useAppConfig();
   const { appName, passwordPolicy } = config;
   // useAppConfig() falls back to "disabled" while loading; only block once the real value is known.
@@ -107,8 +109,8 @@ export function RegisterPage() {
   const subdivisions = useSubdivisions(values.countryCode || null);
 
   useEffect(() => {
-    document.title = `Sign Up | ${appName}`;
-  }, [appName]);
+    document.title = t('auth.register.docTitle', { appName });
+  }, [appName, t]);
 
   const countryOptions = useMemo(
     () => (countries.data ?? []).map((c) => ({ value: c.code, label: c.name })),
@@ -130,18 +132,19 @@ export function RegisterPage() {
         weeklyTargetHours: values.weeklyTargetHours as number,
         countryCode: values.countryCode || null,
         subdivisionCode: showSubdivisions && values.subdivisionCode ? values.subdivisionCode : null,
+        language: getLanguage(),
       }),
     onSuccess: () => {
-      toast.success('Registration successful! Please check your email to verify your account.', 5000);
+      toast.success(t('auth.register.success'), 5000);
       navigate('/login');
     },
     onError: (e: unknown) => {
       if (!(e instanceof ApiError)) {
-        setFormError('Registration failed. Please try again.');
+        setFormError(t('auth.register.failed'));
         return;
       }
       if (e.code === 'REGISTRATION_DISABLED') {
-        setFormError('Registration is currently disabled. Please contact the administrator.');
+        setFormError(t('auth.register.disabled'));
         return;
       }
       const fieldErrors: FieldErrors = {};
@@ -211,14 +214,14 @@ export function RegisterPage() {
       <div className="auth-card">
         <div className="auth-card__head">
           <img className="auth-card__logo" src="/icons/icon-48x48.png" alt="" />
-          <h1 className="auth-card__title">Create Account</h1>
-          <p className="auth-card__subtitle">Start tracking your time today</p>
+          <h1 className="auth-card__title">{t('auth.register.title')}</h1>
+          <p className="auth-card__subtitle">{t('auth.register.subtitle')}</p>
         </div>
 
         <form className="form" onSubmit={handleSubmit} noValidate>
           {registrationDisabled && (
             <div className="notice notice--error" role="alert">
-              Registration is currently disabled. Please contact the administrator.
+              {t('auth.register.disabled')}
             </div>
           )}
           {formError && !registrationDisabled && (
@@ -228,7 +231,7 @@ export function RegisterPage() {
           )}
 
           <TextField
-            label="First Name"
+            label={t('auth.register.firstName')}
             name="firstName"
             autoComplete="given-name"
             required
@@ -238,7 +241,7 @@ export function RegisterPage() {
             onBlur={handleBlur('firstName')}
           />
           <TextField
-            label="Last Name"
+            label={t('auth.register.lastName')}
             name="lastName"
             autoComplete="family-name"
             required
@@ -248,11 +251,11 @@ export function RegisterPage() {
             onBlur={handleBlur('lastName')}
           />
           <SelectField
-            label="Country"
+            label={t('auth.register.country')}
             name="country"
             autoComplete="country"
-            placeholder="Select your country (optional)"
-            helperText="Used to automatically detect public holidays in your calendar"
+            placeholder={t('auth.register.countryPlaceholder')}
+            helperText={t('auth.register.countryHelper')}
             options={countryOptions}
             value={values.countryCode}
             error={errors.countryCode}
@@ -260,9 +263,9 @@ export function RegisterPage() {
           />
           {showSubdivisions && (
             <SelectField
-              label="State / Region"
+              label={t('auth.register.subdivision')}
               name="subdivision"
-              placeholder="Select your state / region (optional)"
+              placeholder={t('auth.register.subdivisionPlaceholder')}
               options={subdivisionOptions}
               value={values.subdivisionCode}
               error={errors.subdivisionCode}
@@ -270,19 +273,19 @@ export function RegisterPage() {
             />
           )}
           <NumberField
-            label="Weekly Target Hours"
+            label={t('auth.register.weeklyHours')}
             required
             min={0}
             max={80}
             step={0.5}
             inputStep={0.1}
-            helperText="0–80 hours per week, e.g. 37.5 (0 = no target)"
+            helperText={t('auth.register.weeklyHoursHelper')}
             value={values.weeklyTargetHours}
             error={errors.weeklyTargetHours}
             onChange={(hours) => update({ weeklyTargetHours: hours })}
           />
           <TextField
-            label="Email"
+            label={t('auth.email')}
             type="email"
             name="email"
             autoComplete="email"
@@ -293,7 +296,7 @@ export function RegisterPage() {
             onBlur={handleBlur('email')}
           />
           <PasswordField
-            label="Password"
+            label={t('auth.password')}
             name="password"
             autoComplete="new-password"
             required
@@ -304,7 +307,7 @@ export function RegisterPage() {
             onBlur={handleBlur('password')}
           />
           <PasswordField
-            label="Confirm Password"
+            label={t('auth.confirmPassword')}
             name="confirmPassword"
             autoComplete="new-password"
             required
@@ -315,14 +318,14 @@ export function RegisterPage() {
           />
 
           <Button type="submit" variant="primary" block loading={mutation.isPending} disabled={registrationDisabled}>
-            Create Account
+            {t('auth.register.submit')}
           </Button>
         </form>
 
         <div className="auth-card__footer">
-          <span>Already have an account?</span>
+          <span>{t('auth.register.haveAccount')}</span>
           <Link className="btn btn--link" to="/login">
-            Sign in
+            {t('auth.register.signIn')}
           </Link>
         </div>
       </div>

@@ -10,6 +10,7 @@ import { useToast } from '../components/Toast';
 import { formatClock, formatHours, formatLongBalance, formatSignedClock, trimSeconds } from '../lib/format';
 import { formatLongDate, parseIsoDate, todayIso, weekdayShort } from '../lib/dates';
 import { invalidateTimeData, queryKeys } from '../lib/queries';
+import { useT } from '../i18n';
 import type { Dashboard, DaySummary, TimeEntry } from '../api/types';
 import '../styles/dashboard.css';
 
@@ -35,6 +36,7 @@ function TodayCard({
   onStop: () => void;
   stopping: boolean;
 }) {
+  const { t } = useT();
   const workedMinutes = today?.workedMinutes ?? 0;
   const targetMinutes = today?.targetMinutes ?? 0;
   const balance = today?.balanceMinutes ?? 0;
@@ -42,8 +44,8 @@ function TodayCard({
   // Without a target (e.g. weekend) any worked time fills the ring instead of leaving it empty.
   const ratio = hasTarget ? Math.min(1, workedMinutes / targetMinutes) : workedMinutes > 0 ? 1 : 0;
   return (
-    <section className="card dash-today" aria-label="Today">
-      <div className="dash-today__label">Today</div>
+    <section className="card dash-today"     aria-label={t('dashboard.today')}>
+          <div className="dash-today__label">{t('dashboard.today')}</div>
       <div className="dash-ring">
         <svg className="dash-ring__svg" viewBox="0 0 200 200" aria-hidden="true">
           <circle className="dash-ring__track" cx="100" cy="100" r={RING_RADIUS} />
@@ -63,7 +65,7 @@ function TodayCard({
             {formatClock(workedMinutes)}
           </div>
           <div className="dash-today__caption">
-            {hasTarget ? `of ${formatClock(targetMinutes)} h target` : 'hours worked'}
+            {hasTarget ? t('dashboard.today.target', { target: formatClock(targetMinutes) }) : t('dashboard.today.noTarget')}
           </div>
         </div>
       </div>
@@ -77,10 +79,10 @@ function TodayCard({
         <div className="dash-today__running" data-testid="running-entry">
           <span className="dash-today__running-label">
             <span className="dash-today__running-dot" aria-hidden="true" />
-            Running since {trimSeconds(openEntry.startTime)}
+            {t('dashboard.running', { time: trimSeconds(openEntry.startTime) })}
           </span>
           <Button variant="error" small onClick={onStop} loading={stopping}>
-            Stop
+            {t('dashboard.stop')}
           </Button>
         </div>
       )}
@@ -88,9 +90,10 @@ function TodayCard({
   );
 }
 function BalanceCard({ minutes, year }: { minutes: number; year: string }) {
+  const { t } = useT();
   return (
-    <section className="card dash-stat" aria-label="Current balance">
-      <div className="dash__label">Current balance ({year})</div>
+    <section className="card dash-stat" aria-label={t('dashboard.balance.label')}>
+      <div className="dash__label">{t('dashboard.balance.title', { year })}</div>
       <div
         className={`dash-stat__value dash-stat__value--${minutes >= 0 ? 'positive' : 'negative'}`}
         data-testid="current-balance"
@@ -102,30 +105,36 @@ function BalanceCard({ minutes, year }: { minutes: number; year: string }) {
 }
 
 function VacationCard({ year }: { year: number }) {
+  const { t, tp } = useT();
   const { data } = useQuery({ queryKey: queryKeys.vacation(year), queryFn: () => api.getVacationAccount(year) });
   if (!data) return null;
   return (
-    <section className="card dash-stat" aria-label="Vacation">
-      <div className="dash__label">Vacation ({year})</div>
+    <section className="card dash-stat"     aria-label={t('dashboard.vacation.label')}>
+          <div className="dash__label">{t('dashboard.vacation.title', { year })}</div>
       <div
         className={`dash-stat__value dash-stat__value--${data.remaining >= 0 ? 'positive' : 'negative'}`}
         data-testid="vacation-remaining"
       >
-        {data.remaining} {Math.abs(data.remaining) === 1 ? 'day' : 'days'} left
+        {tp('dashboard.vacation.left', Math.abs(data.remaining) === 1 ? 1 : 2, { count: data.remaining })}
       </div>
       <p className="dash-stat__detail">
-        {data.taken} taken · {data.planned} planned · {data.entitlement} total
+        {t('dashboard.vacation.detail', {
+          taken: data.taken,
+          planned: data.planned,
+          entitlement: data.entitlement,
+        })}
       </p>
     </section>
   );
 }
 
 function WeeklyProgressCard({ progress }: { progress: Dashboard['weeklyProgress'] }) {
+  const { t } = useT();
   const tone = progress.hasTarget ? progressTone(progress.percentage) : null;
   const colorClass = tone === 'green' ? 'positive' : tone === 'red' ? 'negative' : 'amber';
   return (
-    <section className="card dash-stat" aria-label="Weekly progress">
-      <div className="dash__label">Weekly progress</div>
+    <section className="card dash-stat"     aria-label={t('dashboard.weekly.title')}>
+          <div className="dash__label">{t('dashboard.weekly.title')}</div>
       <div className={`dash-stat__value dash-stat__value--${colorClass}`} data-testid="weekly-percentage">
         {progress.hasTarget ? `${Math.round(progress.percentage)}%` : '–'}
       </div>
@@ -134,7 +143,7 @@ function WeeklyProgressCard({ progress }: { progress: Dashboard['weeklyProgress'
           <div
             className="progress"
             role="progressbar"
-            aria-label="Weekly progress"
+            aria-label={t('dashboard.weekly.title')}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.min(100, Math.round(progress.percentage))}
@@ -149,18 +158,19 @@ function WeeklyProgressCard({ progress }: { progress: Dashboard['weeklyProgress'
           </div>
         </>
       ) : (
-        <div className="dash-stat__detail">No target this week</div>
+        <div className="dash-stat__detail">{t('dashboard.weekly.noTarget')}</div>
       )}
     </section>
   );
 }
 
 function WeekChart({ week, todayDate }: { week: DaySummary[]; todayDate: string }) {
+  const { t } = useT();
   const maxMinutes = Math.max(MIN_CHART_SCALE_MINUTES, ...week.map((d) => Math.max(d.workedMinutes, d.targetMinutes)));
   const nothingLogged = week.every((d) => d.workedMinutes === 0);
   return (
-    <section className="card" aria-label="Current week">
-      <h3 className="week__title">Current Week</h3>
+    <section className="card"     aria-label={t('dashboard.week.label')}>
+          <h3 className="week__title">{t('dashboard.week.title')}</h3>
       <div className="week__chart">
         {week.map((day) => {
           const label = weekdayShort(parseIsoDate(day.date));
@@ -172,7 +182,15 @@ function WeekChart({ week, todayDate }: { week: DaySummary[]; todayDate: string 
               className={`week__col${isToday ? ' week__col--today' : ''}`}
               role="img"
               aria-label={`${label} ${formatHours(day.workedMinutes)}`}
-              title={`${label}: ${formatHours(day.workedMinutes)}${hasTarget ? ` of ${formatHours(day.targetMinutes)}` : ''}`}
+              title={
+                hasTarget
+                  ? t('dashboard.week.dayTitleTarget', {
+                      day: label,
+                      worked: formatHours(day.workedMinutes),
+                      target: formatHours(day.targetMinutes),
+                    })
+                  : t('dashboard.week.dayTitle', { day: label, worked: formatHours(day.workedMinutes) })
+              }
             >
               <div className="week__bar-area">
                 {hasTarget && (
@@ -191,9 +209,9 @@ function WeekChart({ week, todayDate }: { week: DaySummary[]; todayDate: string 
         })}
       </div>
       <p className="week__legend">
-        {nothingLogged ? 'Nothing logged this week yet – use Log Time to add your first booking.' : (
+        {nothingLogged ? t('dashboard.week.empty') : (
           <>
-            <span className="week__legend-line" aria-hidden="true" /> Daily target
+            <span className="week__legend-line" aria-hidden="true" /> {t('dashboard.week.dailyTarget')}
           </>
         )}
       </p>
@@ -201,8 +219,9 @@ function WeekChart({ week, todayDate }: { week: DaySummary[]; todayDate: string 
   );
 }
 function DashboardSkeleton() {
+  const { t } = useT();
   return (
-    <div className="dash" role="status" aria-label="Loading dashboard">
+    <div className="dash" role="status" aria-label={t('dashboard.loading')}>
       <div className="dash-hero">
         <div className="dash-hero__main">
           <div className="card skeleton dash-skeleton__today" />
@@ -219,6 +238,7 @@ function DashboardSkeleton() {
 }
 
 export function DashboardPage() {
+  const { t } = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -243,8 +263,8 @@ export function DashboardPage() {
   }, [openEntry?.id, refetch]);
 
   useEffect(() => {
-    document.title = 'Dashboard | chroniqo';
-  }, []);
+    document.title = t('dashboard.pageTitle');
+  }, [t]);
 
   const stopRunning = async () => {
     if (!openEntry || stopping) return;
@@ -259,10 +279,10 @@ export function DashboardPage() {
         breakMinutes: openEntry.breakMinutes,
         notes: openEntry.notes,
       });
-      toast.success(`Booking stopped at ${endTime}`);
+      toast.success(t('dashboard.stopped', { time: endTime }));
       await invalidateTimeData(queryClient);
     } catch (e) {
-      toast.error(e instanceof ApiError && e.message ? e.message : 'The booking could not be stopped.');
+      toast.error(e instanceof ApiError && e.message ? e.message : t('dashboard.stopFailed'));
     } finally {
       setStopping(false);
     }
@@ -272,7 +292,7 @@ export function DashboardPage() {
     <div className="page dash-page">
       <div className="page__header">
         <div>
-          <h2 className="page__title">Dashboard</h2>
+          <h2 className="page__title">{t('dashboard.title')}</h2>
           <p className="page__subtitle">{formatLongDate(new Date())}</p>
         </div>
         <Button
@@ -282,7 +302,7 @@ export function DashboardPage() {
           disabled={isFetching}
         >
           <Icon name="refresh" className={isFetching ? 'is-spinning' : undefined} />
-          Refresh
+          {t('dashboard.refresh')}
         </Button>
       </div>
 
@@ -291,10 +311,10 @@ export function DashboardPage() {
       ) : isError || !data ? (
         <div className="dash">
           <div className="notice notice--error" role="alert">
-            The dashboard could not be loaded.
+            {t('dashboard.loadError')}
           </div>
           <div>
-            <Button onClick={() => void refetch()}>Retry</Button>
+            <Button onClick={() => void refetch()}>{t('dashboard.retry')}</Button>
           </div>
         </div>
       ) : (
@@ -306,11 +326,11 @@ export function DashboardPage() {
               <div className="dash-actions">
                 <Button variant="primary" onClick={() => setDialogDate(today)}>
                   <Icon name="clock" />
-                  Log Time
+                  {t('dashboard.logTime')}
                 </Button>
                 <Button variant="tertiary" onClick={() => navigate('/month')}>
                   <Icon name="calendar" />
-                  View Month
+                  {t('dashboard.viewMonth')}
                 </Button>
               </div>
             </div>

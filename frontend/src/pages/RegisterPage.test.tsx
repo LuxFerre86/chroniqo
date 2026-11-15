@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api/http';
 import { ToastProvider } from '../components/Toast';
+import { setActiveLanguage } from '../i18n';
 import { RegisterPage } from './RegisterPage';
 
 const mocks = vi.hoisted(() => ({
@@ -121,6 +122,7 @@ describe('RegisterPage', () => {
         weeklyTargetHours: 40,
         countryCode: 'DE',
         subdivisionCode: 'DE-BY',
+        language: 'en',
       }),
     );
     expect(await screen.findByText('login page')).toBeInTheDocument();
@@ -159,5 +161,28 @@ describe('RegisterPage', () => {
     renderRegister();
     expect(await screen.findByText(/Registration is currently disabled/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create Account' })).toBeDisabled();
+  });
+
+  it('renders German texts and sends the language with the registration', async () => {
+    setActiveLanguage('de');
+    mocks.register.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderRegister();
+
+    expect(await screen.findByRole('heading', { name: 'Konto erstellen' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Konto erstellen' }));
+    expect(await screen.findByText('Vorname ist erforderlich')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/^Vorname/), 'Jana');
+    await user.type(screen.getByLabelText(/^Nachname/), 'Doe');
+    await user.type(screen.getByLabelText(/^Wöchentliche Sollstunden/), '40');
+    await user.type(screen.getByLabelText(/^E-Mail/), 'jana@example.com');
+    await user.type(screen.getByLabelText(/^Passwort(?! bestätigen)/, { selector: 'input' }), 'Str0ng!Passw0rd');
+    await user.type(screen.getByLabelText(/^Passwort bestätigen/, { selector: 'input' }), 'Str0ng!Passw0rd');
+    await user.click(screen.getByRole('button', { name: 'Konto erstellen' }));
+
+    await waitFor(() =>
+      expect(mocks.register).toHaveBeenCalledWith(expect.objectContaining({ language: 'de' })),
+    );
   });
 });

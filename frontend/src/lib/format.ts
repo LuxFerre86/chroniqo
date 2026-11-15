@@ -1,3 +1,5 @@
+import { getLocale } from '../i18n';
+
 /** Duration formatting helpers. All inputs are minutes. */
 
 function split(minutes: number): { sign: string; hours: number; mins: number } {
@@ -32,7 +34,7 @@ export function formatSignedClock(minutes: number): string {
 export function formatLongBalance(minutes: number): string {
   const { hours, mins } = split(minutes);
   const sign = minutes < 0 ? '\u2212' : minutes > 0 ? '+' : '';
-  return `${sign}${hours.toLocaleString('en-US')} h ${mins} min`;
+  return `${sign}${hours.toLocaleString(getLocale())} h ${mins} min`;
 }
 
 /** "8h" or "8:10h" – used for chart labels and weekly progress. */

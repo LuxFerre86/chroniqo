@@ -7,6 +7,7 @@ import { api } from '../api/endpoints';
 import type { Dashboard, DaySummary } from '../api/types';
 import { ToastProvider } from '../components/Toast';
 import { DashboardPage } from './DashboardPage';
+import { setActiveLanguage } from '../i18n';
 
 vi.mock('../api/endpoints', () => ({
   api: {
@@ -84,6 +85,23 @@ describe('DashboardPage', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    setActiveLanguage('en');
+  });
+
+  it('renders the dashboard in German', async () => {
+    setActiveLanguage('de');
+    vi.mocked(api.getDashboard).mockResolvedValue(dashboard());
+    renderPage();
+
+    expect(await screen.findByTestId('today-worked')).toHaveTextContent('7:48');
+    expect(screen.getByText('Samstag, 14.11.2026')).toBeInTheDocument();
+    expect(screen.getByText('von 7:48 h Soll')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Aktuelle Woche' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Zeit erfassen' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Mo 8:10h' })).toBeInTheDocument();
+    expect(await screen.findByTestId('vacation-remaining')).toHaveTextContent('15 Tage übrig');
+    expect(screen.getByText('10 genommen · 5 geplant · 30 gesamt')).toBeInTheDocument();
+    expect(document.title).toBe('Dashboard | chroniqo');
   });
 
   it('renders the numbers of the dashboard', async () => {
@@ -91,7 +109,7 @@ describe('DashboardPage', () => {
     renderPage();
 
     expect(await screen.findByTestId('today-worked')).toHaveTextContent('7:48');
-    expect(screen.getByText('Saturday, 14.11.2026')).toBeInTheDocument();
+    expect(screen.getByText('Saturday, 14/11/2026')).toBeInTheDocument();
     expect(screen.getByText('of 7:48 h target')).toBeInTheDocument();
     expect(screen.getByTestId('today-balance')).toHaveTextContent('+0:00');
     expect(screen.getByTestId('current-balance')).toHaveTextContent('+17 h 21 min');
@@ -187,7 +205,7 @@ describe('DashboardPage', () => {
     renderPage();
 
     await user.click(await screen.findByRole('button', { name: /Log Time/ }));
-    expect(await screen.findByRole('dialog')).toHaveTextContent('14.11.2026');
+    expect(await screen.findByRole('dialog')).toHaveTextContent('14/11/2026');
     await waitFor(() => expect(api.getTimeEntries).toHaveBeenCalledWith('2026-11-14', '2026-11-14'));
     await user.click(screen.getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());

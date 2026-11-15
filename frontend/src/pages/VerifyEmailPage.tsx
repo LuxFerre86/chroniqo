@@ -5,6 +5,7 @@ import type { VerifyEmailStatus } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../components/Button';
 import { useAppConfig } from '../lib/queries';
+import { useT } from '../i18n';
 
 /**
  * Verification tokens are single-use, so the request must be sent exactly once per token even when
@@ -25,6 +26,7 @@ function verifyOnce(token: string): Promise<VerifyEmailStatus> {
 }
 
 export function VerifyEmailPage() {
+  const { t } = useT();
   const { appName } = useAppConfig();
   const { refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -35,8 +37,8 @@ export function VerifyEmailPage() {
   const [continuing, setContinuing] = useState(false);
 
   useEffect(() => {
-    document.title = `Verify Email | ${appName}`;
-  }, [appName]);
+    document.title = t('auth.verify.docTitle', { appName });
+  }, [appName, t]);
 
   useEffect(() => {
     if (!token) return;
@@ -64,7 +66,7 @@ export function VerifyEmailPage() {
     return (
       <div className="auth-page">
         <div className="centered-state" role="status">
-          <span className="spinner" aria-hidden="true" /> Verifying…
+          <span className="spinner" aria-hidden="true" /> {t('auth.verify.verifying')}
         </div>
       </div>
     );
@@ -80,28 +82,28 @@ export function VerifyEmailPage() {
           <div className="auth-card__emoji" aria-hidden="true">
             {verified ? '✅' : '❌'}
           </div>
-          <h1 className="auth-card__title">{verified ? 'Email Verified!' : 'Verification Failed'}</h1>
+          <h1 className="auth-card__title">{verified ? t('auth.verify.successTitle') : t('auth.verify.failedTitle')}</h1>
         </div>
         <p className="auth-card__message">
           {!verified
-            ? 'The verification link is invalid or has expired. Please request a new verification email.'
+            ? t('auth.verify.invalid')
             : loggedIn
-              ? "Your email has been successfully verified. You're now logged in!"
-              : 'Your email has been successfully verified. Please log in to continue.'}
+              ? t('auth.verify.successLoggedIn')
+              : t('auth.verify.successLogin')}
         </p>
         {loggedIn ? (
           <Button variant="primary" block loading={continuing} onClick={goToDashboard}>
-            Go to Dashboard
+            {t('auth.verify.goToDashboard')}
           </Button>
         ) : (
           <>
             {!verified && (
               <Button variant="primary" block onClick={() => navigate('/resend-verification')}>
-                Request New Verification Email
+                {t('auth.verify.requestNew')}
               </Button>
             )}
             <Button variant={verified ? 'primary' : 'tertiary'} block onClick={() => navigate('/login')}>
-              Go to Login
+              {t('auth.verify.goToLogin')}
             </Button>
           </>
         )}

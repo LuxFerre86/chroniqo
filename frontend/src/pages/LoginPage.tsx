@@ -7,12 +7,13 @@ import { useAuth } from '../auth/AuthContext';
 import { Button } from '../components/Button';
 import { Checkbox, PasswordField, TextField } from '../components/fields';
 import { useToast } from '../components/Toast';
+import { useT } from '../i18n';
 import { useAppConfig } from '../lib/queries';
 
-const DEFAULT_LOGIN_ERROR = 'Incorrect email or password, or the account is locked or not verified.';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginPage() {
+  const { t } = useT();
   const { login } = useAuth();
   const { appName } = useAppConfig();
   const navigate = useNavigate();
@@ -26,13 +27,13 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   useEffect(() => {
-    document.title = `Login | ${appName}`;
-  }, [appName]);
+    document.title = t('auth.login.docTitle', { appName });
+  }, [appName, t]);
 
   const accountDeleted = searchParams.has('accountDeleted');
   useEffect(() => {
     if (!accountDeleted) return;
-    toast.success('Your account was deleted successfully.', 4000);
+    toast.success(t('auth.login.accountDeleted'), 4000);
     const next = new URLSearchParams(searchParams);
     next.delete('accountDeleted');
     setSearchParams(next, { replace: true });
@@ -46,8 +47,8 @@ export function LoginPage() {
       navigate(from || '/', { replace: true });
     },
     onError: (e: unknown) => {
-      const hasDetail = e instanceof ApiError && !e.message.startsWith('Request failed (');
-      setError(hasDetail ? e.message : DEFAULT_LOGIN_ERROR);
+      const hasDetail = e instanceof ApiError && e.message !== t('error.requestFailed', { status: e.status });
+      setError(hasDetail ? e.message : t('auth.login.defaultError'));
     },
   });
 
@@ -56,9 +57,9 @@ export function LoginPage() {
     if (mutation.isPending) return;
     setError(null);
     const nextErrors: { email?: string; password?: string } = {};
-    if (!email.trim()) nextErrors.email = 'Please enter your email address';
-    else if (!EMAIL_PATTERN.test(email.trim())) nextErrors.email = 'Please enter a valid email address';
-    if (!password) nextErrors.password = 'Please enter your password';
+    if (!email.trim()) nextErrors.email = t('auth.login.emailRequired');
+    else if (!EMAIL_PATTERN.test(email.trim())) nextErrors.email = t('auth.emailInvalid');
+    if (!password) nextErrors.password = t('auth.login.passwordRequired');
     setFieldErrors(nextErrors);
     if (nextErrors.email || nextErrors.password) return;
     mutation.mutate();
@@ -70,7 +71,7 @@ export function LoginPage() {
         <div className="auth-card__head">
           <img className="auth-card__logo" src="/icons/icon-48x48.png" alt="" />
           <h1 className="auth-card__title">{appName}</h1>
-          <p className="auth-card__subtitle">Track your time with ease</p>
+          <p className="auth-card__subtitle">{t('auth.login.subtitle')}</p>
         </div>
 
         <form className="form" onSubmit={handleSubmit} noValidate>
@@ -80,7 +81,7 @@ export function LoginPage() {
             </div>
           )}
           <TextField
-            label="Email"
+            label={t('auth.email')}
             type="email"
             name="email"
             autoComplete="username"
@@ -94,7 +95,7 @@ export function LoginPage() {
             }}
           />
           <PasswordField
-            label="Password"
+            label={t('auth.password')}
             name="password"
             autoComplete="current-password"
             required
@@ -105,26 +106,26 @@ export function LoginPage() {
               setFieldErrors((c) => ({ ...c, password: undefined }));
             }}
           />
-          <Checkbox label="Remember me" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+          <Checkbox label={t('auth.login.rememberMe')} checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
           <Button type="submit" variant="primary" block loading={mutation.isPending}>
-            Log in
+            {t('auth.login.submit')}
           </Button>
         </form>
 
         <Button variant="link" onClick={() => navigate('/reset-password')}>
-          Forgot password
+          {t('auth.login.forgotPassword')}
         </Button>
         <Button
           variant="link"
           onClick={() => navigate(email.trim() ? `/resend-verification?email=${encodeURIComponent(email.trim())}` : '/resend-verification')}
         >
-          Resend verification email
+          {t('auth.login.resendVerification')}
         </Button>
 
         <div className="auth-card__footer">
-          <span>Don't have an account?</span>
+          <span>{t('auth.login.noAccount')}</span>
           <Link className="btn btn--link" to="/register">
-            Sign up
+            {t('auth.login.signUp')}
           </Link>
         </div>
       </div>

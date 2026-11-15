@@ -6,6 +6,7 @@ import { ApiError } from '../api/http';
 import type { UserProfile } from '../api/types';
 import { ToastProvider } from '../components/Toast';
 import { SettingsPage } from './SettingsPage';
+import { setActiveLanguage } from '../i18n';
 
 const refreshUser = vi.fn();
 const clearSession = vi.fn();
@@ -119,8 +120,8 @@ describe('SettingsPage – custom days off', () => {
     const holidays = section('Custom Days Off');
 
     expect(await within(holidays).findByText('Bridge day')).toBeInTheDocument();
-    expect(within(holidays).getByText('15.05.2026')).toBeInTheDocument();
-    expect(within(holidays).getByText('24.12.2026 – 31.12.2026 · every year')).toBeInTheDocument();
+    expect(within(holidays).getByText('15/05/2026')).toBeInTheDocument();
+    expect(within(holidays).getByText('24/12/2026 – 31/12/2026 · every year')).toBeInTheDocument();
   });
 
   it('adds a single-day entry', async () => {
@@ -418,7 +419,7 @@ describe('SettingsPage – account information', () => {
     renderPage();
 
     const account = section('Account Information');
-    expect(within(account).getByText('04.03.2025, 10:15')).toBeInTheDocument();
+    expect(within(account).getByText('04/03/2025, 10:15')).toBeInTheDocument();
     expect(within(account).getByText('Never')).toBeInTheDocument();
     expect(within(account).queryByText('ada@example.com')).toBeNull();
     expect(within(account).queryByText('2026.10.0')).toBeNull();
@@ -430,7 +431,7 @@ describe('SettingsPage – account information', () => {
 
     const account = section('Account Information');
     expect(within(account).getByText('Unknown')).toBeInTheDocument();
-    expect(within(account).getByText('14.11.2026, 08:00')).toBeInTheDocument();
+    expect(within(account).getByText('14/11/2026, 08:00')).toBeInTheDocument();
   });
 });
 
@@ -528,5 +529,40 @@ describe('SettingsPage – working day chips', () => {
     const group = screen.getByRole('group', { name: 'Working Days' });
     const names = within(group).getAllByRole('checkbox').map((c) => c.getAttribute('aria-label'));
     expect(names).toEqual(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']);
+  });
+});
+
+describe('SettingsPage – language', () => {
+  it('saves the chosen language and refreshes the user', async () => {
+    renderPage();
+    const select = await screen.findByLabelText('Language');
+    expect(select).toHaveValue('en');
+    expect(within(select).getByRole('option', { name: 'Deutsch' })).toBeInTheDocument();
+
+    await userEvent.selectOptions(select, 'de');
+
+    await waitFor(() => expect(mocked.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ language: 'de' })));
+    expect(refreshUser).toHaveBeenCalled();
+  });
+
+  it('shows an error toast when saving the language fails', async () => {
+    mocked.updateProfile.mockRejectedValue(new ApiError(500, 'Boom'));
+    renderPage();
+    await userEvent.selectOptions(await screen.findByLabelText('Language'), 'de');
+
+    expect(await screen.findByText('Boom')).toBeInTheDocument();
+    expect(refreshUser).not.toHaveBeenCalled();
+  });
+
+  it('renders German texts when the active language is German', async () => {
+    setActiveLanguage('de');
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Einstellungen' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Passwort ändern' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Sprache')).toHaveValue('de');
+    const group = screen.getByRole('group', { name: 'Arbeitstage' });
+    expect(within(group).getAllByRole('checkbox').map((c) => c.getAttribute('aria-label'))[0]).toBe('Montag');
+    expect(document.title).toBe('Einstellungen | chroniqo');
   });
 });

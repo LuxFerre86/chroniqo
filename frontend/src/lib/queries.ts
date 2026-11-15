@@ -1,12 +1,13 @@
 import { useQuery, type QueryClient } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
+import { getLanguage } from '../i18n';
 import { DEFAULT_PASSWORD_POLICY } from './password';
 import type { AppConfig } from '../api/types';
 
 export const queryKeys = {
   me: ['me'] as const,
   config: ['config'] as const,
-  countries: ['countries'] as const,
+  countries: () => ['countries', getLanguage()] as const,
   subdivisions: (code: string) => ['subdivisions', code] as const,
   dashboard: ['dashboard'] as const,
   summary: (from: string, to: string) => ['summary', from, to] as const,
@@ -46,7 +47,7 @@ export function useAppConfig(): AppConfig {
 }
 
 export function useCountries() {
-  return useQuery({ queryKey: queryKeys.countries, queryFn: api.getCountries, staleTime: Infinity });
+  return useQuery({ queryKey: queryKeys.countries(), queryFn: api.getCountries, staleTime: Infinity });
 }
 
 export function useSubdivisions(countryCode: string | null) {

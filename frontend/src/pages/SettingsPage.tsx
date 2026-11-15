@@ -20,31 +20,26 @@ import {
 } from '../lib/push';
 import { invalidateTimeData, queryKeys, useAppConfig, useCountries, useSubdivisions } from '../lib/queries';
 import { isValidWeeklyHours } from '../lib/weeklyHours';
+import { getLanguage, LANGUAGES, translate, useT } from '../i18n';
+import type { Language } from '../i18n';
 import '../styles/settings.css';
 
-const DAY_LABELS: Record<DayOfWeekName, string> = {
-  MONDAY: 'Monday',
-  TUESDAY: 'Tuesday',
-  WEDNESDAY: 'Wednesday',
-  THURSDAY: 'Thursday',
-  FRIDAY: 'Friday',
-  SATURDAY: 'Saturday',
-  SUNDAY: 'Sunday',
-};
+const LANGUAGE_NAMES: Record<Language, string> = { en: 'English', de: 'Deutsch' };
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+  return error instanceof Error ? error.message : translate('settings.error.generic');
 }
 
 export function SettingsPage() {
+  const { t } = useT();
   useEffect(() => {
-    document.title = 'Settings | chroniqo';
-  }, []);
+    document.title = t('settings.pageTitle');
+  }, [t]);
 
   return (
     <div className="page">
       <div className="page__header">
-        <h1 className="page__title">Settings</h1>
+        <h1 className="page__title">{t('settings.title')}</h1>
       </div>
       <div className="settings">
         <div className="settings__col">
@@ -64,6 +59,7 @@ export function SettingsPage() {
 }
 
 function RemindersSection() {
+  const { t } = useT();
   const { pushPublicKey } = useAppConfig();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -105,13 +101,13 @@ function RemindersSection() {
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        toast.error('Notifications are blocked. Allow them in your browser settings to get reminders.');
+        toast.error(t('settings.reminders.blocked'));
         return;
       }
       const subscription = await subscribeThisDevice(pushPublicKey as string);
       await api.subscribePush(toSubscriptionInput(subscription));
       setDeviceActive(true);
-      toast.success('Reminders enabled on this device!', 3000);
+      toast.success(t('settings.reminders.enabled'), 3000);
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -128,7 +124,7 @@ function RemindersSection() {
         await subscription.unsubscribe();
       }
       setDeviceActive(false);
-      toast.success('Reminders disabled on this device.', 3000);
+      toast.success(t('settings.reminders.disabled'), 3000);
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -140,14 +136,14 @@ function RemindersSection() {
     event.preventDefault();
     const hours = Number(endAfterHours);
     if (!startTime || !Number.isInteger(hours) || hours < 1 || hours > 24) {
-      toast.error('Enter a start time and a duration between 1 and 24 hours.');
+      toast.error(t('settings.reminders.invalid'));
       return;
     }
     setBusy(true);
     try {
       await api.updateReminderSettings({ startEnabled, startTime, endEnabled, endAfterHours: hours });
       await queryClient.invalidateQueries({ queryKey: queryKeys.reminderSettings });
-      toast.success('Reminder settings saved!', 3000);
+      toast.success(t('settings.reminders.saved'), 3000);
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -158,44 +154,41 @@ function RemindersSection() {
   return (
     <section className="card settings__section" aria-labelledby="settings-reminders">
       <h3 id="settings-reminders" className="settings__heading">
-        Reminders
+        {t('settings.reminders.title')}
       </h3>
-      <p className="settings__hint">
-        Push notifications on your devices. Enable them per device; the schedule below applies to all of them. No
-        reminders on non-working days, holidays or absence days.
-      </p>
+      <p className="settings__hint">{t('settings.reminders.hint')}</p>
       <div className="settings__actions">
         {deviceActive ? (
           <Button variant="outlined" disabled={busy} onClick={() => void disableDevice()}>
-            Disable on this device
+            {t('settings.reminders.disableDevice')}
           </Button>
         ) : (
           <Button variant="primary" disabled={busy} onClick={() => void enableDevice()}>
-            Enable on this device
+            {t('settings.reminders.enableDevice')}
           </Button>
         )}
       </div>
       <form className="form" onSubmit={(e) => void handleSave(e)} noValidate>
         <Checkbox
-          label="Remind me to start tracking"
+          label={t('settings.reminders.startEnabled')}
           checked={startEnabled}
           onChange={(e) => setStartEnabled(e.target.checked)}
         />
         <TextField
-          label="Start reminder time"
+          label={t('settings.reminders.startTime')}
           type="time"
           value={startTime}
           disabled={!startEnabled}
           onChange={(e) => setStartTime(e.target.value)}
-          helperText="Only sent if nothing has been logged by then."
+          helperText={t('settings.reminders.startTimeHelper')}
         />
         <Checkbox
-          label="Remind me about a running entry"
+          label={t('settings.reminders.endEnabled')}
           checked={endEnabled}
           onChange={(e) => setEndEnabled(e.target.checked)}
         />
         <TextField
-          label="Running entry reminder after (hours)"
+          label={t('settings.reminders.endAfterHours')}
           type="number"
           min={1}
           max={24}
@@ -206,7 +199,7 @@ function RemindersSection() {
         />
         <div className="settings__actions">
           <Button type="submit" variant="primary" disabled={busy}>
-            Save Reminders
+            {t('settings.reminders.save')}
           </Button>
         </div>
       </form>
@@ -215,6 +208,7 @@ function RemindersSection() {
 }
 
 function CustomHolidaysSection() {
+  const { t } = useT();
   const toast = useToast();
   const queryClient = useQueryClient();
   const holidays = useQuery({ queryKey: queryKeys.customHolidays, queryFn: () => api.getCustomHolidays() });
@@ -234,13 +228,13 @@ function CustomHolidaysSection() {
   async function handleAdd(event: FormEvent) {
     event.preventDefault();
     if (!name.trim() || !startDate) {
-      toast.error('Name and start date are required.');
+      toast.error(t('settings.holidays.required'));
       return;
     }
     setBusy(true);
     try {
       await api.createCustomHoliday({ name: name.trim(), startDate, endDate: endDate || startDate, recurring });
-      toast.success('Day off added!', 3000);
+      toast.success(t('settings.holidays.added'), 3000);
       setName('');
       setStartDate('');
       setEndDate('');
@@ -269,13 +263,11 @@ function CustomHolidaysSection() {
   return (
     <section className="card settings__section" aria-labelledby="settings-custom-holidays">
       <h3 id="settings-custom-holidays" className="settings__heading">
-        Custom Days Off
+        {t('settings.holidays.title')}
       </h3>
-      <p className="settings__hint">
-        Bridge days or company holidays. They count like public holidays: no target hours and no vacation days used.
-      </p>
+      <p className="settings__hint">{t('settings.holidays.hint')}</p>
       {items.length > 0 && (
-        <ul className="holiday-list" aria-label="Custom days off">
+        <ul className="holiday-list" aria-label={t('settings.holidays.listLabel')}>
           {items.map((h) => (
             <li key={h.id} className="holiday-list__item">
               <div>
@@ -284,25 +276,31 @@ function CustomHolidaysSection() {
                   {h.startDate === h.endDate
                     ? formatShortDate(h.startDate)
                     : `${formatShortDate(h.startDate)} – ${formatShortDate(h.endDate)}`}
-                  {h.recurring && ' · every year'}
+                  {h.recurring && t('settings.holidays.everyYear')}
                 </div>
               </div>
               <Button
                 variant="tertiary"
                 disabled={busy}
-                aria-label={`Delete ${h.name}`}
+                aria-label={t('settings.holidays.deleteLabel', { name: h.name })}
                 onClick={() => void handleDelete(h.id)}
               >
-                Delete
+                {t('settings.holidays.delete')}
               </Button>
             </li>
           ))}
         </ul>
       )}
       <form className="form" onSubmit={(e) => void handleAdd(e)} noValidate>
-        <TextField label="Name" required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
         <TextField
-          label="Start date"
+          label={t('settings.holidays.name')}
+          required
+          maxLength={100}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <TextField
+          label={t('settings.holidays.startDate')}
           type="date"
           required
           value={startDate}
@@ -312,17 +310,21 @@ function CustomHolidaysSection() {
           }}
         />
         <TextField
-          label="End date"
+          label={t('settings.holidays.endDate')}
           type="date"
           min={startDate || undefined}
           value={endDate}
-          helperText="Leave empty for a single day"
+          helperText={t('settings.holidays.endDateHelper')}
           onChange={(e) => setEndDate(e.target.value)}
         />
-        <Checkbox label="Repeat every year" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} />
+        <Checkbox
+          label={t('settings.holidays.recurring')}
+          checked={recurring}
+          onChange={(e) => setRecurring(e.target.checked)}
+        />
         <div className="settings__actions">
           <Button type="submit" variant="primary" disabled={busy}>
-            Add Day Off
+            {t('settings.holidays.add')}
           </Button>
         </div>
       </form>
@@ -331,6 +333,7 @@ function CustomHolidaysSection() {
 }
 
 function VacationSection() {
+  const { t } = useT();
   const toast = useToast();
   const queryClient = useQueryClient();
   const currentYear = new Date().getFullYear();
@@ -349,13 +352,13 @@ function VacationSection() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (days === null || !Number.isInteger(days) || days < 0 || days > 366) {
-      toast.error('Vacation days must be a whole number between 0 and 366.');
+      toast.error(t('settings.vacation.invalid'));
       return;
     }
     setSaving(true);
     try {
       await api.setVacationEntitlement(year, days);
-      toast.success('Vacation entitlement saved!', 3000);
+      toast.success(t('settings.vacation.saved'), 3000);
       await queryClient.invalidateQueries({ queryKey: ['vacation'] });
     } catch (error) {
       toast.error(errorMessage(error));
@@ -367,27 +370,27 @@ function VacationSection() {
   return (
     <section className="card settings__section" aria-labelledby="settings-vacation">
       <h3 id="settings-vacation" className="settings__heading">
-        Vacation
+        {t('settings.vacation.title')}
       </h3>
       <form className="form" onSubmit={(e) => void handleSubmit(e)} noValidate>
         <SelectField
-          label="Year"
+          label={t('settings.vacation.year')}
           value={String(year)}
           onChange={(e) => setYear(Number(e.target.value))}
           options={years.map((y) => ({ value: String(y), label: String(y) }))}
         />
         <NumberField
-          label="Annual Entitlement (days)"
+          label={t('settings.vacation.entitlement')}
           value={days}
           onChange={setDays}
           min={0}
           max={366}
           step={1}
-          helperText="A new year inherits the entitlement of the previous year. Vacation bookings beyond the entitlement are blocked."
+          helperText={t('settings.vacation.entitlementHelper')}
         />
         <div className="settings__actions">
           <Button type="submit" variant="primary" disabled={saving}>
-            {saving ? 'Saving…' : 'Save Vacation'}
+            {saving ? t('settings.vacation.saving') : t('settings.vacation.save')}
           </Button>
         </div>
       </form>
@@ -396,6 +399,8 @@ function VacationSection() {
 }
 
 function ProfileSection() {
+  const { t } = useT();
+  const language = getLanguage();
   const { user, refreshUser } = useAuth();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -432,20 +437,39 @@ function ProfileSection() {
     setWorkingDays((current) => (checked ? [...current, day] : current.filter((d) => d !== day)));
   };
 
+  const onLanguageChange = async (next: Language) => {
+    if (!user || next === language) return;
+    try {
+      await api.updateProfile({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        weeklyTargetHours: user.weeklyTargetHours,
+        workingDays: user.workingDays,
+        countryCode: user.countryCode,
+        subdivisionCode: user.subdivisionCode,
+        language: next,
+      });
+      // The refreshed user carries the new language; I18nProvider then remounts the tree.
+      await refreshUser();
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  };
+
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const nextErrors: typeof errors = {};
-    if (!firstName.trim()) nextErrors.firstName = 'First name is required';
-    if (!lastName.trim()) nextErrors.lastName = 'Last name is required';
+    if (!firstName.trim()) nextErrors.firstName = t('settings.profile.firstNameRequired');
+    if (!lastName.trim()) nextErrors.lastName = t('settings.profile.lastNameRequired');
     setErrors(nextErrors);
     if (nextErrors.firstName || nextErrors.lastName) return;
 
     if (!isValidWeeklyHours(weeklyHours)) {
-      toast.error('Weekly target hours must be between 0 and 80 with at most one decimal place (e.g. 37.5).');
+      toast.error(t('settings.profile.weeklyHoursInvalid'));
       return;
     }
     if (workingDays.length === 0) {
-      toast.error('Please select at least one working day.');
+      toast.error(t('settings.profile.workingDaysRequired'));
       return;
     }
 
@@ -459,7 +483,7 @@ function ProfileSection() {
         countryCode: countryCode || null,
         subdivisionCode: showSubdivisions && subdivisionCode ? subdivisionCode : null,
       });
-      toast.success('Profile updated successfully!', 3000);
+      toast.success(t('settings.profile.saved'), 3000);
       await Promise.all([refreshUser(), invalidateTimeData(queryClient)]);
     } catch (error) {
       toast.error(errorMessage(error));
@@ -471,11 +495,11 @@ function ProfileSection() {
   return (
     <section className="card settings__section" aria-labelledby="settings-profile">
       <h3 className="settings__heading" id="settings-profile">
-        Profile Information
+        {t('settings.profile.title')}
       </h3>
       <form className="form" onSubmit={onSubmit} noValidate>
         <TextField
-          label="First Name"
+          label={t('settings.profile.firstName')}
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
           error={errors.firstName}
@@ -483,7 +507,7 @@ function ProfileSection() {
           required
         />
         <TextField
-          label="Last Name"
+          label={t('settings.profile.lastName')}
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
           error={errors.lastName}
@@ -491,39 +515,50 @@ function ProfileSection() {
           required
         />
         <SelectField
-          label="Country"
+          label={t('settings.profile.country')}
           value={countryCode}
           onChange={(e) => {
             setCountryCode(e.target.value);
             setSubdivisionCode('');
           }}
           options={(countries.data ?? []).map((c) => ({ value: c.code, label: c.name }))}
-          placeholder="None — disable automatic public holidays"
-          helperText="Used for automatic public holiday detection"
+          placeholder={t('settings.profile.countryPlaceholder')}
+          helperText={t('settings.profile.countryHelper')}
         />
         {showSubdivisions && (
           <SelectField
-            label="State / Region"
+            label={t('settings.profile.subdivision')}
             value={subdivisionCode}
             onChange={(e) => setSubdivisionCode(e.target.value)}
             options={subdivisionOptions}
-            placeholder="Select your state / region (optional)"
+            placeholder={t('settings.profile.subdivisionPlaceholder')}
           />
         )}
-        <TextField label="Email" value={user?.email ?? ''} readOnly helperText="Email cannot be changed" />
+        <SelectField
+          label={t('settings.language.label')}
+          value={language}
+          onChange={(e) => void onLanguageChange(e.target.value as Language)}
+          options={LANGUAGES.map((l) => ({ value: l, label: LANGUAGE_NAMES[l] }))}
+        />
+        <TextField
+          label={t('settings.profile.email')}
+          value={user?.email ?? ''}
+          readOnly
+          helperText={t('settings.profile.emailHelper')}
+        />
         <NumberField
-          label="Weekly Target Hours"
+          label={t('settings.profile.weeklyHours')}
           value={weeklyHours}
           onChange={setWeeklyHours}
           min={0}
           max={80}
           step={0.5}
           inputStep={0.1}
-          helperText="0–80 hours per week, e.g. 37.5 (0 = no target)"
+          helperText={t('settings.profile.weeklyHoursHelper')}
         />
         <div className="settings__group" role="group" aria-labelledby={workingDaysId}>
           <span className="field__label" id={workingDaysId}>
-            Working Days
+            {t('settings.profile.workingDays')}
           </span>
           <div className="day-chips">
             {weekdayOrder(user?.firstDayOfWeek).map((i) => {
@@ -532,20 +567,20 @@ function ProfileSection() {
                 <label key={day} className="day-chip">
                   <input
                     type="checkbox"
-                    aria-label={DAY_LABELS[day]}
+                    aria-label={t(`settings.day.${day}`)}
                     checked={workingDays.includes(day)}
                     onChange={(e) => toggleDay(day, e.target.checked)}
                   />
-                  <span aria-hidden="true">{DAY_LABELS[day].slice(0, 3)}</span>
+                  <span aria-hidden="true">{t(`settings.dayShort.${day}`)}</span>
                 </label>
               );
             })}
           </div>
-          <span className="field__helper">Select the days you are scheduled to work</span>
+          <span className="field__helper">{t('settings.profile.workingDaysHelper')}</span>
         </div>
         <div className="settings__actions">
           <Button type="submit" variant="primary" loading={saving}>
-            Save Changes
+            {t('settings.profile.save')}
           </Button>
         </div>
       </form>
@@ -554,6 +589,7 @@ function ProfileSection() {
 }
 
 function PasswordSection() {
+  const { t } = useT();
   const toast = useToast();
   const { passwordPolicy } = useAppConfig();
 
@@ -566,18 +602,18 @@ function PasswordSection() {
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const nextErrors: typeof errors = {};
-    if (!currentPassword) nextErrors.current = 'Current password is required';
+    if (!currentPassword) nextErrors.current = t('settings.password.currentRequired');
     const policyError = validatePassword(newPassword, passwordPolicy);
     if (policyError) nextErrors.next = policyError;
-    if (!confirmPassword) nextErrors.confirm = 'Please confirm your new password';
-    else if (confirmPassword !== newPassword) nextErrors.confirm = 'Passwords do not match';
+    if (!confirmPassword) nextErrors.confirm = t('settings.password.confirmRequired');
+    else if (confirmPassword !== newPassword) nextErrors.confirm = t('settings.password.mismatch');
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
     setSaving(true);
     try {
       await api.changePassword(currentPassword, newPassword);
-      toast.success('Password changed successfully!', 3000);
+      toast.success(t('settings.password.saved'), 3000);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -598,11 +634,11 @@ function PasswordSection() {
   return (
     <section className="card settings__section" aria-labelledby="settings-password">
       <h3 className="settings__heading" id="settings-password">
-        Change Password
+        {t('settings.password.title')}
       </h3>
       <form className="form" onSubmit={onSubmit} noValidate>
         <PasswordField
-          label="Current Password"
+          label={t('settings.password.current')}
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           error={errors.current}
@@ -610,7 +646,7 @@ function PasswordSection() {
           required
         />
         <PasswordField
-          label="New Password"
+          label={t('settings.password.new')}
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           error={errors.next}
@@ -619,7 +655,7 @@ function PasswordSection() {
           required
         />
         <PasswordField
-          label="Confirm New Password"
+          label={t('settings.password.confirm')}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           error={errors.confirm}
@@ -628,7 +664,7 @@ function PasswordSection() {
         />
         <div className="settings__actions">
           <Button type="submit" variant="primary" loading={saving}>
-            Change Password
+            {t('settings.password.submit')}
           </Button>
         </div>
       </form>
@@ -637,21 +673,22 @@ function PasswordSection() {
 }
 
 function AccountSection() {
+  const { t } = useT();
   const { user } = useAuth();
 
   return (
     <section className="card settings__section" aria-labelledby="settings-account">
       <h3 className="settings__heading" id="settings-account">
-        Account Information
+        {t('settings.account.title')}
       </h3>
       <div className="settings__stats">
         <div className="settings__stat">
-          <div className="settings__stat-label">Member Since</div>
-          <div className="settings__stat-value">{formatDateTime(user?.createdAt, 'Unknown')}</div>
+          <div className="settings__stat-label">{t('settings.account.memberSince')}</div>
+          <div className="settings__stat-value">{formatDateTime(user?.createdAt, t('settings.account.unknown'))}</div>
         </div>
         <div className="settings__stat">
-          <div className="settings__stat-label">Last Login</div>
-          <div className="settings__stat-value">{formatDateTime(user?.lastLoginAt, 'Never')}</div>
+          <div className="settings__stat-label">{t('settings.account.lastLogin')}</div>
+          <div className="settings__stat-value">{formatDateTime(user?.lastLoginAt, t('settings.account.never'))}</div>
         </div>
       </div>
     </section>
@@ -659,6 +696,8 @@ function AccountSection() {
 }
 
 function DangerSection() {
+  const { t } = useT();
+  const confirmWord = t('settings.danger.confirmWord');
   const { clearSession } = useAuth();
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -674,12 +713,12 @@ function DangerSection() {
   };
 
   const onDelete = async () => {
-    if (confirmation !== 'DELETE') {
-      toast.error('Please type DELETE to confirm account removal.');
+    if (confirmation !== confirmWord) {
+      toast.error(t('settings.danger.typeWord', { word: confirmWord }));
       return;
     }
     if (!password) {
-      toast.error('Please enter your current password.');
+      toast.error(t('settings.danger.needPassword'));
       return;
     }
 
@@ -698,29 +737,27 @@ function DangerSection() {
   return (
     <section className="card settings__section settings__danger" aria-labelledby="settings-danger">
       <h3 className="settings__heading" id="settings-danger">
-        Danger Zone
+        {t('settings.danger.title')}
       </h3>
-      <p className="settings__danger-text">
-        Delete your account permanently. This removes your profile, time entries, absences, and saved settings.
-      </p>
+      <p className="settings__danger-text">{t('settings.danger.text')}</p>
       <div className="settings__actions">
         <Button variant="error" onClick={() => setOpen(true)}>
-          Delete Account
+          {t('settings.danger.delete')}
         </Button>
       </div>
 
       <Modal
         open={open}
         onClose={close}
-        title="Delete Account"
+        title={t('settings.danger.delete')}
         narrow
         footer={
           <>
             <Button variant="tertiary" onClick={close} disabled={deleting}>
-              Cancel
+              {t('settings.danger.cancel')}
             </Button>
             <Button variant="error" onClick={() => void onDelete()} loading={deleting}>
-              Delete Account
+              {t('settings.danger.delete')}
             </Button>
           </>
         }
@@ -732,20 +769,17 @@ function DangerSection() {
             void onDelete();
           }}
         >
-          <p className="settings__dialog-text">
-            This action cannot be undone. Type DELETE and enter your current password to permanently remove your
-            account.
-          </p>
+          <p className="settings__dialog-text">{t('settings.danger.dialogText', { word: confirmWord })}</p>
           <TextField
-            label="Confirmation"
+            label={t('settings.danger.confirmation')}
             value={confirmation}
             onChange={(e) => setConfirmation(e.target.value)}
-            placeholder="DELETE"
-            helperText="Type DELETE in uppercase to confirm"
+            placeholder={confirmWord}
+            helperText={t('settings.danger.confirmationHelper', { word: confirmWord })}
             autoComplete="off"
           />
           <PasswordField
-            label="Current Password"
+            label={t('settings.danger.currentPassword')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"

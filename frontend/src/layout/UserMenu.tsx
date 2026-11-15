@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
 import type { UserProfile } from '../api/types';
+import { useT } from '../i18n';
 
 function initials(user: UserProfile | null): string {
   if (!user) return '?';
@@ -11,6 +12,7 @@ function initials(user: UserProfile | null): string {
 
 /** Avatar button with a dropdown for settings and logout. */
 export function UserMenu({ user, onLogout }: { user: UserProfile | null; onLogout: () => void }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
@@ -38,7 +40,7 @@ export function UserMenu({ user, onLogout }: { user: UserProfile | null; onLogou
         className="user-menu__trigger"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={t('userMenu.trigger')}
         onClick={() => setOpen((v) => !v)}
       >
         <span className="user-menu__avatar" aria-hidden="true">
@@ -48,14 +50,14 @@ export function UserMenu({ user, onLogout }: { user: UserProfile | null; onLogou
         <Icon name="chevron-down" className="user-menu__chevron" />
       </button>
       {open && (
-        <div className="user-menu__panel" role="menu" aria-label="Account">
+        <div className="user-menu__panel" role="menu" aria-label={t('userMenu.panel')}>
           <div className="user-menu__who">
             <span className="user-menu__who-name">{fullName}</span>
             {user && <span className="user-menu__who-mail">{user.email}</span>}
           </div>
           <Link to="/settings" role="menuitem" className="user-menu__item" onClick={() => setOpen(false)}>
             <Icon name="settings" />
-            Settings
+            {t('userMenu.settings')}
           </Link>
           <button
             type="button"
@@ -67,7 +69,7 @@ export function UserMenu({ user, onLogout }: { user: UserProfile | null; onLogou
             }}
           >
             <Icon name="logout" />
-            Logout
+            {t('userMenu.logout')}
           </button>
         </div>
       )}

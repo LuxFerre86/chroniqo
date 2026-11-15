@@ -9,8 +9,10 @@ import { PasswordField } from '../components/fields';
 import { useToast } from '../components/Toast';
 import { passwordHelperText, validatePassword } from '../lib/password';
 import { useAppConfig } from '../lib/queries';
+import { translate, useT } from '../i18n';
 
 export function PasswordResetConfirmPage() {
+  const { t } = useT();
   const { appName, passwordPolicy } = useAppConfig();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -24,27 +26,27 @@ export function PasswordResetConfirmPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = `Set New Password | ${appName}`;
-  }, [appName]);
+    document.title = t('auth.resetConfirm.docTitle', { appName });
+  }, [appName, t]);
 
   const mutation = useMutation({
     mutationFn: () => api.confirmPasswordReset(token as string, password),
     onSuccess: () => {
-      toast.success('Password reset successful. You can now log in.');
+      toast.success(t('auth.resetConfirm.success'));
       navigate('/login');
     },
     onError: (e: unknown) => {
       if (e instanceof ApiError && e.errors?.newPassword) {
         setPasswordError(e.errors.newPassword);
       } else {
-        setError(e instanceof ApiError ? e.message : 'Something went wrong. Please try again.');
+        setError(e instanceof ApiError ? e.message : t('auth.somethingWrong'));
       }
     },
   });
 
   const confirmMessage = (pw: string, cf: string) => {
-    if (!cf) return 'Please confirm your password';
-    return cf === pw ? null : 'Passwords do not match';
+    if (!cf) return translate('auth.confirmPasswordRequired');
+    return cf === pw ? null : translate('auth.passwordsMismatch');
   };
 
   function handleSubmit(event: FormEvent) {
@@ -66,17 +68,17 @@ export function PasswordResetConfirmPage() {
           <div className="auth-card__emoji" aria-hidden="true">
             🔐
           </div>
-          <h1 className="auth-card__title">Set New Password</h1>
-          <p className="auth-card__subtitle">Choose a strong password</p>
+          <h1 className="auth-card__title">{t('auth.resetConfirm.title')}</h1>
+          <p className="auth-card__subtitle">{t('auth.resetConfirm.subtitle')}</p>
         </div>
 
         {!token ? (
           <>
             <div className="notice notice--error" role="alert">
-              Invalid reset link
+              {t('auth.resetConfirm.invalidLink')}
             </div>
             <Link className="btn btn--tertiary btn--block" to="/login">
-              Back to Login
+              {t('auth.backToLogin')}
             </Link>
           </>
         ) : (
@@ -87,7 +89,7 @@ export function PasswordResetConfirmPage() {
               </div>
             )}
             <PasswordField
-              label="New Password"
+              label={t('auth.resetConfirm.newPassword')}
               name="newPassword"
               autoComplete="new-password"
               required
@@ -102,7 +104,7 @@ export function PasswordResetConfirmPage() {
               onBlur={() => password && setPasswordError(validatePassword(password, passwordPolicy))}
             />
             <PasswordField
-              label="Confirm Password"
+              label={t('auth.confirmPassword')}
               name="confirmPassword"
               autoComplete="new-password"
               required
@@ -115,7 +117,7 @@ export function PasswordResetConfirmPage() {
               onBlur={() => confirm && setConfirmError(confirmMessage(password, confirm))}
             />
             <Button type="submit" variant="primary" block loading={mutation.isPending}>
-              Set New Password
+              {t('auth.resetConfirm.submit')}
             </Button>
           </form>
         )}
