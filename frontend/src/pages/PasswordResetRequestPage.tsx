@@ -6,7 +6,6 @@ import { api } from '../api/endpoints';
 import { ApiError } from '../api/http';
 import { Button } from '../components/Button';
 import { TextField } from '../components/fields';
-import { useToast } from '../components/Toast';
 import { isValidEmail } from '../lib/password';
 import { useAppConfig } from '../lib/queries';
 
@@ -17,7 +16,6 @@ function validateEmail(value: string): string | null {
 
 export function PasswordResetRequestPage() {
   const { appName } = useAppConfig();
-  const toast = useToast();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +30,6 @@ export function PasswordResetRequestPage() {
     onSuccess: () => {
       setEmail('');
       setSent(true);
-      toast.success('If an account exists for this email, a reset link has been sent.');
     },
     onError: (e: unknown) => {
       setError(e instanceof ApiError ? e.message : 'Something went wrong. Please try again.');

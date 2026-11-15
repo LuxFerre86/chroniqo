@@ -69,6 +69,42 @@
   font-variant-numeric: tabular-nums;
 }
 
+.dash-today__running {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  font-size: 13px;
+  color: var(--secondary-text-color);
+}
+
+.dash-today__running-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dash-today__running-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--positive);
+  animation: dash-running-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes dash-running-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-today__running-dot {
+    animation: none;
+  }
+}
+
 .dash-today__balance--positive {
   color: var(--positive);
   background: var(--positive-bg);

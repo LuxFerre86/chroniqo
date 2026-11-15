@@ -64,6 +64,21 @@ describe('LoginPage', () => {
     expect(await screen.findByTestId('where')).toHaveTextContent('/');
   });
 
+  it('validates empty and malformed input on the client without calling the server', async () => {
+    const user = userEvent.setup();
+    renderLogin();
+
+    await user.click(screen.getByRole('button', { name: 'Log in' }));
+    expect(await screen.findByText('Please enter your email address')).toBeInTheDocument();
+    expect(screen.getByText('Please enter your password')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/^Email/), 'not-an-email');
+    await user.type(screen.getByLabelText(/^Password/), 'secret');
+    await user.click(screen.getByRole('button', { name: 'Log in' }));
+    expect(await screen.findByText('Please enter a valid email address')).toBeInTheDocument();
+    expect(login).not.toHaveBeenCalled();
+  });
+
   it('returns to the originally requested page after login', async () => {
     login.mockResolvedValue(undefined);
     const user = userEvent.setup();

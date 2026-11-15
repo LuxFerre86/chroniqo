@@ -35,13 +35,13 @@ const entry = (overrides: Partial<TimeEntry> = {}): TimeEntry => ({
   ...overrides,
 });
 
-function renderDialog(onClose = vi.fn()) {
+function renderDialog(onClose = vi.fn(), date = DATE) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
         <ToastProvider>
-          <TimeEntryDialog date={DATE} onClose={onClose} />
+          <TimeEntryDialog date={date} onClose={onClose} />
         </ToastProvider>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -202,7 +202,7 @@ describe('TimeEntryDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(api.saveAbsence).toHaveBeenCalledWith(DATE, '2026-11-18', 'VACATION'));
-    expect(await screen.findByText('Vacation booked')).toBeInTheDocument();
+    expect(await screen.findByText('Vacation booked: 3 days (2 weekend days skipped)')).toBeInTheDocument();
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
@@ -228,10 +228,34 @@ describe('TimeEntryDialog', () => {
     const { onClose } = renderDialog();
 
     await user.click(await screen.findByRole('button', { name: 'Remove sick leave' }));
+    expect(api.deleteAbsences).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Confirm: remove 1 day' }));
 
     await waitFor(() => expect(api.deleteAbsences).toHaveBeenCalledWith(DATE, DATE, 'SICK'));
-    expect(await screen.findByText('Sick leave removed')).toBeInTheDocument();
+    expect(await screen.findByText('Sick leave removed: 1 day')).toBeInTheDocument();
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it('opens future days in vacation mode and blocks working time there', async () => {
+    const user = userEvent.setup();
+    renderDialog(vi.fn(), '2099-01-05');
+
+    expect(await screen.findByLabelText(/Start date/)).toHaveValue('2099-01-05');
+
+    await user.click(screen.getByRole('button', { name: 'Working time' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('cannot be booked for a future date');
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+  });
+
+  it('hides the remove button when there is nothing to remove', async () => {
+    vi.mocked(api.getAbsences).mockResolvedValue([]);
+    const user = userEvent.setup();
+    renderDialog();
+    await screen.findByText('New booking');
+
+    await user.click(screen.getByRole('button', { name: 'Vacation' }));
+    expect(await screen.findByLabelText(/Start date/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove vacation' })).not.toBeInTheDocument();
   });
 
   it('prefers working mode when the day has bookings, even with an absence', async () => {

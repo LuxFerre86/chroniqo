@@ -10,6 +10,7 @@ import { useToast } from '../components/Toast';
 import { useAppConfig } from '../lib/queries';
 
 const DEFAULT_LOGIN_ERROR = 'Incorrect email or password, or the account is locked or not verified.';
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -23,7 +24,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   useEffect(() => {
     document.title = `Login | ${appName}`;
   }, [appName]);
@@ -54,6 +55,12 @@ export function LoginPage() {
     event.preventDefault();
     if (mutation.isPending) return;
     setError(null);
+    const nextErrors: { email?: string; password?: string } = {};
+    if (!email.trim()) nextErrors.email = 'Please enter your email address';
+    else if (!EMAIL_PATTERN.test(email.trim())) nextErrors.email = 'Please enter a valid email address';
+    if (!password) nextErrors.password = 'Please enter your password';
+    setFieldErrors(nextErrors);
+    if (nextErrors.email || nextErrors.password) return;
     mutation.mutate();
   }
 
@@ -80,7 +87,11 @@ export function LoginPage() {
             required
             autoFocus
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            error={fieldErrors.email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setFieldErrors((c) => ({ ...c, email: undefined }));
+            }}
           />
           <PasswordField
             label="Password"
@@ -88,7 +99,11 @@ export function LoginPage() {
             autoComplete="current-password"
             required
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            error={fieldErrors.password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setFieldErrors((c) => ({ ...c, password: undefined }));
+            }}
           />
           <Checkbox label="Remember me" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
           <Button type="submit" variant="primary" block loading={mutation.isPending}>

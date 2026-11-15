@@ -331,7 +331,7 @@ describe('SettingsPage – account information', () => {
     renderPage();
 
     const account = section('Account Information');
-    expect(within(account).getByText('2025-03-04')).toBeInTheDocument();
+    expect(within(account).getByText('04.03.2025, 10:15')).toBeInTheDocument();
     expect(within(account).getByText('Never')).toBeInTheDocument();
     expect(within(account).queryByText('ada@example.com')).toBeNull();
     expect(within(account).queryByText('2026.10.0')).toBeNull();
@@ -343,7 +343,7 @@ describe('SettingsPage – account information', () => {
 
     const account = section('Account Information');
     expect(within(account).getByText('Unknown')).toBeInTheDocument();
-    expect(within(account).getByText('2026-11-14')).toBeInTheDocument();
+    expect(within(account).getByText('14.11.2026, 08:00')).toBeInTheDocument();
   });
 });
 

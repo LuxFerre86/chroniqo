@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   addMonths,
+  countDays,
   currentYearMonth,
   daysInMonth,
   firstWeekdayIndex,
+  formatDateTime,
   formatLongDate,
   formatMonthLabel,
   formatShortDate,
@@ -137,7 +139,20 @@ describe('formatters', () => {
   });
 
   it('formats the long dashboard date', () => {
-    expect(formatLongDate(new Date(2026, 10, 14))).toBe('Saturday, November 14, 2026');
+    expect(formatLongDate(new Date(2026, 10, 14))).toBe('Saturday, 14.11.2026');
+  });
+
+  it('formats server timestamps with and without time', () => {
+    expect(formatDateTime('2026-11-14T08:05:30')).toBe('14.11.2026, 08:05');
+    expect(formatDateTime('2026-11-14 08:05:30')).toBe('14.11.2026, 08:05');
+    expect(formatDateTime('2026-11-14')).toBe('14.11.2026');
+    expect(formatDateTime(null, 'Never')).toBe('Never');
+    expect(formatDateTime('garbage', 'Unknown')).toBe('Unknown');
+  });
+
+  it('counts weekdays and weekend days of a range', () => {
+    expect(countDays('2026-11-14', '2026-11-18')).toEqual({ weekdays: 3, weekendDays: 2 });
+    expect(countDays('2026-11-16', '2026-11-16')).toEqual({ weekdays: 1, weekendDays: 0 });
   });
 
   it('formats the short dialog date', () => {

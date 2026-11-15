@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
 import { ApiError } from '../api/http';
 import type { AbsenceType, TimeEntry } from '../api/types';
-import { formatShortDate } from '../lib/dates';
+import { countDays, formatShortDate, todayIso } from '../lib/dates';
 import { formatMinutes, isTime24h, normalizeTime, trimSeconds, worked } from '../lib/format';
 import { invalidateTimeData, queryKeys } from '../lib/queries';
 import { Button } from './Button';
@@ -105,6 +105,8 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [dateEditable, setDateEditable] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const today = todayIso();
 
   const entriesQuery = useQuery({
     queryKey: queryKeys.timeEntries(listDate, listDate),
@@ -114,6 +116,21 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
     queryKey: queryKeys.absences(date, date),
     queryFn: () => api.getAbsences(date, date),
   });
+  const absenceRangeEnd = absenceEnd || absenceStart;
+  const absenceRangeValid = !!absenceStart && absenceRangeEnd >= absenceStart;
+  const absenceRangeQuery = useQuery({
+    queryKey: queryKeys.absences(absenceStart, absenceRangeEnd),
+    queryFn: () => api.getAbsences(absenceStart, absenceRangeEnd),
+    enabled: absenceRangeValid,
+  });
+  const removableCount =
+    mode === null || mode === 'WORKING'
+      ? 0
+      : (absenceRangeQuery.data ?? []).filter((a) => a.type === mode).length;
+
+  useEffect(() => {
+    setConfirmRemove(false);
+  }, [mode, absenceStart, absenceEnd]);
 
   const entries = useMemo(
     () =>
@@ -127,7 +144,7 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
     if (mode !== null || !initiallyLoaded) return;
     const absence = (absencesQuery.data ?? []).find((a) => a.date === date);
     const hasEntries = (entriesQuery.data ?? []).length > 0;
-    setMode(!hasEntries && absence ? absence.type : 'WORKING');
+    setMode(!hasEntries && absence ? absence.type : date > todayIso() ? 'VACATION' : 'WORKING');
   }, [mode, initiallyLoaded, absencesQuery.data, entriesQuery.data, date]);
 
   const patchEditor = (patch: Partial<EditorState>) => {
@@ -217,7 +234,10 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
       const end = absenceEnd || absenceStart;
       if (end < absenceStart) throw new ValidationError('End date must be on or after start date');
       await api.saveAbsence(absenceStart, end, type);
-      toast.success(type === 'SICK' ? 'Sick leave recorded' : 'Vacation booked');
+      const { weekdays, weekendDays } = countDays(absenceStart, end);
+      const label = type === 'SICK' ? 'Sick leave recorded' : 'Vacation booked';
+      const skipped = weekendDays > 0 ? ` (${plural(weekendDays, 'weekend day')} skipped)` : '';
+      toast.success(`${label}: ${plural(weekdays, 'day')}${skipped}`);
       await invalidateTimeData(queryClient);
       onClose();
     });
@@ -228,14 +248,17 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
       const end = absenceEnd || absenceStart;
       if (end < absenceStart) throw new ValidationError('End date must be on or after start date');
       await api.deleteAbsences(absenceStart, end, type);
-      toast.success(type === 'SICK' ? 'Sick leave removed' : 'Vacation cancelled');
+      const removed = plural(removableCount, 'day');
+      toast.success(type === 'SICK' ? `Sick leave removed: ${removed}` : `Vacation cancelled: ${removed}`);
       await invalidateTimeData(queryClient);
       onClose();
     });
 
+  const futureBooking = mode === 'WORKING' && editor.date > today;
+
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (busy || mode === null) return;
+    if (busy || mode === null || futureBooking) return;
     void (mode === 'WORKING' ? saveWorking() : saveAbsence(mode));
   };
 
@@ -268,12 +291,30 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
             Delete booking
           </Button>
         )}
-        {mode !== 'WORKING' && (
-          <Button variant="error" disabled={busy} onClick={() => void removeAbsence(mode)}>
-            {mode === 'SICK' ? 'Remove sick leave' : 'Remove vacation'}
+        {mode !== 'WORKING' && removableCount > 0 && (
+          <Button
+            variant="error"
+            disabled={busy}
+            onClick={() => {
+              if (confirmRemove) void removeAbsence(mode);
+              else setConfirmRemove(true);
+            }}
+          >
+            {confirmRemove
+              ? `Confirm: remove ${plural(removableCount, 'day')}`
+              : mode === 'SICK'
+                ? 'Remove sick leave'
+                : 'Remove vacation'}
           </Button>
         )}
-        <Button type="submit" form={formId} variant="primary" className="modal__primary" loading={busy}>
+        <Button
+          type="submit"
+          form={formId}
+          variant="primary"
+          className="modal__primary"
+          loading={busy}
+          disabled={futureBooking}
+        >
           Save changes
         </Button>
       </>
@@ -300,6 +341,12 @@ function TimeEntryDialogContent({ date, onClose }: DialogProps) {
               </Button>
             ))}
           </div>
+
+          {futureBooking && (
+            <div className="notice notice--error" role="alert">
+              Working time cannot be booked for a future date. Use Vacation for planned absences.
+            </div>
+          )}
 
           {error && (
             <div className="notice notice--error" role="alert">
