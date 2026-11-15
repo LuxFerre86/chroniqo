@@ -26,7 +26,7 @@ vi.mock('../auth/AuthContext', () => ({
 
 function Where() {
   const location = useLocation();
-  return <div data-testid="where">{location.pathname}</div>;
+  return <div data-testid="where">{location.pathname + location.search}</div>;
 }
 
 function renderLogin(initialEntry: string | { pathname: string; state?: unknown } = '/login') {
@@ -102,5 +102,13 @@ describe('LoginPage', () => {
     expect(screen.getByRole('link', { name: 'Sign up' })).toHaveAttribute('href', '/register');
     await user.click(screen.getByRole('button', { name: 'Forgot password' }));
     expect(await screen.findByTestId('where')).toHaveTextContent('/reset-password');
+  });
+
+  it('links to the resend-verification page and passes the typed email', async () => {
+    const user = userEvent.setup();
+    renderLogin();
+    await user.type(screen.getByLabelText(/^Email/), 'jane@example.com');
+    await user.click(screen.getByRole('button', { name: 'Resend verification email' }));
+    expect(await screen.findByTestId('where')).toHaveTextContent('/resend-verification?email=jane%40example.com');
   });
 });

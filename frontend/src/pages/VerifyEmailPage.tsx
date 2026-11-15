@@ -94,9 +94,16 @@ export function VerifyEmailPage() {
             Go to Dashboard
           </Button>
         ) : (
-          <Button variant="primary" block onClick={() => navigate('/login')}>
-            Go to Login
-          </Button>
+          <>
+            {!verified && (
+              <Button variant="primary" block onClick={() => navigate('/resend-verification')}>
+                Request New Verification Email
+              </Button>
+            )}
+            <Button variant={verified ? 'primary' : 'tertiary'} block onClick={() => navigate('/login')}>
+              Go to Login
+            </Button>
+          </>
         )}
       </div>
     </div>

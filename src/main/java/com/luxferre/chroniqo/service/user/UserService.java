@@ -52,6 +52,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final int VERIFICATION_TOKEN_VALIDITY_HOURS = 24;
+    static final int VERIFICATION_RESEND_COOLDOWN_SECONDS = 60;
+
     private final DefaultUserDetailsService userDetailsService;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
@@ -115,7 +118,7 @@ public class UserService {
         user.setSubdivisionCode(request.subdivisionCode());
         user.setEnabled(false);
         user.setVerificationToken(UUID.randomUUID().toString());
-        user.setVerificationTokenExpiryDate(LocalDateTime.now().plusHours(24));
+        user.setVerificationTokenExpiryDate(LocalDateTime.now().plusHours(VERIFICATION_TOKEN_VALIDITY_HOURS));
 
         user = userRepository.save(user);
         emailService.sendVerificationEmail(user);
@@ -187,6 +190,40 @@ public class UserService {
         return sessionEstablished
                 ? EmailVerificationResult.VERIFIED_LOGGED_IN
                 : EmailVerificationResult.VERIFIED_LOGIN_REQUIRED;
+    }
+
+    /**
+     * Issues a fresh verification token (invalidating the previous one) and
+     * re-sends the verification email.
+     *
+     * <p>Silently does nothing when the address is unknown or already verified,
+     * and when a verification email was sent less than
+     * {@value #VERIFICATION_RESEND_COOLDOWN_SECONDS} seconds ago, so that
+     * callers can neither enumerate accounts nor flood a mailbox.
+     *
+     * @param email the address the verification email should be sent to
+     */
+    @Transactional
+    public void resendVerificationEmail(String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) return;
+
+        User user = userOpt.get();
+        if (user.isEnabled()) return;
+
+        LocalDateTime lastSentAt = user.getVerificationTokenExpiryDate() == null
+                ? null
+                : user.getVerificationTokenExpiryDate().minusHours(VERIFICATION_TOKEN_VALIDITY_HOURS);
+        if (lastSentAt != null && lastSentAt.plusSeconds(VERIFICATION_RESEND_COOLDOWN_SECONDS).isAfter(LocalDateTime.now())) {
+            log.info("Verification email resend skipped: cooldown active");
+            return;
+        }
+
+        user.setVerificationToken(UUID.randomUUID().toString());
+        user.setVerificationTokenExpiryDate(LocalDateTime.now().plusHours(VERIFICATION_TOKEN_VALIDITY_HOURS));
+        userRepository.save(user);
+        emailService.sendVerificationEmail(user);
+        log.info("Verification email re-sent");
     }
 
     /**

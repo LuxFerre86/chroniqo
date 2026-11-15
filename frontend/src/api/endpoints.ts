@@ -31,6 +31,8 @@ export const api = {
   register: (data: RegisterRequest) => request<void>('POST', '/api/auth/register', { body: data }),
   verifyEmail: (token: string) =>
     request<{ status: VerifyEmailStatus }>('POST', '/api/auth/verify-email', { body: { token } }),
+  resendVerificationEmail: (email: string) =>
+    request<void>('POST', '/api/auth/verification-email/resend', { body: { email } }),
   requestPasswordReset: (email: string) =>
     request<void>('POST', '/api/auth/password-reset/request', { body: { email } }),
   confirmPasswordReset: (token: string, newPassword: string) =>

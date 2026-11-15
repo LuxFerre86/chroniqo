@@ -175,6 +175,28 @@ class AuthControllerTest extends AbstractApiControllerTest {
                 .andExpect(jsonPath("$.errors.token").exists());
     }
 
+    // ---- resend verification ------------------------------------------------
+
+    @Test
+    void resendVerificationEmail_alwaysReturns202() throws Exception {
+        mockMvc.perform(post("/api/auth/verification-email/resend").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"unknown@example.com\"}"))
+                .andExpect(status().isAccepted());
+
+        verify(userService).resendVerificationEmail("unknown@example.com");
+    }
+
+    @Test
+    void resendVerificationEmail_invalidEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/verification-email/resend").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"nope\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).resendVerificationEmail(any());
+    }
+
     // ---- password reset -----------------------------------------------------
 
     @Test

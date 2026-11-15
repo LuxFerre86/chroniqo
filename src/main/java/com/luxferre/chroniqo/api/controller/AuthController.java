@@ -3,6 +3,7 @@ package com.luxferre.chroniqo.api.controller;
 import com.luxferre.chroniqo.api.dto.PasswordResetConfirmRequest;
 import com.luxferre.chroniqo.api.dto.PasswordResetRequestRequest;
 import com.luxferre.chroniqo.api.dto.RegisterRequest;
+import com.luxferre.chroniqo.api.dto.ResendVerificationRequest;
 import com.luxferre.chroniqo.api.dto.VerifyEmailRequest;
 import com.luxferre.chroniqo.api.dto.VerifyEmailResponse;
 import com.luxferre.chroniqo.dto.UserRegistrationRequest;
@@ -70,6 +71,19 @@ public class AuthController {
     @PostMapping("/verify-email")
     public VerifyEmailResponse verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
         return new VerifyEmailResponse(userService.verifyEmail(request.token()));
+    }
+
+    /**
+     * Re-sends the verification email for a not yet verified account. Always
+     * answers {@code 202} so that callers cannot find out which email addresses
+     * are registered or already verified.
+     *
+     * @param request the account email
+     */
+    @PostMapping("/verification-email/resend")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void resendVerificationEmail(@Valid @RequestBody ResendVerificationRequest request) {
+        userService.resendVerificationEmail(request.email().trim());
     }
 
     /**

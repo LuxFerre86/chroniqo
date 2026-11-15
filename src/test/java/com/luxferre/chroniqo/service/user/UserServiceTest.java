@@ -536,6 +536,76 @@ public class UserServiceTest {
     }
 
     // =========================================================================
+    // resendVerificationEmail
+    // =========================================================================
+
+    @Nested
+    class ResendVerificationEmail {
+
+        private User unverifiedUser(LocalDateTime tokenExpiry) {
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setEnabled(false);
+            user.setVerificationToken("old-token");
+            user.setVerificationTokenExpiryDate(tokenExpiry);
+            when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+            return user;
+        }
+
+        @Test
+        void unverifiedUser_getsNewTokenAndEmail() {
+            User user = unverifiedUser(LocalDateTime.now().plusHours(24).minusMinutes(10));
+            when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            userService.resendVerificationEmail("user@example.com");
+
+            assertThat(user.getVerificationToken()).isNotEqualTo("old-token").isNotNull();
+            assertThat(user.getVerificationTokenExpiryDate()).isAfter(LocalDateTime.now().plusHours(23));
+            verify(emailService).sendVerificationEmail(user);
+        }
+
+        @Test
+        void expiredToken_getsNewTokenAndEmail() {
+            User user = unverifiedUser(LocalDateTime.now().minusDays(2));
+            when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            userService.resendVerificationEmail("user@example.com");
+
+            assertThat(user.getVerificationToken()).isNotEqualTo("old-token");
+            verify(emailService).sendVerificationEmail(user);
+        }
+
+        @Test
+        void withinCooldown_doesNothing() {
+            User user = unverifiedUser(LocalDateTime.now().plusHours(24).minusSeconds(10));
+
+            userService.resendVerificationEmail("user@example.com");
+
+            assertThat(user.getVerificationToken()).isEqualTo("old-token");
+            verify(emailService, never()).sendVerificationEmail(any());
+        }
+
+        @Test
+        void alreadyVerifiedUser_doesNothing() {
+            User user = unverifiedUser(null);
+            user.setEnabled(true);
+
+            userService.resendVerificationEmail("user@example.com");
+
+            verify(emailService, never()).sendVerificationEmail(any());
+        }
+
+        @Test
+        void unknownEmail_doesNothing() {
+            when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
+
+            userService.resendVerificationEmail("unknown@example.com");
+
+            verify(emailService, never()).sendVerificationEmail(any());
+        }
+    }
+
+    // =========================================================================
     // updateLastLogin
     // =========================================================================
 
