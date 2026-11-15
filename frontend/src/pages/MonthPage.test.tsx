@@ -54,11 +54,11 @@ const SUMMARIES: DaySummary[] = [
   day('2026-11-16'),
 ];
 
-function renderPage() {
+function renderPage(path = '/') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <ToastProvider>
           <MonthPage />
         </ToastProvider>
@@ -98,6 +98,13 @@ describe('MonthPage', () => {
 
   const headerLabels = () =>
     Array.from(document.querySelectorAll('.cal__head')).map((el) => el.textContent);
+
+  it('opens the month given in the month query parameter', async () => {
+    renderPage('/month?month=2026-10');
+
+    expect(await screen.findByRole('button', { name: /^30\/10\/2026/ })).toBeInTheDocument();
+    expect(api.getSummary).toHaveBeenCalledWith('2026-01-01', '2026-12-31');
+  });
 
   it('starts the calendar on Monday by default', async () => {
     renderPage();

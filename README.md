@@ -14,6 +14,7 @@ Track your working hours, manage absences, and monitor your work-time balance �
 - **Time Tracking** – Log daily work entries with start time, end time, break duration, and an optional note
 - **Dashboard** – See today's summary, weekly progress chart, and your current balance at a glance
 - **Month View** – Calendar-style overview of all days, worked hours, and daily balance
+- **Year View** – Twelve mini calendars with absences, yearly totals, vacation account and a month-by-month comparison
 - **Absence Management** – Record vacation, sick leave, and public holidays
 - **Work-Time Balance** – Automatic calculation of overtime and undertime across any period
 - **Email Verification** – Account registration with email confirmation
